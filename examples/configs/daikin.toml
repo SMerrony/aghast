@@ -1,0 +1,14 @@
+[Inverter.C0E434E69F27]          # The key is the unpunctuated MAC address of the unit
+  label = "Steve's Office"  # A user-friendly label for the unit
+  
+[Inverter.C0E434E6A3C6]
+  label = "Dining Room"
+
+[Inverter.C0E434E60BC6]
+  label = "Spare Bedroom"
+
+[Inverter.C0E434E615C3]
+  label = "Paul's Studio"
+
+[Inverter.C0E434E60BA0]
+  label = "Master Bedroom"

@@ -1,0 +1,15 @@
+systemName = "Our House"
+
+longitude = 43.5
+latitude = 2.0
+
+mqttBroker = "localhost"
+mqttPort = 1883
+mqttClientID = "aghast"
+
+integrations = [
+  "time",
+  "http",
+  "network",
+  "daikin",
+]

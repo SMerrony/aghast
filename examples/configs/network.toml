@@ -1,0 +1,30 @@
+
+[HostChecker.MainRouter]
+  host = "192.168.1.1"
+  label = "4G Router"
+  period = 60
+  port = 80
+
+[HostChecker.VoipHub]
+  host = "192.168.1.2"
+  label = "VOIP Hub"
+  period = 60
+  port = 80
+
+[HostChecker.NAS]
+  host = "192.168.1.19"
+  label = "File Server"
+  period = 30
+  port = 445
+
+[HostChecker.tv1]
+  host = "lgwebostv"
+  label = "Living Room TV"
+  period = 1800
+  port = 80
+
+[HostChecker.wonkyPi]
+  host = "192.168.1.92"
+  port = 8080
+  label = "Ancient Pi"
+  period = 60
