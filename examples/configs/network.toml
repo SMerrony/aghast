@@ -1,20 +1,25 @@
-
 [HostChecker.MainRouter]
   host = "192.168.1.1"
   label = "4G Router"
   period = 60
   port = 80
 
+[HostChecker.PiHole]
+  host = "192.168.1.90"
+  label = "Pi-Hole & DHCP"
+  period = 60
+  port = 80
+
 [HostChecker.VoipHub]
   host = "192.168.1.2"
   label = "VOIP Hub"
-  period = 60
+  period = 120
   port = 80
 
 [HostChecker.NAS]
   host = "192.168.1.19"
   label = "File Server"
-  period = 30
+  period = 180
   port = 445
 
 [HostChecker.tv1]
@@ -28,3 +33,10 @@
   port = 8080
   label = "Ancient Pi"
   period = 60
+
+
+[HostChecker.BrotherA3]
+  host = "192.168.1.17"
+  port = 80
+  label = "Brother A3 Printer"
+  period = 120

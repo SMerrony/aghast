@@ -24,6 +24,7 @@ import (
 
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/integrations/daikin"
+	"github.com/SMerrony/aghast/integrations/datalogger"
 	"github.com/SMerrony/aghast/integrations/http"
 	"github.com/SMerrony/aghast/integrations/network"
 	"github.com/SMerrony/aghast/integrations/time"
@@ -51,6 +52,8 @@ func StartIntegrations(conf MainConfigT, evChan chan events.EventT, mqttChan cha
 		switch i {
 		case "daikin":
 			integ = new(daikin.Daikin)
+		case "datalogger":
+			integ = new(datalogger.DataLogger)
 		case "http":
 			integ = new(http.HTTP)
 		case "time":

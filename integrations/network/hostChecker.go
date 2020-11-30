@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/SMerrony/aghast/events"
+	"github.com/SMerrony/aghast/mqtt"
 )
 
 type hostCheckerT struct {
@@ -79,6 +80,15 @@ func (n *Network) hostChecker(dev string, evChan chan events.EventT) {
 					DeviceName:  dev,
 					EventName:   "StateChanged",
 					Value:       "Unavailable"}
+				log.Printf("DEBUG: Hostchecker about to send MQTT msg\n")
+				mqMsg := mqtt.MQTTMessageT{
+					Topic:    "network/hostchecker/" + dev + "/state",
+					Qos:      0,
+					Retained: true,
+					Payload:  "Unavailable",
+				}
+				n.mqttChan <- mqMsg
+				log.Printf("DEBUG: Hostchecker sent MQTT msg: %v", mqMsg)
 			}
 			hcConf.alive = false
 		} else {
@@ -89,9 +99,30 @@ func (n *Network) hostChecker(dev string, evChan chan events.EventT) {
 					DeviceName:  dev,
 					EventName:   "StateChanged",
 					Value:       "Available"}
+				log.Printf("DEBUG: Hostchecker about to send MQTT msg\n")
+				mqMsg := mqtt.MQTTMessageT{
+					Topic:    "network/hostchecker/" + dev + "/state",
+					Qos:      0,
+					Retained: true,
+					Payload:  "Available",
+				}
+				n.mqttChan <- mqMsg
+				log.Printf("DEBUG: Hostchecker sent MQTT msg: %v", mqMsg)
 			}
 			hcConf.alive = true
 			hcConf.responseTime = after.Sub(before)
+			evChan <- events.EventT{
+				Integration: "Network",
+				DeviceType:  "HostChecker",
+				DeviceName:  dev,
+				EventName:   "Latency",
+				Value:       hcConf.responseTime}
+			n.mqttChan <- mqtt.MQTTMessageT{
+				Topic:    "network/hostchecker/" + dev + "/latency",
+				Qos:      0,
+				Retained: true,
+				Payload:  fmt.Sprintf("%d", hcConf.responseTime/time.Millisecond),
+			}
 		}
 		hcConf.firstCheck = false
 		n.hostCheckersMu.Unlock()

@@ -101,7 +101,7 @@ func (h *HTTP) Start(evChan chan events.EventT, mqttChan chan mqtt.MQTTMessageT)
 	sid := events.GetSubscriberID()
 	ch, err := events.Subscribe(sid, "Time", "Ticker", "SystemTicker", "Minute")
 	if err != nil {
-		log.Fatalln("ERROR: HTTP Integration could not subscrible to Ticker event")
+		log.Fatalln("ERROR: HTTP Integration could not subscribe to Ticker event")
 	}
 	go func() {
 		for {

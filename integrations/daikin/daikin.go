@@ -179,26 +179,32 @@ func (d *Daikin) monitor() {
 		// <-everyMinute.C
 		// log.Println("DEBUG: Running Daikin monitor probe")
 		for _, unit := range d.inverters {
-			err := unit.requestSensorInfo()
-			if err != nil {
-				log.Printf("WARNING: Daikin sensor probe failed with %v\n", err)
-				log.Printf("... Unit data is %v\n", unit)
+			if unit.online {
+				err := unit.requestSensorInfo()
+				if err != nil {
+					log.Printf("WARNING: Daikin sensor probe failed with %v\n", err)
+					log.Printf("... Unit data is %v\n", unit)
+					unit.online = false
+				} else {
+					// log.Printf("DEBUG: ... Unit - %s, Unit Temp - %f, Outside Temp - %f\n", unit.Label, unit.sensorInfo["htemp"].floatValue, unit.sensorInfo["otemp"].floatValue)
+					mqMsg := mqtt.MQTTMessageT{
+						Topic:    "daikin/" + unit.Label + "/temperature",
+						Qos:      0,
+						Retained: true,
+						Payload:  fmt.Sprintf("%.1f", unit.sensorInfo["htemp"].floatValue),
+					}
+					d.mqttChan <- mqMsg
+					mqMsg = mqtt.MQTTMessageT{
+						Topic:    "daikin/" + unit.Label + "/outsidetemperature",
+						Qos:      0,
+						Retained: true,
+						Payload:  fmt.Sprintf("%.1f", unit.sensorInfo["otemp"].floatValue),
+					}
+					d.mqttChan <- mqMsg
+				}
 			} else {
-				// log.Printf("DEBUG: ... Unit - %s, Unit Temp - %f, Outside Temp - %f\n", unit.Label, unit.sensorInfo["htemp"].floatValue, unit.sensorInfo["otemp"].floatValue)
-				mqMsg := mqtt.MQTTMessageT{
-					Topic:    "daikin/" + unit.Label + "/temperature",
-					Qos:      0,
-					Retained: true,
-					Payload:  fmt.Sprintf("%.1f", unit.sensorInfo["htemp"].floatValue),
-				}
-				d.mqttChan <- mqMsg
-				mqMsg = mqtt.MQTTMessageT{
-					Topic:    "daikin/" + unit.Label + "/outsidetemperature",
-					Qos:      0,
-					Retained: true,
-					Payload:  fmt.Sprintf("%.1f", unit.sensorInfo["otemp"].floatValue),
-				}
-				d.mqttChan <- mqMsg
+				// we have a user-configured unit that did not show up during device discovery
+				// TODO handle missing device
 			}
 		}
 		<-everyMinute.C

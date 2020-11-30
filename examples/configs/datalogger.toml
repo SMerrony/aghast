@@ -1,0 +1,9 @@
+logDir = "/tmp"     # Don't use /tmp for real!
+
+[Logger.Latencies]
+  logFile = "wonkyPiLatency.csv"
+  integration = "Network"
+  deviceType = "HostChecker"
+  deviceName = "wonkyPi"
+  eventName = "Latency"
+  flushEvery = 2

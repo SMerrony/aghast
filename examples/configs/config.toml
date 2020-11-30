@@ -3,13 +3,14 @@ systemName = "Our House"
 longitude = 43.5
 latitude = 2.0
 
-mqttBroker = "localhost"
+mqttBroker = "mediaserver01"
 mqttPort = 1883
 mqttClientID = "aghast"
 
 integrations = [
   "time",
-  "http",
+#  "http",
   "network",
+  "datalogger",
   "daikin",
 ]
