@@ -125,7 +125,7 @@ func (d *Daikin) LoadConfig(confdir string) error {
 		// inv.MACAddress = mac
 		inv.Label = details["label"].(string)
 		d.inverters[mac] = inv
-		log.Printf("DEBUG: Daikin Inverter at %s is %s\n", mac, inv.Label)
+		log.Printf("DEBUG: Configured Daikin Inverter at %s as %s\n", mac, inv.Label)
 	}
 
 	return nil
@@ -142,6 +142,21 @@ func (d *Daikin) Start(evChan chan events.EventT, mqChan chan mqtt.MessageT) {
 	d.evChan = evChan
 	d.mqttChan = mqChan
 
+	d.runDiscovery(maxUnits, scanTimeout)
+
+	msg := mqtt.MessageT{
+		Topic:    "daikin/status",
+		Qos:      0,
+		Retained: false,
+		Payload:  "Daikin Starting",
+	}
+	d.mqttChan <- msg
+	// configured and accessible units are now in d, we can start monitoring etc.
+	go d.monitor()
+	go d.rerunDiscovery(maxUnits, scanTimeout)
+}
+
+func (d *Daikin) runDiscovery(maxUnits int, scanTimeout time.Duration) {
 	// scan the local network for Daikin Inverter units
 	foundUnits := discoverDaikinUnits(maxUnits, scanTimeout)
 	for _, foundUnit := range foundUnits {
@@ -154,25 +169,26 @@ func (d *Daikin) Start(evChan chan events.EventT, mqChan chan mqtt.MessageT) {
 			d.unconfiguredInverters = append(d.unconfiguredInverters, foundUnit)
 			d.invertersMu.Unlock()
 		} else {
+			d.invertersMu.Lock()
+			// if _, loaded := d.inverters[macAddr]; !loaded {
 			log.Println("INFO: Discovered configured Daikin Inverter")
 			knownUnit.Label = d.inverters[macAddr].Label
 			knownUnit.address = "http://" + strings.Split(foundUnit.address, ":")[0]
 			knownUnit.online = true
-			d.invertersMu.Lock()
 			d.inverters[macAddr] = knownUnit
+			// }
 			d.invertersMu.Unlock()
 		}
 		log.Printf("INFO: ... IP - %s, MAC - %s, Name - %s\n", foundUnit.address, macAddr, foundUnit.basicInfo["name"].stringValue)
 	}
-	msg := mqtt.MessageT{
-		Topic:    "daikin/status",
-		Qos:      0,
-		Retained: false,
-		Payload:  "Daikin Starting",
+}
+
+func (d *Daikin) rerunDiscovery(maxUnits int, scanTimeout time.Duration) {
+	every15mins := time.NewTicker(15 * time.Minute)
+	for {
+		<-every15mins.C
+		d.runDiscovery(maxUnits, scanTimeout)
 	}
-	d.mqttChan <- msg
-	// configured and accessible units are now in d, we can start monitoring etc.
-	go d.monitor()
 }
 
 func (d *Daikin) monitor() {
@@ -245,9 +261,8 @@ func discoverDaikinUnits(maxUnits int, timeout time.Duration) (units []inverterT
 			// normal timeout
 			if strings.HasSuffix(err.Error(), "timeout") {
 				return
-			} else {
-				panic(err)
 			}
+			panic(err)
 		}
 		if strings.HasSuffix(addrX.String(), udpPort) {
 			// this is the request, not a response
