@@ -90,7 +90,32 @@ func eventManager() {
 		}
 		// TODO Handle system-level events such as 'shutdown'
 		subsMu.RLock()
+		// explicit subscriptions
 		subs, any := subscriptions[getSubKey(ev.Integration, ev.DeviceType, ev.DeviceName, ev.EventName)]
+		if any {
+			for _, dest := range subs {
+				log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+				dest.channel <- ev
+			}
+		}
+		// DeviceName is "+"
+		subs, any = subscriptions[getSubKey(ev.Integration, ev.DeviceType, "+", ev.EventName)]
+		if any {
+			for _, dest := range subs {
+				log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+				dest.channel <- ev
+			}
+		}
+		// EventMName is "+"
+		subs, any = subscriptions[getSubKey(ev.Integration, ev.DeviceType, ev.DeviceName, "+")]
+		if any {
+			for _, dest := range subs {
+				log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+				dest.channel <- ev
+			}
+		}
+		// DviceName AND EventMName is "+"
+		subs, any = subscriptions[getSubKey(ev.Integration, ev.DeviceType, "+", "+")]
 		if any {
 			for _, dest := range subs {
 				log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)

@@ -102,16 +102,17 @@ func (d *DataLogger) logger(l loggerT) {
 		log.Printf("WARNING: DataLogger Integration could not subscribe to event for %v\n", l)
 		return
 	}
-	idField := l.integration + "/" + l.deviceType + "/" + l.deviceName
+	idRoot := l.integration + "/" + l.deviceType
 	unflushed := 0
 	for {
 		ev := <-ch
 		ts := time.Now().Format(time.RFC3339)
-		record := make([]string, 4)
+		record := make([]string, 5)
 		record[0] = ts
-		record[1] = idField
-		record[2] = l.eventName
-		record[3] = fmt.Sprintf("%v", ev.Value)
+		record[1] = idRoot
+		record[2] = ev.DeviceName
+		record[3] = ev.EventName
+		record[4] = fmt.Sprintf("%v", ev.Value)
 		csvWriter.Write(record)
 		if unflushed++; unflushed == l.flushEvery {
 			csvWriter.Flush()

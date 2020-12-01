@@ -4,6 +4,15 @@ logDir = "/tmp"     # Don't use /tmp for real!
   logFile = "wonkyPiLatency.csv"
   integration = "Network"
   deviceType = "HostChecker"
-  deviceName = "wonkyPi"
+  deviceName = "+"
   eventName = "Latency"
   flushEvery = 2
+
+[Logger.StevesRoomTemp]
+  logFile = "stevesTemp.csv"
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceName = "Steve's Office"
+  eventName = "Temperature"
+  flushEvery = 10
+  
