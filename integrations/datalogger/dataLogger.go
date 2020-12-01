@@ -83,7 +83,7 @@ func (d *DataLogger) ProvidesDeviceTypes() []string {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (d *DataLogger) Start(evChan chan events.EventT, mqChan chan mqtt.MQTTMessageT) {
+func (d *DataLogger) Start(evChan chan events.EventT, mqChan chan mqtt.MessageT) {
 	for _, l := range d.loggers {
 		go d.logger(l)
 	}

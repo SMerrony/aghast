@@ -24,117 +24,96 @@ package mqtt
 import (
 	"fmt"
 	"log"
-	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 const mqttOutboundQueueLen = 100
 
-type mqttT struct {
+// MQTT encapsulates a connection to an MQTT Broker
+type MQTT struct {
+	PublishChan chan MessageT
 	// Broker         string
 	// Port           int
 	// ClientID       string
-	client           mqtt.Client
-	options          *mqtt.ClientOptions
-	connectHandler   mqtt.OnConnectHandler
-	connLostHander   mqtt.ConnectionLostHandler
-	pubHandler       mqtt.MessageHandler
-	subscribedTopics map[string]bool
+	client         mqtt.Client
+	options        *mqtt.ClientOptions
+	connectHandler mqtt.OnConnectHandler
+	connLostHander mqtt.ConnectionLostHandler
+	pubHandler     mqtt.MessageHandler
 }
 
-// MQTTMessageT is the type of messages sent via the AGHAST MQTT channels
-type MQTTMessageT struct {
+// MessageT is the type of messages sent via the AGHAST MQTT channels
+type MessageT struct {
 	Topic    string
 	Qos      byte
 	Retained bool
 	Payload  interface{}
 }
 
-var (
-	mq mqttT
-	// MQTTPublishChan is used to publish MQTT messages to the Broker
-	MQTTPublishChan chan MQTTMessageT
-)
+func (m *MQTT) Start(broker string, port int, clientID string) chan MessageT {
+	m.options = mqtt.NewClientOptions()
+	m.options.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
+	m.options.SetClientID(clientID)
 
-func StartMQTT(broker string, port int, clientID string) chan MQTTMessageT {
-	mq.subscribedTopics = make(map[string]bool)
-	mq.options = mqtt.NewClientOptions()
-	mq.options.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
-	mq.options.SetClientID(clientID)
-
-	mq.connectHandler = func(client mqtt.Client) {
+	m.connectHandler = func(client mqtt.Client) {
 		log.Println("DEBUG: MQTT Connected to Broker")
 	}
-	mq.options.OnConnect = mq.connectHandler
+	m.options.OnConnect = m.connectHandler
 
-	mq.connLostHander = func(client mqtt.Client, err error) {
+	m.connLostHander = func(client mqtt.Client, err error) {
 		log.Printf("WARNING: MQTT Connection lost: %v", err)
 	}
-	mq.options.OnConnectionLost = mq.connLostHander
+	m.options.OnConnectionLost = m.connLostHander
 
-	mq.pubHandler = func(client mqtt.Client, msg mqtt.Message) {
+	m.pubHandler = func(client mqtt.Client, msg mqtt.Message) {
 		log.Printf("DEBUG: Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
 	}
-	mq.options.SetDefaultPublishHandler(mq.pubHandler)
+	m.options.SetDefaultPublishHandler(m.pubHandler)
 
-	mq.client = mqtt.NewClient(mq.options)
-	if token := mq.client.Connect(); token.Wait() && token.Error() != nil {
+	m.client = mqtt.NewClient(m.options)
+	if token := m.client.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
 
-	MQTTPublishChan = make(chan MQTTMessageT, mqttOutboundQueueLen)
-	go PublishViaMQTT()
-	msg := MQTTMessageT{
+	m.PublishChan = make(chan MessageT, mqttOutboundQueueLen)
+	go m.publishViaMQTT()
+
+	msg := MessageT{
 		Topic:    "aghast/status",
 		Qos:      0,
 		Retained: false,
 		Payload:  "Starting",
 	}
-	MQTTPublishChan <- msg
+	m.PublishChan <- msg
 	// testing...
-	// sub(mq.client)
-	// go publish(mq.client)
+	// sub(m.client)
+	// go publish(m.client)
 
-	return MQTTPublishChan
+	return m.PublishChan
 
 }
 
-// PublishViaMQTT sends messages to any MQTT listeners via the configured Broker
-func PublishViaMQTT() {
+// publishViaMQTT sends messages to any MQTT listeners via the configured Broker
+func (m *MQTT) publishViaMQTT() {
 	for {
-		msg := <-MQTTPublishChan
+		msg := <-m.PublishChan
 		// log.Printf("DEBUG: PublishViaMQTT got msg to forward for topic: %s, Payload: %v\n", msg.Topic, msg.Payload)
 		// // check we already subscribed?
-		// if _, subbed := mq.subscribedTopics[msg.Topic]; !subbed {
-		// 	token := mq.client.Subscribe(msg.Topic, 1, nil)
+		// if _, subbed := m.subscribedTopics[msg.Topic]; !subbed {
+		// 	token := m.client.Subscribe(msg.Topic, 1, nil)
 		// 	token.Wait()
 		// 	log.Printf("DEBUG: MQTT - Subbed to topic: %s\n", msg.Topic)
-		// 	mq.subscribedTopics[msg.Topic] = true
+		// 	m.subscribedTopics[msg.Topic] = true
 		// }
-		mq.client.Publish(msg.Topic, msg.Qos, msg.Retained, msg.Payload)
+		m.client.Publish(msg.Topic, msg.Qos, msg.Retained, msg.Payload)
 		// token.Wait()
 		// log.Println("DEBUG: ... forwarded")
 	}
 }
 
-// testing...
-func publish(client mqtt.Client) {
-	num := 10
-	for i := 0; i < num; i++ {
-		text := fmt.Sprintf("Message %d", i)
-		// token := client.Publish("topic/test", 0, false, text)
-		// token.Wait()
-		msg := MQTTMessageT{
-			Topic:    "topic/test",
-			Qos:      0,
-			Retained: false,
-			Payload:  text,
-		}
-		MQTTPublishChan <- msg
-		log.Println("DEBUG: Send msg from Publish")
-		time.Sleep(time.Second)
-	}
+func subscribeToTopic() {
+
 }
 
 // testing...

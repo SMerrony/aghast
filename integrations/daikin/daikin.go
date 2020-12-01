@@ -45,7 +45,7 @@ type Daikin struct {
 	invertersMu           sync.RWMutex
 	inverters             map[string]inverterT // the ones we use
 	unconfiguredInverters []inverterT          // we found these, but they aren't configured
-	mqttChan              chan mqtt.MQTTMessageT
+	mqttChan              chan mqtt.MessageT
 }
 
 type reqT string
@@ -136,7 +136,7 @@ func (d *Daikin) ProvidesDeviceTypes() []string {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (d *Daikin) Start(_ chan events.EventT, mqChan chan mqtt.MQTTMessageT) {
+func (d *Daikin) Start(_ chan events.EventT, mqChan chan mqtt.MessageT) {
 
 	d.mqttChan = mqChan
 
@@ -162,7 +162,7 @@ func (d *Daikin) Start(_ chan events.EventT, mqChan chan mqtt.MQTTMessageT) {
 		}
 		log.Printf("INFO: ... IP - %s, MAC - %s, Name - %s\n", foundUnit.address, macAddr, foundUnit.basicInfo["name"].stringValue)
 	}
-	msg := mqtt.MQTTMessageT{
+	msg := mqtt.MessageT{
 		Topic:    "daikin/status",
 		Qos:      0,
 		Retained: false,
@@ -187,14 +187,14 @@ func (d *Daikin) monitor() {
 					unit.online = false
 				} else {
 					// log.Printf("DEBUG: ... Unit - %s, Unit Temp - %f, Outside Temp - %f\n", unit.Label, unit.sensorInfo["htemp"].floatValue, unit.sensorInfo["otemp"].floatValue)
-					mqMsg := mqtt.MQTTMessageT{
+					mqMsg := mqtt.MessageT{
 						Topic:    "daikin/" + unit.Label + "/temperature",
 						Qos:      0,
 						Retained: true,
 						Payload:  fmt.Sprintf("%.1f", unit.sensorInfo["htemp"].floatValue),
 					}
 					d.mqttChan <- mqMsg
-					mqMsg = mqtt.MQTTMessageT{
+					mqMsg = mqtt.MessageT{
 						Topic:    "daikin/" + unit.Label + "/outsidetemperature",
 						Qos:      0,
 						Retained: true,

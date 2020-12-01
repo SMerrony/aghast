@@ -97,7 +97,7 @@ func (h *HTTP) LoadConfig(confdir string) error {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (h *HTTP) Start(evChan chan events.EventT, mqttChan chan mqtt.MQTTMessageT) {
+func (h *HTTP) Start(evChan chan events.EventT, mqttChan chan mqtt.MessageT) {
 	sid := events.GetSubscriberID()
 	ch, err := events.Subscribe(sid, "Time", "Ticker", "SystemTicker", "Minute")
 	if err != nil {

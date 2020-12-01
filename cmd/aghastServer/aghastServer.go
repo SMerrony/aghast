@@ -53,7 +53,8 @@ func main() {
 	}
 	var wg sync.WaitGroup
 
-	mqttChan := mqtt.StartMQTT(conf.MqttBroker, conf.MqttPort, conf.MqttClientID)
+	mq := new(mqtt.MQTT)
+	mqttChan := mq.Start(conf.MqttBroker, conf.MqttPort, conf.MqttClientID)
 
 	// start the event manager - this should happen before Integrations are started
 	wg.Add(1)
@@ -62,7 +63,7 @@ func main() {
 	wg.Add(1)
 	server.StartIntegrations(conf, eventChan, mqttChan)
 
-	msg := mqtt.MQTTMessageT{
+	msg := mqtt.MessageT{
 		Topic:    "aghast/status",
 		Qos:      0,
 		Retained: false,

@@ -81,7 +81,7 @@ func (n *Network) hostChecker(dev string, evChan chan events.EventT) {
 					EventName:   "StateChanged",
 					Value:       "Unavailable"}
 				log.Printf("DEBUG: Hostchecker about to send MQTT msg\n")
-				mqMsg := mqtt.MQTTMessageT{
+				mqMsg := mqtt.MessageT{
 					Topic:    "network/hostchecker/" + dev + "/state",
 					Qos:      0,
 					Retained: true,
@@ -100,7 +100,7 @@ func (n *Network) hostChecker(dev string, evChan chan events.EventT) {
 					EventName:   "StateChanged",
 					Value:       "Available"}
 				log.Printf("DEBUG: Hostchecker about to send MQTT msg\n")
-				mqMsg := mqtt.MQTTMessageT{
+				mqMsg := mqtt.MessageT{
 					Topic:    "network/hostchecker/" + dev + "/state",
 					Qos:      0,
 					Retained: true,
@@ -117,7 +117,7 @@ func (n *Network) hostChecker(dev string, evChan chan events.EventT) {
 				DeviceName:  dev,
 				EventName:   "Latency",
 				Value:       hcConf.responseTime}
-			n.mqttChan <- mqtt.MQTTMessageT{
+			n.mqttChan <- mqtt.MessageT{
 				Topic:    "network/hostchecker/" + dev + "/latency",
 				Qos:      0,
 				Retained: true,

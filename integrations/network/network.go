@@ -33,7 +33,7 @@ const configFilename = "/network.toml"
 // The Network type encapsulates the 'Network' Integration.
 // It currently provides the 'HostChecker' deviceType.
 type Network struct {
-	mqttChan       chan mqtt.MQTTMessageT
+	mqttChan       chan mqtt.MessageT
 	hostCheckersMu sync.RWMutex
 	hostCheckers   map[string]hostCheckerT
 }
@@ -74,7 +74,7 @@ func (n *Network) ProvidesDeviceTypes() []string {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (n *Network) Start(evChan chan events.EventT, mqChan chan mqtt.MQTTMessageT) {
+func (n *Network) Start(evChan chan events.EventT, mqChan chan mqtt.MessageT) {
 
 	n.mqttChan = mqChan
 
