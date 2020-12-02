@@ -51,6 +51,7 @@ type Daikin struct {
 
 type reqT string
 
+// these are the known Daikin 'end-points'
 const (
 	getBasicInfo    = "/common/basic_info"
 	getRemoteMethod = "/common/get_remote_method"
@@ -212,29 +213,86 @@ func (d *Daikin) monitor() {
 						EventName:   "Temperature",
 						Value:       fmt.Sprintf("%.1f", unit.sensorInfo["htemp"].floatValue),
 					}
-					mqMsg := mqtt.MessageT{
+					d.mqttChan <- mqtt.MessageT{
 						Topic:    "daikin/" + unit.Label + "/temperature",
 						Qos:      0,
 						Retained: true,
 						Payload:  fmt.Sprintf("%.1f", unit.sensorInfo["htemp"].floatValue),
 					}
-					d.mqttChan <- mqMsg
-					mqMsg = mqtt.MessageT{
+					d.mqttChan <- mqtt.MessageT{
 						Topic:    "daikin/" + unit.Label + "/outsidetemperature",
 						Qos:      0,
 						Retained: true,
 						Payload:  fmt.Sprintf("%.1f", unit.sensorInfo["otemp"].floatValue),
 					}
-					d.mqttChan <- mqMsg
 				}
-			} else {
-				// we have a user-configured unit that did not show up during device discovery
-				// TODO handle missing device
+				err = unit.requestControlInfo()
+				if err != nil {
+					log.Printf("WARNING: Daikin control probe failed with %v\n", err)
+					log.Printf("... Unit data is %v\n", unit)
+					unit.online = false
+				} else {
+					d.evChan <- events.EventT{
+						Integration: "Daikin",
+						DeviceType:  "Inverter",
+						DeviceName:  unit.Label,
+						EventName:   "Power",
+						Value:       fmt.Sprintf("%v", unit.controlInfo["pow"].boolValue),
+					}
+					d.mqttChan <- mqtt.MessageT{
+						Topic:    "daikin/" + unit.Label + "/power",
+						Qos:      0,
+						Retained: true,
+						Payload:  fmt.Sprintf("%v", unit.controlInfo["pow"].boolValue),
+					}
+					d.evChan <- events.EventT{
+						Integration: "Daikin",
+						DeviceType:  "Inverter",
+						DeviceName:  unit.Label,
+						EventName:   "SetTemperature",
+						Value:       fmt.Sprintf("%.1f", unit.controlInfo["stemp"].floatValue),
+					}
+					d.mqttChan <- mqtt.MessageT{
+						Topic:    "daikin/" + unit.Label + "/settemperature",
+						Qos:      0,
+						Retained: true,
+						Payload:  fmt.Sprintf("%.1f", unit.controlInfo["stemp"].floatValue),
+					}
+					d.evChan <- events.EventT{
+						Integration: "Daikin",
+						DeviceType:  "Inverter",
+						DeviceName:  unit.Label,
+						EventName:   "FanRate",
+						Value:       fmt.Sprintf("%s", unit.controlInfo["f_rate"].stringValue),
+					}
+					d.mqttChan <- mqtt.MessageT{
+						Topic:    "daikin/" + unit.Label + "/fanrate",
+						Qos:      0,
+						Retained: true,
+						Payload:  fmt.Sprintf("%s", unit.controlInfo["f_rate"].stringValue),
+					}
+				}
 			}
 		}
 		<-everyMinute.C
 	}
 }
+
+// func (d *Daikin) publishFloat(evName, subTopic string, key string, floatVal float64) {
+// 	d.evChan <- events.EventT{
+// 		Integration: "Daikin",
+// 		DeviceType:  "Inverter",
+// 		DeviceName:  unit.Label,
+// 		EventName:   evName,
+// 		Value:       fmt.Sprintf("%.1f", floatVal),
+// 	}
+// 	d.mqttChan <- mqtt.MessageT{
+// 		Topic:    "daikin/" + unit.Label + subTopic,
+// 		Qos:      0,
+// 		Retained: true,
+// 		Payload:  fmt.Sprintf("%.1f", floatVal),
+// 	}
+// }
 
 // discoverDaikinUnits searches for Inverters on the local network
 func discoverDaikinUnits(maxUnits int, timeout time.Duration) (units []inverterT) {
@@ -294,6 +352,23 @@ func (du *inverterT) requestSensorInfo() (e error) {
 		}
 	}
 	e = du.requestInfo(getSensorInfo, du.sensorInfo)
+	return e
+}
+
+func (du *inverterT) requestControlInfo() (e error) {
+	if len(du.controlInfo) == 0 {
+		du.controlInfo = infoMap{
+			"ret":    {label: "Return Code", infoType: stringT},
+			"pow":    {label: "Power", infoType: zeroOneBoolT},
+			"mode":   {label: "Mode", infoType: intT},
+			"stemp":  {label: "Set Temperature", infoType: floatT},
+			"shum":   {label: "Set Humidity", infoType: floatT},
+			"alert":  {label: "Alert", infoType: intT},
+			"f_rate": {label: "Fan Rate", infoType: stringT},
+			"f_dir":  {label: "Fan Sweep", infoType: intT},
+		}
+	}
+	e = du.requestInfo(getControlInfo, du.controlInfo)
 	return e
 }
 
@@ -372,11 +447,11 @@ func parseKnownInfo(body []byte, im infoMap) (e error) {
 				if info.label == "Return Code" && info.stringValue != "OK" {
 					return errors.New("Invalid Request")
 				}
-				if info.label == "Fan Rate" {
-					if s, ok := fanRateToString(info.stringValue); ok {
-						fmt.Printf(" \tDecodes to: %s ", s)
-					}
-				}
+				// if info.label == "Fan Rate" {
+				// 	if s, ok := fanRateToString(info.stringValue); ok {
+				// 		fmt.Printf(" \tDecodes to: %s ", s)
+				// 	}
+				// }
 				// fmt.Printf(" \t\"%s\"\n", info.stringValue)
 			case urlEncStringT:
 				info.stringValue, err = url.QueryUnescape(string(elements[1]))
@@ -389,16 +464,16 @@ func parseKnownInfo(body []byte, im infoMap) (e error) {
 				if err != nil {
 					log.Printf("WARNING: Could not parse int from %s\n", string(elements[1]))
 				}
-				if info.label == "Mode" {
-					if s, ok := acModeToString(int(info.intValue)); ok {
-						fmt.Printf(" \tDecodes to: %s ", s)
-					}
-				}
-				if info.label == "Fan Sweep" {
-					if s, ok := fanSweepToString(int(info.intValue)); ok {
-						fmt.Printf(" \tDecodes to: %s ", s)
-					}
-				}
+				// if info.label == "Mode" {
+				// 	if s, ok := acModeToString(int(info.intValue)); ok {
+				// 		fmt.Printf(" \tDecodes to: %s ", s)
+				// 	}
+				// }
+				// if info.label == "Fan Sweep" {
+				// 	if s, ok := fanSweepToString(int(info.intValue)); ok {
+				// 		fmt.Printf(" \tDecodes to: %s ", s)
+				// 	}
+				// }
 				// fmt.Printf(" \t%d\n", info.intValue)
 			case floatT:
 				if len(elements[1]) < 3 && elements[1][0] == '-' {
