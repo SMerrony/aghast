@@ -21,6 +21,7 @@ package daikin
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -47,6 +48,14 @@ type Daikin struct {
 	unconfiguredInverters []inverterT          // we found these, but they aren't configured
 	evChan                chan events.EventT
 	mqttChan              chan mqtt.MessageT
+}
+
+type MQTTControlInfoT struct {
+	Power string
+	Mode  int
+	Stemp float64
+	Frate string
+	Fdir  int
 }
 
 type reqT string
@@ -239,12 +248,32 @@ func (d *Daikin) monitor() {
 						EventName:   "Power",
 						Value:       fmt.Sprintf("%v", unit.controlInfo["pow"].boolValue),
 					}
+
+					var payloadStruct MQTTControlInfoT
+					payloadStruct.Power = fmt.Sprintf("%v", unit.controlInfo["pow"].boolValue)
+					payloadStruct.Mode = int(unit.controlInfo["mode"].intValue)
+					payloadStruct.Stemp = unit.controlInfo["stemp"].floatValue
+					payloadStruct.Frate = unit.controlInfo["f_rate"].stringValue
+					payloadStruct.Fdir = int(unit.controlInfo["f_dir"].intValue)
+					payload, err := json.Marshal(payloadStruct)
+					if err != nil {
+						panic(err)
+					}
 					d.mqttChan <- mqtt.MessageT{
-						Topic:    "daikin/" + unit.Label + "/power",
+						Topic:    "daikin/" + unit.Label + "/controlinfo",
 						Qos:      0,
 						Retained: true,
-						Payload:  fmt.Sprintf("%v", unit.controlInfo["pow"].boolValue),
+						Payload:  payload,
 					}
+
+					d.evChan <- events.EventT{
+						Integration: "Daikin",
+						DeviceType:  "Inverter",
+						DeviceName:  unit.Label,
+						EventName:   "Mode",
+						Value:       fmt.Sprintf("%d", unit.controlInfo["mode"].intValue),
+					}
+
 					d.evChan <- events.EventT{
 						Integration: "Daikin",
 						DeviceType:  "Inverter",
@@ -252,12 +281,7 @@ func (d *Daikin) monitor() {
 						EventName:   "SetTemperature",
 						Value:       fmt.Sprintf("%.1f", unit.controlInfo["stemp"].floatValue),
 					}
-					d.mqttChan <- mqtt.MessageT{
-						Topic:    "daikin/" + unit.Label + "/settemperature",
-						Qos:      0,
-						Retained: true,
-						Payload:  fmt.Sprintf("%.1f", unit.controlInfo["stemp"].floatValue),
-					}
+
 					d.evChan <- events.EventT{
 						Integration: "Daikin",
 						DeviceType:  "Inverter",
@@ -265,12 +289,7 @@ func (d *Daikin) monitor() {
 						EventName:   "FanRate",
 						Value:       fmt.Sprintf("%s", unit.controlInfo["f_rate"].stringValue),
 					}
-					d.mqttChan <- mqtt.MessageT{
-						Topic:    "daikin/" + unit.Label + "/fanrate",
-						Qos:      0,
-						Retained: true,
-						Payload:  fmt.Sprintf("%s", unit.controlInfo["f_rate"].stringValue),
-					}
+
 				}
 			}
 		}
