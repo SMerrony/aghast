@@ -28,7 +28,10 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-const mqttOutboundQueueLen = 100
+const (
+	mqttOutboundQueueLen = 100
+	mqttInboundQueueLen  = 100
+)
 
 // MQTT encapsulates a connection to an MQTT Broker
 type MQTT struct {
@@ -66,10 +69,10 @@ func (m *MQTT) Start(broker string, port int, clientID string) chan MessageT {
 	}
 	m.options.OnConnectionLost = m.connLostHander
 
-	m.pubHandler = func(client mqtt.Client, msg mqtt.Message) {
-		log.Printf("DEBUG: Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
-	}
-	m.options.SetDefaultPublishHandler(m.pubHandler)
+	// m.pubHandler = func(client mqtt.Client, msg mqtt.Message) {
+	// 	log.Printf("DEBUG: Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
+	// }
+	// m.options.SetDefaultPublishHandler(m.pubHandler)
 
 	m.client = mqtt.NewClient(m.options)
 	if token := m.client.Connect(); token.Wait() && token.Error() != nil {
@@ -112,8 +115,15 @@ func (m *MQTT) publishViaMQTT() {
 	}
 }
 
-func subscribeToTopic() {
-
+// SubscribeToTopic returns a channel which will receive any MQTT messages published to the topic
+func (m *MQTT) SubscribeToTopic(topic string) (c chan MessageT) {
+	c = make(chan MessageT, mqttInboundQueueLen)
+	m.client.Subscribe(topic, 1, func(client mqtt.Client, msg mqtt.Message) {
+		cMsg := MessageT{msg.Topic(), msg.Qos(), msg.Retained(), msg.Payload()}
+		c <- cMsg
+		// log.Printf("DEBUG: MQTT subscription got topic: %s,  msg: %v\n", msg.Topic(), msg.Payload())
+	})
+	return c
 }
 
 // testing...

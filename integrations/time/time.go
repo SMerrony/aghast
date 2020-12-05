@@ -49,7 +49,7 @@ func (t *Time) ProvidesDeviceTypes() []string {
 }
 
 // Start any services this Integration provides.
-func (t *Time) Start(evChan chan events.EventT, mqttChan chan mqtt.MessageT) {
+func (t *Time) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	go tickers(evChan)
 }
 

@@ -38,14 +38,14 @@ type Integration interface {
 	LoadConfig(string) error
 
 	// The Start func begins running the Integration GoRoutines
-	Start(chan events.EventT, chan mqtt.MessageT)
+	Start(chan events.EventT, mqtt.MQTT)
 
 	// ProvidesDeviceType returns a list of Device Type supported by this Integration
 	ProvidesDeviceTypes() []string
 }
 
 // StartIntegrations asks each enabled Integration to configure itself, then starts them.
-func StartIntegrations(conf MainConfigT, evChan chan events.EventT, mqttChan chan mqtt.MessageT) {
+func StartIntegrations(conf MainConfigT, evChan chan events.EventT, mqtt mqtt.MQTT) {
 
 	var integ Integration
 	for _, i := range conf.Integrations {
@@ -70,6 +70,6 @@ func StartIntegrations(conf MainConfigT, evChan chan events.EventT, mqttChan cha
 			log.Printf("ERROR: %s Integration could not load its configuration", i)
 			// log.Fatalln("ABORT: Time Integration must run")
 		}
-		go integ.Start(evChan, mqttChan)
+		go integ.Start(evChan, mqtt)
 	}
 }

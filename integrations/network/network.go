@@ -74,9 +74,9 @@ func (n *Network) ProvidesDeviceTypes() []string {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (n *Network) Start(evChan chan events.EventT, mqChan chan mqtt.MessageT) {
+func (n *Network) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 
-	n.mqttChan = mqChan
+	n.mqttChan = mq.PublishChan
 
 	// HostCheckers
 	n.hostCheckersMu.RLock()

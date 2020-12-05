@@ -50,7 +50,9 @@ type Daikin struct {
 	mqttChan              chan mqtt.MessageT
 }
 
-type MQTTControlInfoT struct {
+// ControlInfoMsgT is the type of messaage sent out both as an Event and via MQTT
+// containing the interesting Control state from the unit
+type ControlInfoMsgT struct {
 	Power string
 	Mode  int
 	Stemp float64
@@ -72,7 +74,10 @@ const (
 	getYearPower    = "/aircon/get_year_power"
 	getWeekPowerExt = "/aircon/get_week_power_ex"
 	getYearPowerExt = "/aircon/get_year_power_ex"
+	setControlInfo  = "/aircon/set_control_info"
 )
+
+const setControlFmt = "?pow=%d&mode=%d&stemp=%d&f_rate=%s&f_dir=%d"
 
 const (
 	udpPort     = ":30050"
@@ -147,11 +152,10 @@ func (d *Daikin) ProvidesDeviceTypes() []string {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (d *Daikin) Start(evChan chan events.EventT, mqChan chan mqtt.MessageT) {
+func (d *Daikin) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 
 	d.evChan = evChan
-	d.mqttChan = mqChan
-
+	d.mqttChan = mq.PublishChan
 	d.runDiscovery(maxUnits, scanTimeout)
 
 	msg := mqtt.MessageT{
@@ -164,6 +168,21 @@ func (d *Daikin) Start(evChan chan events.EventT, mqChan chan mqtt.MessageT) {
 	// configured and accessible units are now in d, we can start monitoring etc.
 	go d.monitor()
 	go d.rerunDiscovery(maxUnits, scanTimeout)
+
+	// testing...
+	type Mt struct{ Message string }
+	var ms Mt
+	c := mq.SubscribeToTopic("aghast/client/daikin/button1")
+	go func() {
+		for {
+			m := <-c
+			err := json.Unmarshal(m.Payload.([]byte), &ms)
+			if err != nil {
+				log.Printf("WARNING: Could not read JSON from MQTT with error: %v", err)
+			}
+			log.Printf("DEBUG: Daikin got MQTT message: %s\n", ms)
+		}
+	}()
 }
 
 func (d *Daikin) runDiscovery(maxUnits int, scanTimeout time.Duration) {
@@ -241,21 +260,13 @@ func (d *Daikin) monitor() {
 					log.Printf("... Unit data is %v\n", unit)
 					unit.online = false
 				} else {
-					d.evChan <- events.EventT{
-						Integration: "Daikin",
-						DeviceType:  "Inverter",
-						DeviceName:  unit.Label,
-						EventName:   "Power",
-						Value:       fmt.Sprintf("%v", unit.controlInfo["pow"].boolValue),
-					}
-
-					var payloadStruct MQTTControlInfoT
-					payloadStruct.Power = fmt.Sprintf("%v", unit.controlInfo["pow"].boolValue)
-					payloadStruct.Mode = int(unit.controlInfo["mode"].intValue)
-					payloadStruct.Stemp = unit.controlInfo["stemp"].floatValue
-					payloadStruct.Frate = unit.controlInfo["f_rate"].stringValue
-					payloadStruct.Fdir = int(unit.controlInfo["f_dir"].intValue)
-					payload, err := json.Marshal(payloadStruct)
+					var ci ControlInfoMsgT
+					ci.Power = fmt.Sprintf("%v", unit.controlInfo["pow"].boolValue)
+					ci.Mode = int(unit.controlInfo["mode"].intValue)
+					ci.Stemp = unit.controlInfo["stemp"].floatValue
+					ci.Frate = unit.controlInfo["f_rate"].stringValue
+					ci.Fdir = int(unit.controlInfo["f_dir"].intValue)
+					payload, err := json.Marshal(ci)
 					if err != nil {
 						panic(err)
 					}
@@ -270,48 +281,15 @@ func (d *Daikin) monitor() {
 						Integration: "Daikin",
 						DeviceType:  "Inverter",
 						DeviceName:  unit.Label,
-						EventName:   "Mode",
-						Value:       fmt.Sprintf("%d", unit.controlInfo["mode"].intValue),
+						EventName:   "ControInfo",
+						Value:       ci,
 					}
-
-					d.evChan <- events.EventT{
-						Integration: "Daikin",
-						DeviceType:  "Inverter",
-						DeviceName:  unit.Label,
-						EventName:   "SetTemperature",
-						Value:       fmt.Sprintf("%.1f", unit.controlInfo["stemp"].floatValue),
-					}
-
-					d.evChan <- events.EventT{
-						Integration: "Daikin",
-						DeviceType:  "Inverter",
-						DeviceName:  unit.Label,
-						EventName:   "FanRate",
-						Value:       fmt.Sprintf("%s", unit.controlInfo["f_rate"].stringValue),
-					}
-
 				}
 			}
 		}
 		<-everyMinute.C
 	}
 }
-
-// func (d *Daikin) publishFloat(evName, subTopic string, key string, floatVal float64) {
-// 	d.evChan <- events.EventT{
-// 		Integration: "Daikin",
-// 		DeviceType:  "Inverter",
-// 		DeviceName:  unit.Label,
-// 		EventName:   evName,
-// 		Value:       fmt.Sprintf("%.1f", floatVal),
-// 	}
-// 	d.mqttChan <- mqtt.MessageT{
-// 		Topic:    "daikin/" + unit.Label + subTopic,
-// 		Qos:      0,
-// 		Retained: true,
-// 		Payload:  fmt.Sprintf("%.1f", floatVal),
-// 	}
-// }
 
 // discoverDaikinUnits searches for Inverters on the local network
 func discoverDaikinUnits(maxUnits int, timeout time.Duration) (units []inverterT) {
@@ -410,6 +388,22 @@ func (du *inverterT) requestInfo(req string, dest infoMap) (e error) {
 	return nil
 }
 
+func (du *inverterT) setControls(ci ControlInfoMsgT) error {
+	v := url.Values{}
+	v.Set("pow", ci.Power)
+	v.Add("mode", fmt.Sprintf("%d", ci.Mode))
+	v.Add("stemp", fmt.Sprintf("%.1f", ci.Stemp))
+	v.Add("f_rate", ci.Frate)
+	v.Add("f_dir", fmt.Sprintf("%d", ci.Fdir))
+
+	resp, err := http.PostForm(du.address+setControlInfo, v)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close() // TODO check return code from unit?
+	return nil
+}
+
 func (du *inverterT) prepareBasicInfo() {
 	if len(du.basicInfo) == 0 {
 		du.basicInfo = infoMap{
@@ -452,13 +446,12 @@ func parseKnownInfo(body []byte, im infoMap) (e error) {
 		elements := bytes.Split(v, []byte("="))
 		info, known := im[string(elements[0])]
 		if known {
-			// fmt.Printf("%s\t", info.label)
+
 			switch info.infoType {
 			case stringT:
 				if len(elements[1]) == 0 {
 					info.stringValue = ""
 					info.valueUnavailable = true
-					// fmt.Printf(" \tUnavailable ")
 				} else {
 					info.stringValue = string(elements[1])
 				}
@@ -466,53 +459,37 @@ func parseKnownInfo(body []byte, im infoMap) (e error) {
 				if info.label == "Return Code" && info.stringValue != "OK" {
 					return errors.New("Invalid Request")
 				}
-				// if info.label == "Fan Rate" {
-				// 	if s, ok := fanRateToString(info.stringValue); ok {
-				// 		fmt.Printf(" \tDecodes to: %s ", s)
-				// 	}
-				// }
-				// fmt.Printf(" \t\"%s\"\n", info.stringValue)
+
 			case urlEncStringT:
 				info.stringValue, err = url.QueryUnescape(string(elements[1]))
 				if err != nil {
 					log.Printf("WARNING: Could not unescape string from %s\n", string(elements[1]))
 				}
-				// fmt.Printf(" \t\"%s\"\n", info.stringValue)
+
 			case intT:
 				info.intValue, err = strconv.ParseInt(string(elements[1]), 10, 64)
 				if err != nil {
 					log.Printf("WARNING: Could not parse int from %s\n", string(elements[1]))
 				}
-				// if info.label == "Mode" {
-				// 	if s, ok := acModeToString(int(info.intValue)); ok {
-				// 		fmt.Printf(" \tDecodes to: %s ", s)
-				// 	}
-				// }
-				// if info.label == "Fan Sweep" {
-				// 	if s, ok := fanSweepToString(int(info.intValue)); ok {
-				// 		fmt.Printf(" \tDecodes to: %s ", s)
-				// 	}
-				// }
-				// fmt.Printf(" \t%d\n", info.intValue)
+
 			case floatT:
 				if len(elements[1]) < 3 && elements[1][0] == '-' {
 					info.floatValue = 0.0
 					info.valueUnavailable = true
-					// fmt.Printf(" \tUnavailable ")
 				} else {
 					info.floatValue, err = strconv.ParseFloat(string(elements[1]), 64)
 					if err != nil {
 						log.Printf("WARNING: Could not parse float from %s\n", string(elements[1]))
 					}
 				}
-				// fmt.Printf(" \t%f\n", info.floatValue)
+
 			case zeroOneBoolT:
 				if elements[1][0] == '1' {
 					info.boolValue = true
 				} else {
 					info.boolValue = false
 				}
-				// fmt.Printf("\t%v\n", info.boolValue)
+
 			}
 			im[string(elements[0])] = info
 		} else {
