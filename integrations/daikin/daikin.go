@@ -45,9 +45,11 @@ const configFilename = "/daikin.toml"
 type Daikin struct {
 	invertersMu           sync.RWMutex
 	inverters             map[string]inverterT // the ones we use
+	invertersByLabel      map[string]string    // map into the above via label
 	unconfiguredInverters []inverterT          // we found these, but they aren't configured
 	evChan                chan events.EventT
 	mqttChan              chan mqtt.MessageT
+	mq                    mqtt.MQTT
 }
 
 // ControlInfoMsgT is the type of messaage sent out both as an Event and via MQTT
@@ -77,7 +79,7 @@ const (
 	setControlInfo  = "/aircon/set_control_info"
 )
 
-const setControlFmt = "?pow=%d&mode=%d&stemp=%d&f_rate=%s&f_dir=%d"
+const setControlFmt = "?pow=%s&mode=%s&stemp=%s&f_rate=%s&f_dir=%s&shum=%s"
 
 const (
 	udpPort     = ":30050"
@@ -119,6 +121,7 @@ type inverterT struct {
 	basicInfo, remoteMethodInfo,
 	modelInfo, controlInfo,
 	sensorInfo infoMap
+	// clientChan chan mqtt.MessageT
 }
 
 // LoadConfig loads and stores the configuration for this Integration
@@ -131,6 +134,7 @@ func (d *Daikin) LoadConfig(confdir string) error {
 	d.invertersMu.Lock()
 	defer d.invertersMu.Unlock()
 	d.inverters = make(map[string]inverterT)
+	d.invertersByLabel = make(map[string]string)
 
 	confMap := conf.ToMap()
 	invsConf := confMap["Inverter"].(map[string]interface{})
@@ -140,6 +144,7 @@ func (d *Daikin) LoadConfig(confdir string) error {
 		// inv.MACAddress = mac
 		inv.Label = details["label"].(string)
 		d.inverters[mac] = inv
+		d.invertersByLabel[inv.Label] = mac
 		log.Printf("DEBUG: Configured Daikin Inverter at %s as %s\n", mac, inv.Label)
 	}
 
@@ -156,6 +161,7 @@ func (d *Daikin) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 
 	d.evChan = evChan
 	d.mqttChan = mq.PublishChan
+	d.mq = mq
 	d.runDiscovery(maxUnits, scanTimeout)
 
 	msg := mqtt.MessageT{
@@ -166,23 +172,10 @@ func (d *Daikin) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	}
 	d.mqttChan <- msg
 	// configured and accessible units are now in d, we can start monitoring etc.
-	go d.monitor()
+	go d.monitorUnits()
+	go d.monitorClients()
 	go d.rerunDiscovery(maxUnits, scanTimeout)
 
-	// testing...
-	type Mt struct{ Message string }
-	var ms Mt
-	c := mq.SubscribeToTopic("aghast/client/daikin/button1")
-	go func() {
-		for {
-			m := <-c
-			err := json.Unmarshal(m.Payload.([]byte), &ms)
-			if err != nil {
-				log.Printf("WARNING: Could not read JSON from MQTT with error: %v", err)
-			}
-			log.Printf("DEBUG: Daikin got MQTT message: %s\n", ms)
-		}
-	}()
 }
 
 func (d *Daikin) runDiscovery(maxUnits int, scanTimeout time.Duration) {
@@ -197,18 +190,19 @@ func (d *Daikin) runDiscovery(maxUnits int, scanTimeout time.Duration) {
 			d.invertersMu.Lock()
 			d.unconfiguredInverters = append(d.unconfiguredInverters, foundUnit)
 			d.invertersMu.Unlock()
+			log.Printf("INFO: ... IP - %s, MAC - %s, Name - %s\n", foundUnit.address, macAddr, foundUnit.basicInfo["name"].stringValue)
 		} else {
-			d.invertersMu.Lock()
-			// if _, loaded := d.inverters[macAddr]; !loaded {
-			log.Println("INFO: Discovered configured Daikin Inverter")
-			knownUnit.Label = d.inverters[macAddr].Label
-			knownUnit.address = "http://" + strings.Split(foundUnit.address, ":")[0]
-			knownUnit.online = true
-			d.inverters[macAddr] = knownUnit
-			// }
-			d.invertersMu.Unlock()
+			if !knownUnit.online {
+				d.invertersMu.Lock()
+				log.Println("INFO: Discovered configured Daikin Inverter")
+				knownUnit.Label = d.inverters[macAddr].Label
+				knownUnit.address = "http://" + strings.Split(foundUnit.address, ":")[0]
+				knownUnit.online = true
+				d.inverters[macAddr] = knownUnit
+				d.invertersMu.Unlock()
+				log.Printf("INFO: ... IP - %s, MAC - %s, Name - %s\n", foundUnit.address, macAddr, foundUnit.basicInfo["name"].stringValue)
+			}
 		}
-		log.Printf("INFO: ... IP - %s, MAC - %s, Name - %s\n", foundUnit.address, macAddr, foundUnit.basicInfo["name"].stringValue)
 	}
 }
 
@@ -220,7 +214,83 @@ func (d *Daikin) rerunDiscovery(maxUnits int, scanTimeout time.Duration) {
 	}
 }
 
-func (d *Daikin) monitor() {
+func (d *Daikin) monitorClients() {
+	clientChan := d.mq.SubscribeToTopic("daikin/client/#")
+	for {
+		msg := <-clientChan
+		payload := string(msg.Payload.([]uint8))
+		log.Printf("DEBUG: Got msg from Daikin client, topic: %s, payload: %s\n", msg.Topic, payload)
+		// topic format is daikin/client/<Label>/<control>
+		topicSlice := strings.Split(msg.Topic, "/")
+		unitMAC := d.invertersByLabel[topicSlice[2]]
+		inv := d.inverters[unitMAC]
+
+		// get the existing settings from the unit
+		err := inv.requestControlInfo()
+		if err != nil {
+			log.Printf("WARNING: Could not retrieve Control info for unit: %s\n", topicSlice[2])
+			continue
+		}
+		control := topicSlice[3]
+		var power, setting, mode, fan, sweep string
+
+		if control == "power" {
+			if payload == "true" {
+				power = "1"
+			} else {
+				power = "0"
+			}
+		} else {
+			if inv.controlInfo["pow"].boolValue {
+				power = "1"
+			} else {
+				power = "0"
+			}
+		}
+
+		if control == "setting" {
+			setting = payload
+		} else {
+			setting = fmt.Sprintf("%.1f", inv.controlInfo["stemp"].floatValue)
+		}
+
+		if control == "mode" {
+			mode = payload
+		} else {
+			mode = fmt.Sprintf("%d", inv.controlInfo["mode"].intValue)
+		}
+
+		if control == "fan" {
+			fan = payload
+		} else {
+			fan = inv.controlInfo["f_rate"].stringValue
+		}
+
+		if control == "sweep" {
+			sweep = payload
+		} else {
+			sweep = fmt.Sprintf("%d", inv.controlInfo["f_dir"].intValue)
+		}
+
+		cmd := fmt.Sprintf(setControlFmt, power, mode, setting, fan, sweep, "0")
+		// send the command
+		addr := d.inverters[unitMAC].address
+		//debugging
+		log.Printf("DEBUG: Daikin Control Command to: %s%s is: %s\n", addr, setControlInfo, cmd)
+		resp, err := http.Get(addr + setControlInfo + cmd)
+
+		if err != nil {
+			log.Printf("WARNING: Daikin - error sending control command %v\v", err)
+		}
+		// var b []byte
+		//_, err = resp.Body.Read(b)
+		log.Printf("DEBUG: Daikin response was %s\n", resp.Status)
+		resp.Body.Close() // TODO check return code from unit?
+		// refresh the data
+	}
+}
+
+func (d *Daikin) monitorUnits() {
 	everyMinute := time.NewTicker(time.Minute)
 	for {
 		// <-everyMinute.C
