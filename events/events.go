@@ -54,6 +54,7 @@ var (
 	subIDs        []bool
 	subsMu        sync.RWMutex
 	subscriptions map[string][]subscriptionT
+	logEvents     bool
 )
 
 // GetSubscriberID returns a subscriber ID which must be used when calling Subscribe or Unsubscribe
@@ -75,7 +76,8 @@ func GetSubscriberID() int {
 
 // StartEventManager performs any setup required, then launches the evenManager Goroutine.
 // It returns the main Event channel to which Integrations should send their Events.
-func StartEventManager() chan EventT {
+func StartEventManager(logevents bool) chan EventT {
+	logEvents = logevents
 	eventMgrChan = make(chan EventT, managerEventsBuffer)
 	subscriptions = make(map[string][]subscriptionT)
 	go eventManager()
@@ -85,7 +87,7 @@ func StartEventManager() chan EventT {
 func eventManager() {
 	for {
 		ev := <-eventMgrChan
-		if ev.EventName != "Second" {
+		if ev.EventName != "Second" && logEvents {
 			log.Printf("DEBUG: EventManager got %s event from %s.%s.%s with %v\n", ev.EventName, ev.Integration, ev.DeviceType, ev.DeviceName, ev.Value)
 		}
 		// TODO Handle system-level events such as 'shutdown'
@@ -94,7 +96,9 @@ func eventManager() {
 		subs, any := subscriptions[getSubKey(ev.Integration, ev.DeviceType, ev.DeviceName, ev.EventName)]
 		if any {
 			for _, dest := range subs {
-				log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+				if logEvents {
+					log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+				}
 				dest.channel <- ev
 			}
 		}
@@ -102,7 +106,9 @@ func eventManager() {
 		subs, any = subscriptions[getSubKey(ev.Integration, ev.DeviceType, "+", ev.EventName)]
 		if any {
 			for _, dest := range subs {
-				log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+				if logEvents {
+					log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+				}
 				dest.channel <- ev
 			}
 		}
@@ -110,7 +116,9 @@ func eventManager() {
 		subs, any = subscriptions[getSubKey(ev.Integration, ev.DeviceType, ev.DeviceName, "+")]
 		if any {
 			for _, dest := range subs {
-				log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+				if logEvents {
+					log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+				}
 				dest.channel <- ev
 			}
 		}
@@ -118,7 +126,9 @@ func eventManager() {
 		subs, any = subscriptions[getSubKey(ev.Integration, ev.DeviceType, "+", "+")]
 		if any {
 			for _, dest := range subs {
-				log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+				if logEvents {
+					log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+				}
 				dest.channel <- ev
 			}
 		}

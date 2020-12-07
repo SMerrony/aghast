@@ -32,6 +32,7 @@ const mainConfigFilename = "/config.toml"
 // A MainConfigT holds the top-level configuration details
 type MainConfigT struct {
 	SystemName          string
+	LogEvents           bool
 	Longitude, Latitude float64
 	MqttBroker          string
 	MqttPort            int
@@ -88,6 +89,7 @@ func LoadMainConfig(configDir string) (MainConfigT, error) {
 	conf.MqttBroker = mainConfig.Get("mqttBroker").(string)
 	conf.MqttPort = int(mainConfig.Get("mqttPort").(int64))
 	conf.MqttClientID = mainConfig.Get("mqttClientID").(string)
+	conf.LogEvents = mainConfig.Get("logEvents").(bool)
 
 	log.Printf("DEBUG: Main config for %s loaded, MQTT Broker is %s\n", conf.SystemName, conf.MqttBroker)
 

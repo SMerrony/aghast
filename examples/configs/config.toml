@@ -7,9 +7,10 @@ mqttBroker = "mediaserver01"
 mqttPort = 1883
 mqttClientID = "aghast"
 
+logEvents = false       # A LOT of stuff will be logged if this is true!
+
 integrations = [
   "time",
-#  "http",
   "network",
   "datalogger",
   "daikin",

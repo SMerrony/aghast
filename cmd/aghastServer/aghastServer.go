@@ -59,7 +59,7 @@ func main() {
 
 	// start the event manager - this should happen before Integrations are started
 	wg.Add(1)
-	eventChan := events.StartEventManager()
+	eventChan := events.StartEventManager(conf.LogEvents)
 
 	wg.Add(1)
 	server.StartIntegrations(conf, eventChan, mq)
