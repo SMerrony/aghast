@@ -43,7 +43,7 @@ func (n *Network) LoadConfig(confdir string) error {
 
 	conf, err := toml.LoadFile(confdir + configFilename)
 	if err != nil {
-		log.Println("ERROR: Could not load configuration ", err.Error())
+		log.Println("ERROR: Could not load Network configuration ", err.Error())
 		return err
 	}
 

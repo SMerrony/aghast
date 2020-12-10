@@ -1,0 +1,32 @@
+# [EpsonInkjet]
+#   interval = 6000
+#   url = "http://192.168.1.30/PRESENTATION/HTML/TOP/PRTINFO.HTML"
+
+# [[EpsonInkjet.details]]
+#   selector = ".tank img"
+#   attribute = "height"
+#   factor = 1.923
+#   indices = [0, 1, 2, 3, 4 ]
+#   subtopics = ["Black", "Cyan", "Yellow", "Magenta", "Photo Black"]
+
+
+# [EpsonInkjet2]
+#   interval = 6000
+#   url = "http://192.168.1.30/PRESENTATION/HTML/TOP/PRTINFO.HTML"
+
+# [[EpsonInkjet2.details]]
+#   attribute = "height"
+#   index = 4
+#   selector = ".tank img"
+#   subtopic = "P-Black"
+
+[BrotherA3]
+  url = "http://192.168.1.17/general/status.html"
+  interval = 600  # 10 mins for testing
+
+  [[BrotherA3.details]]
+    selector = ".tonerremain"
+    attribute = "height"
+    suffix = "px"     # this will be removed from published values
+    indices = [0, 1, 2, 3]
+    subtopics = ["Black", "Yellow", "Cyan", "Magenta"]

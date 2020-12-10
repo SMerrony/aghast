@@ -286,7 +286,7 @@ func (d *Daikin) monitorClients() {
 		//_, err = resp.Body.Read(b)
 		log.Printf("DEBUG: Daikin response was %s\n", resp.Status)
 		resp.Body.Close() // TODO check return code from unit?
-		// refresh the data
+		// TODO refresh the data
 	}
 }
 
@@ -393,14 +393,21 @@ func discoverDaikinUnits(maxUnits int, timeout time.Duration) (units []inverterT
 			// this is the request, not a response
 			u--
 		} else {
-			// fmt.Printf("%s sent this: %s\n", addrX, buf[:n])
+			//fmt.Printf("%s sent this: %s\n", addrX, buf[:n])
 			var d inverterT
 			d.address = addrX.String()
 			d.prepareBasicInfo()
 			if err = parseKnownInfo(buf[:n], d.basicInfo); err != nil {
 				log.Printf("WARNING: Could not parse response: %s\n", buf[:n])
+				u--
 			} else {
-				units = append(units, d)
+				ret, found := d.basicInfo["ret"]
+				if !found || ret.stringValue != "OK" {
+					// not really a Daikin unit - something else responded to the broadcast
+					u--
+				} else {
+					units = append(units, d)
+				}
 			}
 		}
 	}

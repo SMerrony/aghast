@@ -26,6 +26,7 @@ import (
 	"github.com/SMerrony/aghast/integrations/daikin"
 	"github.com/SMerrony/aghast/integrations/datalogger"
 	"github.com/SMerrony/aghast/integrations/network"
+	"github.com/SMerrony/aghast/integrations/scraper"
 	"github.com/SMerrony/aghast/integrations/time"
 	"github.com/SMerrony/aghast/mqtt"
 )
@@ -45,7 +46,6 @@ type Integration interface {
 
 // StartIntegrations asks each enabled Integration to configure itself, then starts them.
 func StartIntegrations(conf MainConfigT, evChan chan events.EventT, mqtt mqtt.MQTT) {
-
 	var integ Integration
 	for _, i := range conf.Integrations {
 		switch i {
@@ -53,8 +53,8 @@ func StartIntegrations(conf MainConfigT, evChan chan events.EventT, mqtt mqtt.MQ
 			integ = new(daikin.Daikin)
 		case "datalogger":
 			integ = new(datalogger.DataLogger)
-		// case "http":
-		// 	integ = new(http.HTTP)
+		case "scraper":
+			integ = new(scraper.Scraper)
 		case "time":
 			integ = new(time.Time)
 		case "network":
