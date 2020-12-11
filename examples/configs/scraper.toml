@@ -1,32 +1,24 @@
-# [EpsonInkjet]
-#   interval = 6000
-#   url = "http://192.168.1.30/PRESENTATION/HTML/TOP/PRTINFO.HTML"
-
-# [[EpsonInkjet.details]]
-#   selector = ".tank img"
-#   attribute = "height"
-#   factor = 1.923
-#   indices = [0, 1, 2, 3, 4 ]
-#   subtopics = ["Black", "Cyan", "Yellow", "Magenta", "Photo Black"]
-
-
-# [EpsonInkjet2]
-#   interval = 6000
-#   url = "http://192.168.1.30/PRESENTATION/HTML/TOP/PRTINFO.HTML"
-
-# [[EpsonInkjet2.details]]
-#   attribute = "height"
-#   index = 4
-#   selector = ".tank img"
-#   subtopic = "P-Black"
-
+# Scrape the Brother MFC-J6510 web interface
+# The scraped values will be published via MQTT with this topic:
+# aghast/scraper/BrotherA3/Black etc.
 [BrotherA3]
   url = "http://192.168.1.17/general/status.html"
-  interval = 600  # 10 mins for testing
+  interval = 3600               # Every hour
 
   [[BrotherA3.details]]
-    selector = ".tonerremain"
+    selector = ".tonerremain"   # CSS Selector to find
+    attribute = "height"        # Attribute whose value we want
+    suffix = "px"               # this will be removed from published values
+    indices = [0, 1, 2, 3]      # Which instances we want
+    subtopics = ["Black", "Yellow", "Cyan", "Magenta"] # correspond to the indices
+
+# Scrape the Epson XP-530 web interface
+[EpsonInkjet]
+  interval = 7200
+  url = "http://192.168.1.30/PRESENTATION/HTML/TOP/PRTINFO.HTML"
+
+  [[EpsonInkjet.details]]
+    selector = ".tank img"
     attribute = "height"
-    suffix = "px"     # this will be removed from published values
-    indices = [0, 1, 2, 3]
-    subtopics = ["Black", "Yellow", "Cyan", "Magenta"]
+    indices = [0, 1, 2, 3, 4 ]
+    subtopics = ["Black", "Cyan", "Yellow", "Magenta", "Photo Black"]

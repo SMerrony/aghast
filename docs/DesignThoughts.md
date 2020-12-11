@@ -1,23 +1,28 @@
 # Home Automation System Design Ideas
 "A Go Home Automation SysTem" - AGHAST
 
+This document will be updated as ideas are refined and experience is gained with the system.
+
+AGHAST is primarily an automation server - it does not mandate a specific front-end.
+All data and controls that should be provided to users (not administrators) are exposed via MQTT.
+Node-Red is being used as a front-end and example flows are provided, but other MQTT-connected 
+dashboards could be used if prefered.
+
 ## Concepts
 
 Here we describe the main ideas that make up the system.
 
 ### Integrations
 
-An Integration is all the software that provides support for a type of a concrete or abstract object within the HAS.  An Integration may provide Devices, Events, a GUI, etc..
+An Integration is all the software that provides support for a type of a concrete or abstract object within the HAS.  An Integration may provide Devices, Events, MQTT topics, etc..
 
 Example Integrations might include...
  * Time
- * ?Front-End? (app)
  * Daikin HVAC
- * Epson Printer
- * RTSP Player
+ * Web Scraper
 
-Where practical, anything in HAS is part of an Integration.  Maybe having 'Time', 'Network' etc. as explicit
-integrations (albeit pre-installed) will facilitate easier maintenance of them in the future?
+Where practical, anything in AGHAST is part of an Integration.  Maybe having 'Time', 'Network' etc. as explicit
+integrations (albeit pre-installed) will facilitate easier maintenance of them in the future.
 
 ### Devices
 
@@ -31,11 +36,8 @@ Example Devices might include...
 | Time        | Clock  |
 | Time        | Scheduler |
 | Time        | Timer |
-| Front-End   | Button |
-| Daikin HVAC | HVAC Unit |
-| Epson Printer | Inkjet Printer |
-| Epson Printer | Laser Printer |
-| RTSP Player | RTSP Stream | 
+| Daikin HVAC | Inverter |
+
 
 Devices may publish Events, maintain Values that can be queried, and provide Controls.
 

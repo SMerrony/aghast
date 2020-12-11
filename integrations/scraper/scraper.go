@@ -155,8 +155,8 @@ func (s *Scraper) scraper(name string) {
 			e.ForEach(d.Selector, func(ix int, el *colly.HTMLElement) {
 				a := el.Attr(d.Attribute)
 				if _, wanted := d.Indices[ix]; wanted {
-					log.Printf("DEBUG: Scraper found Selector %s, index %d, attribute %s\n",
-						d.Selector, ix, a)
+					// log.Printf("DEBUG: Scraper found Selector %s, index %d, attribute %s\n",
+					// d.Selector, ix, a)
 					if d.hasSuffix {
 						a = strings.TrimSuffix(a, d.Suffix)
 					}
