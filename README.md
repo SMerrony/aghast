@@ -1,5 +1,9 @@
 # A Go Home Automation SysTem (AGHAST)
 
+AGHAST is primarily an automation server - it does not mandate a specific front-end.
+All data and controls that should be provided to end-users (i.e. not administrators) are exposed via MQTT.
+Node-Red is being used as a front-end during development and example flows are provided, but other MQTT-connected dashboards could be used if prefered.
+
 ## Requirements
 
 * An MQTT Broker - development is being undertaken using Mosquitto

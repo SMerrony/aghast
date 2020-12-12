@@ -4,7 +4,7 @@
 This document will be updated as ideas are refined and experience is gained with the system.
 
 AGHAST is primarily an automation server - it does not mandate a specific front-end.
-All data and controls that should be provided to users (not administrators) are exposed via MQTT.
+All data and controls that should be provided to end-users (i.e. not administrators) are exposed via MQTT.
 Node-Red is being used as a front-end and example flows are provided, but other MQTT-connected 
 dashboards could be used if prefered.
 

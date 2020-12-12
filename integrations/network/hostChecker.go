@@ -40,6 +40,8 @@ type hostCheckerT struct {
 	responseTime time.Duration
 }
 
+const mqttPrefix = "aghast/hostchecker/"
+
 func (n *Network) loadHostCheckerConfig(mhc map[string]interface{}) {
 	for name, i := range mhc {
 		var hc hostCheckerT
@@ -82,7 +84,7 @@ func (n *Network) hostChecker(dev string, evChan chan events.EventT) {
 					Value:       "Unavailable"}
 				log.Printf("DEBUG: Hostchecker about to send MQTT msg\n")
 				mqMsg := mqtt.MessageT{
-					Topic:    "network/hostchecker/" + dev + "/state",
+					Topic:    mqttPrefix + dev + "/state",
 					Qos:      0,
 					Retained: true,
 					Payload:  "Unavailable",
@@ -101,7 +103,7 @@ func (n *Network) hostChecker(dev string, evChan chan events.EventT) {
 					Value:       "Available"}
 				log.Printf("DEBUG: Hostchecker about to send MQTT msg\n")
 				mqMsg := mqtt.MessageT{
-					Topic:    "network/hostchecker/" + dev + "/state",
+					Topic:    mqttPrefix + dev + "/state",
 					Qos:      0,
 					Retained: true,
 					Payload:  "Available",
@@ -118,7 +120,7 @@ func (n *Network) hostChecker(dev string, evChan chan events.EventT) {
 				EventName:   "Latency",
 				Value:       hcConf.responseTime}
 			n.mqttChan <- mqtt.MessageT{
-				Topic:    "network/hostchecker/" + dev + "/latency",
+				Topic:    mqttPrefix + dev + "/latency",
 				Qos:      0,
 				Retained: true,
 				Payload:  fmt.Sprintf("%d", hcConf.responseTime/time.Millisecond),

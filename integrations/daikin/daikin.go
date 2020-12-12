@@ -84,6 +84,7 @@ const setControlFmt = "?pow=%s&mode=%s&stemp=%s&f_rate=%s&f_dir=%s&shum=%s"
 const (
 	udpPort     = ":30050"
 	udpQuery    = "DAIKIN_UDP" + getBasicInfo
+	mqttPrefix  = "aghast/daikin/"
 	maxUnits    = 20
 	scanTimeout = 10 * time.Second
 )
@@ -165,7 +166,7 @@ func (d *Daikin) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	d.runDiscovery(maxUnits, scanTimeout)
 
 	msg := mqtt.MessageT{
-		Topic:    "daikin/status",
+		Topic:    mqttPrefix + "status",
 		Qos:      0,
 		Retained: false,
 		Payload:  "Daikin Starting",
@@ -215,23 +216,23 @@ func (d *Daikin) rerunDiscovery(maxUnits int, scanTimeout time.Duration) {
 }
 
 func (d *Daikin) monitorClients() {
-	clientChan := d.mq.SubscribeToTopic("daikin/client/#")
+	clientChan := d.mq.SubscribeToTopic(mqttPrefix + "client/#")
 	for {
 		msg := <-clientChan
 		payload := string(msg.Payload.([]uint8))
 		log.Printf("DEBUG: Got msg from Daikin client, topic: %s, payload: %s\n", msg.Topic, payload)
-		// topic format is daikin/client/<Label>/<control>
+		// topic format is aghast/daikin/client/<Label>/<control>
 		topicSlice := strings.Split(msg.Topic, "/")
-		unitMAC := d.invertersByLabel[topicSlice[2]]
+		unitMAC := d.invertersByLabel[topicSlice[3]]
 		inv := d.inverters[unitMAC]
 
 		// get the existing settings from the unit
 		err := inv.requestControlInfo()
 		if err != nil {
-			log.Printf("WARNING: Could not retrieve Control info for unit: %s\n", topicSlice[2])
+			log.Printf("WARNING: Could not retrieve Control info for unit: %s\n", topicSlice[3])
 			continue
 		}
-		control := topicSlice[3]
+		control := topicSlice[4]
 		var power, setting, mode, fan, sweep string
 
 		if control == "power" {
@@ -312,13 +313,13 @@ func (d *Daikin) monitorUnits() {
 						Value:       fmt.Sprintf("%.1f", unit.sensorInfo["htemp"].floatValue),
 					}
 					d.mqttChan <- mqtt.MessageT{
-						Topic:    "daikin/" + unit.Label + "/temperature",
+						Topic:    mqttPrefix + unit.Label + "/temperature",
 						Qos:      0,
 						Retained: true,
 						Payload:  fmt.Sprintf("%.1f", unit.sensorInfo["htemp"].floatValue),
 					}
 					d.mqttChan <- mqtt.MessageT{
-						Topic:    "daikin/" + unit.Label + "/outsidetemperature",
+						Topic:    mqttPrefix + unit.Label + "/outsidetemperature",
 						Qos:      0,
 						Retained: true,
 						Payload:  fmt.Sprintf("%.1f", unit.sensorInfo["otemp"].floatValue),
@@ -341,7 +342,7 @@ func (d *Daikin) monitorUnits() {
 						panic(err)
 					}
 					d.mqttChan <- mqtt.MessageT{
-						Topic:    "daikin/" + unit.Label + "/controlinfo",
+						Topic:    mqttPrefix + unit.Label + "/controlinfo",
 						Qos:      0,
 						Retained: true,
 						Payload:  payload,
