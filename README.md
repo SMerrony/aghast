@@ -1,13 +1,15 @@
 # A Go Home Automation SysTem (AGHAST)
 
-AGHAST is primarily an automation server - it does not mandate a specific front-end.
+AGHAST is primarily an automation _server_ - it does not mandate a specific front-end.
 All data and controls that should be provided to end-users (i.e. not administrators) are exposed via MQTT.
 Node-Red is being used as a front-end during development and example flows are provided, but other MQTT-connected dashboards could be used if prefered.
+
+We believe that end-users of HA systems are generally not interested in the nuts and bolts, so configuration is performed entirely at the back-end by the in-house geek ;-)
 
 ## Requirements
 
 * An MQTT Broker - development is being undertaken using Mosquitto
-* An MQTT-Connected dashboard - Node-Red works well and examples are included
+* An MQTT-Connected dashboard - Node-Red works well and example flows are included
 
 ## Integrations
 
@@ -19,8 +21,7 @@ Node-Red is being used as a front-end during development and example flows are p
 
 ## Configuration
 
-The main configuration file `config.toml` is quite simple, containing only some general information about
-the system itself, and a list of enabled Integrations, eg.
+The main configuration file `config.toml` is quite simple, containing only some general information about the system itself, and a list of enabled Integrations, eg.
 ```
 systemName = "Our House"      # Label for the system
 

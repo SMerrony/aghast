@@ -20,37 +20,111 @@
 package time
 
 import (
+	"log"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
+	"github.com/pelletier/go-toml"
 )
 
 const (
-	integName  = "Time"
-	tickerType = "Ticker"
-	tickerDev  = "SystemTicker"
+	integName      = "Time"
+	configFilename = "/time.toml"
+	tickerType     = "Ticker"
+	tickerDev      = "SystemTicker"
+	eventType      = "Events"
+	tomlTimeFmt    = "15:04:05"
 )
 
 // The Time Integration produces time-based events for other Integrations to use.
 type Time struct {
+	evChan       chan events.EventT
+	alertsByTime map[string][]timeEventT // indexed by "hh:mm:ss"
+}
+
+type timeEventT struct {
+	name   string
+	hhmmss string
 }
 
 // LoadConfig is required to satisfy the Integration interface.
 func (t *Time) LoadConfig(confdir string) error {
-	// no config for Time yet
+	conf, err := toml.LoadFile(confdir + configFilename)
+	if err != nil {
+		log.Println("ERROR: Could not load configuration ", err.Error())
+		return err
+
+	}
+	confMap := conf.ToMap()
+	eventsConf := confMap["event"].(map[string]interface{})
+	t.alertsByTime = make(map[string][]timeEventT)
+	for evName, ev := range eventsConf {
+		var te timeEventT
+		details := ev.(map[string]interface{})
+		te.name = evName
+		hhmmss := details["time"].(string)
+		_, _, _, err := hhmmssFromString(hhmmss)
+		if err != nil {
+			log.Fatalf("ERROR: Time Integration could not parse time for event %v\n", err)
+		}
+		te.hhmmss = hhmmss
+		t.alertsByTime[hhmmss] = append(t.alertsByTime[hhmmss], te)
+		log.Printf("DEBUG: Timer event %s set for %s\n", te.name, te.hhmmss)
+	}
 	return nil
+}
+
+func hhmmssFromString(hhmmss string) (hh, mm, ss int, e error) {
+	t := strings.Split(hhmmss, ":")
+	hh, e = strconv.Atoi(t[0])
+	if e != nil || hh > 23 {
+		return 0, 0, 0, e
+	}
+	mm, e = strconv.Atoi(t[1])
+	if e != nil || mm > 59 {
+		return 0, 0, 0, e
+	}
+	ss, e = strconv.Atoi(t[0])
+	if e != nil || ss > 60 {
+		return 0, 0, 0, e
+	}
+	return hh, mm, ss, nil
 }
 
 // ProvidesDeviceTypes returns a slice of strings naming each Device-type this
 // Integration supplies.
 func (t *Time) ProvidesDeviceTypes() []string {
-	return []string{tickerType}
+	return []string{tickerType, eventType}
 }
 
 // Start any services this Integration provides.
 func (t *Time) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+	t.evChan = evChan
 	go tickers(evChan)
+	go t.timeEvents()
+}
+
+func (t *Time) timeEvents() {
+	secs := time.NewTicker(time.Second)
+	for {
+		tick := <-secs.C
+		hhmmssNow := tick.Format("15:04:05")
+		evs, any := t.alertsByTime[hhmmssNow]
+		if any {
+			for _, te := range evs {
+				t.evChan <- events.EventT{
+					Integration: integName,
+					DeviceType:  eventType,
+					DeviceName:  "TimedEvent",
+					EventName:   te.name,
+					Value:       te.hhmmss, // why not? :-)
+				}
+			}
+		}
+	}
 }
 
 func tickers(evChan chan events.EventT) {

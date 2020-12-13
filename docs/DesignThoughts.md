@@ -1,7 +1,7 @@
 # Home Automation System Design Ideas
 "A Go Home Automation SysTem" - AGHAST
 
-This document will be updated as ideas are refined and experience is gained with the system.
+This document will be updated as ideas are refined and experience is gained with the system; parts of this document will become obsolete as development progresses.
 
 AGHAST is primarily an automation server - it does not mandate a specific front-end.
 All data and controls that should be provided to end-users (i.e. not administrators) are exposed via MQTT.
@@ -43,7 +43,10 @@ Devices may publish Events, maintain Values that can be queried, and provide Con
 
 Every instance of a Device must have a unique name, eg. ModemPinger, SystemClock, SprinklerTimer.
 
-### Events
+### Event System
+
+We have both internal Events (described here) and external events which are handled either by specific 
+Integrations or by MQTT.
 
 Integrations and Devices may pubilsh Events to indicate something has happened.
 
@@ -51,8 +54,6 @@ Integrations and Devices may pubilsh Events to indicate something has happened.
 | ----------- | ------ | ----- | ------------- |
 | Time        | Timer  | Expired | A timer has finished normally |
 | Time        | Timer  | Killed | A timer has been aborted |
-| Front-End   | -      | Started | An instance of the front-end app has been launched |
-| Front-End   | Button | Pushed | A button on the front-end has been clicked |
 | Daikin HVAC | HVAC Unit | External Control | A unit has been controlled by some external means |
 | Daikin HVAC | HVAC Unit | Temperature Reached | Set temperature achieved |
 

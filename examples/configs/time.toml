@@ -1,1 +1,21 @@
-# Nothing here yet
+# Example Time configuration
+# Times must be double-quoted as "HH:MM:SS"
+
+[event.NightOffPeakStarts]
+  time = "00:50:05"            # Plus 5s to be sure!
+
+[event.NightOffPeakEnds]
+  time = "06:50:00"
+
+[event.LunchtimeOffPeakStarts]
+  time = "12:20:05"
+
+[event.LunchtimeOffPeakEnds]
+  time = "14:20:00"
+
+[event.Test1]
+  time = "16:54:00"
+
+[event.Test2]
+  time = "16:54:00"
+  
