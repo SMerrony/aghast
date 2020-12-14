@@ -117,7 +117,8 @@ type infoMap map[string]infoElement
 type inverterT struct {
 	// MACAddress string
 	Label   string
-	online  bool
+	found   bool // we have found the unit at some point
+	online  bool // the unit is currently accesible
 	address string
 	basicInfo, remoteMethodInfo,
 	modelInfo, controlInfo,
@@ -193,11 +194,12 @@ func (d *Daikin) runDiscovery(maxUnits int, scanTimeout time.Duration) {
 			d.invertersMu.Unlock()
 			log.Printf("INFO: ... IP - %s, MAC - %s, Name - %s\n", foundUnit.address, macAddr, foundUnit.basicInfo["name"].stringValue)
 		} else {
-			if !knownUnit.online {
+			if !knownUnit.found {
 				d.invertersMu.Lock()
 				log.Println("INFO: Discovered configured Daikin Inverter")
 				knownUnit.Label = d.inverters[macAddr].Label
 				knownUnit.address = "http://" + strings.Split(foundUnit.address, ":")[0]
+				knownUnit.found = true
 				knownUnit.online = true
 				d.inverters[macAddr] = knownUnit
 				d.invertersMu.Unlock()
@@ -297,13 +299,14 @@ func (d *Daikin) monitorUnits() {
 		// <-everyMinute.C
 		// log.Println("DEBUG: Running Daikin monitor probe")
 		for _, unit := range d.inverters {
-			if unit.online {
+			if unit.found {
 				err := unit.requestSensorInfo()
 				if err != nil {
 					log.Printf("WARNING: Daikin sensor probe failed with %v\n", err)
 					log.Printf("... Unit data is %v\n", unit)
 					unit.online = false
 				} else {
+					unit.online = true
 					// log.Printf("DEBUG: ... Unit - %s, Unit Temp - %f, Outside Temp - %f\n", unit.Label, unit.sensorInfo["htemp"].floatValue, unit.sensorInfo["otemp"].floatValue)
 					d.evChan <- events.EventT{
 						Integration: "Daikin",
@@ -331,6 +334,7 @@ func (d *Daikin) monitorUnits() {
 					log.Printf("... Unit data is %v\n", unit)
 					unit.online = false
 				} else {
+					unit.online = true
 					var ci ControlInfoMsgT
 					ci.Power = fmt.Sprintf("%v", unit.controlInfo["pow"].boolValue)
 					ci.Mode = int(unit.controlInfo["mode"].intValue)
