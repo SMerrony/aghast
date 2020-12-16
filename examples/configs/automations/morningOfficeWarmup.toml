@@ -1,0 +1,23 @@
+name = "MorningOfficeWarmup"
+description = "Warm up the office"
+enabled = true
+
+[event]
+  integration = "Time"
+  deviceType = "Events"
+  deviceName = "TimedEvent"
+  eventName = "TenBeforeWork"
+
+[action.1]
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceLabel = "Steve's Office"
+  control = "temperature"
+  setting = 20
+ 
+[action.2]
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceLabel = "Steve's Office"
+  control = "mode"
+  setting = "heat" 

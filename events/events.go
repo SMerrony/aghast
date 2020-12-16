@@ -74,7 +74,7 @@ func GetSubscriberID() int {
 	return -1
 }
 
-// StartEventManager performs any setup required, then launches the evenManager Goroutine.
+// StartEventManager performs any setup required, then launches the eventManager Goroutine.
 // It returns the main Event channel to which Integrations should send their Events.
 func StartEventManager(logevents bool) chan EventT {
 	logEvents = logevents

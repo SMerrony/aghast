@@ -18,4 +18,8 @@
 
 [event.Test2]
   time = "16:54:00"
+
+[event.TenBeforeWork]
+  time = "08:50"
+  
   
