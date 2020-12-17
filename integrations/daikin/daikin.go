@@ -284,6 +284,7 @@ func (d *Daikin) monitorClients() {
 
 		if err != nil {
 			log.Printf("WARNING: Daikin - error sending control command %v\v", err)
+			continue
 		}
 		// var b []byte
 		//_, err = resp.Body.Read(b)

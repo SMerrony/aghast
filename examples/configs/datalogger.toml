@@ -16,3 +16,11 @@ logDir = "/tmp"     # Don't use /tmp for real!
   eventName = "Temperature"
   flushEvery = 10
   
+[Logger.AllTemps]
+  logFile = "allTemps.csv"
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceName = "+"
+  eventName = "Temperature"
+  flushEvery = 50
+  
