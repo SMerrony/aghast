@@ -35,6 +35,7 @@ const (
 // The Automation type encapsulates Automation
 type Automation struct {
 	automations []automationT
+	evChan      chan events.EventT
 }
 
 type automationT struct {
@@ -54,7 +55,8 @@ type actionT struct { // TODO should this be defined elsewhere?
 	setting     interface{}
 }
 
-func (a *Automation) LoadConfigs(confDir string) error {
+// LoadConfig loads and stores the configuration for this Integration
+func (a *Automation) LoadConfig(confDir string) error {
 	confs, err := ioutil.ReadDir(confDir + automationsSubDir)
 	if err != nil {
 		log.Printf("ERROR: Could not read 'automations' config directory, %v\n", err)
@@ -105,8 +107,40 @@ func StartAutomations(confDir string, evChan chan events.EventT) {
 
 	var autos Automation
 
-	if err := autos.LoadConfigs(confDir); err != nil {
+	autos.evChan = evChan
+
+	if err := autos.LoadConfig(confDir); err != nil {
 		log.Fatal("ERROR: Cannot proceed with invalid Automations config")
 	}
 
+	// for each automation, subscribe to its event
+	sid := events.GetSubscriberID()
+	for _, a := range autos.automations {
+		go autos.waitForEvent(sid, a)
+	}
+
+}
+
+func (a *Automation) waitForEvent(sid int, auto automationT) {
+	ch, err := events.Subscribe(sid, auto.event.Integration, auto.event.DeviceType, auto.event.DeviceName, auto.event.EventName)
+	if err != nil {
+		log.Fatalf("ERROR: Automation Manager could not subscribe to event, %v\n", err)
+	}
+	for {
+		log.Printf("DEBUG: Automation Manager waiting for event %s\n", auto.event.EventName)
+		_ = <-ch
+		log.Printf("DEBUG: Automation Manager received event %s\n", auto.event.EventName)
+		log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
+		for _, k := range auto.sortedActionKeys {
+			ac := auto.actions[k]
+			a.evChan <- events.EventT{
+				Integration: ac.integration,
+				DeviceType:  ac.deviceType,
+				DeviceName:  ac.deviceLabel,
+				EventName:   ac.control,
+				Value:       ac.setting,
+			}
+			log.Printf("DEBUG: Automation Manager sent to %s\n", ac.integration)
+		}
+	}
 }
