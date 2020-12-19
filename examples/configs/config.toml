@@ -11,9 +11,10 @@ logEvents = true             # A LOT of stuff will be logged if this is true!
 
 # List of Integrations we want enabled
 integrations = [
-  "time",
+  "time",         # the Time integration MUST be enabled
   "network",
   "datalogger",
   "daikin",
+  "influx",
   "scraper",
 ]

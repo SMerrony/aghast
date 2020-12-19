@@ -71,7 +71,7 @@ func (d *DataLogger) LoadConfig(confdir string) error {
 		logger.eventName = details["eventName"].(string)
 		logger.flushEvery = int(details["flushEvery"].(int64))
 		d.loggers[name] = logger
-		log.Printf("DEBUG: logger %s configured as %v\n", name, logger)
+		log.Printf("INFO: CSV logger %s configured as %v\n", name, logger)
 	}
 
 	return nil

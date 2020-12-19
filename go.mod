@@ -6,5 +6,6 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/eclipse/paho.mqtt.golang v1.3.0
 	github.com/gocolly/colly/v2 v2.1.0
+	github.com/influxdata/influxdb-client-go/v2 v2.2.0
 	github.com/pelletier/go-toml v1.8.1
 )

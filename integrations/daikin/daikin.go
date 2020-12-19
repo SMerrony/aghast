@@ -316,6 +316,13 @@ func (d *Daikin) monitorUnits() {
 						EventName:   "Temperature",
 						Value:       fmt.Sprintf("%.1f", unit.sensorInfo["htemp"].floatValue),
 					}
+					d.evChan <- events.EventT{
+						Integration: "Daikin",
+						DeviceType:  "Inverter",
+						DeviceName:  unit.Label,
+						EventName:   "OutsideTemperature",
+						Value:       fmt.Sprintf("%.1f", unit.sensorInfo["otemp"].floatValue),
+					}
 					d.mqttChan <- mqtt.MessageT{
 						Topic:    mqttPrefix + unit.Label + "/temperature",
 						Qos:      0,

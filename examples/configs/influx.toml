@@ -1,0 +1,35 @@
+# InfluxDB connection details
+bucket = "aghast"
+org = "aghast"
+token = "3V4yyqy676enJTEM4CZRkh8uZ7--Nr6XErLuVmGbrif8phNGY8avJPzIZtK9KRO0_zMSRS-JL2bvty539KGr2Q=="
+url = "http://localhost:8086"
+
+# Data to log
+[Logger.OutsideTemp]
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceName = "Hall"          # A specific unit
+  eventName = "OutsideTemperature"
+  type = "float"               # Either 'float', 'integer', or 'string'
+  
+[Logger.HallTemp]
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceName = "Hall"           
+  eventName = "Temperature"
+  type = "float"
+
+[Logger.MusicTemp]
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceName = "Music Room"           
+  eventName = "Temperature"
+  type = "float"
+  
+[Logger.AllTemps]
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceName = "+"             # ALL units
+  eventName = "Temperature"
+  type = "float"
+
