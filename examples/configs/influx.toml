@@ -25,11 +25,24 @@ url = "http://localhost:8086"
   deviceName = "Music Room"           
   eventName = "Temperature"
   type = "float"
-  
-[Logger.AllTemps]
+
+[Logger.SalonTemp]
   integration = "Daikin"
   deviceType = "Inverter"
-  deviceName = "+"             # ALL units
+  deviceName = "Living Room"           
   eventName = "Temperature"
   type = "float"
 
+[Logger.DiningTemp]
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceName = "Dining Room"           
+  eventName = "Temperature"
+  type = "float"
+
+[Logger.MasterBedTemp]
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceName = "Master Bedroom"           
+  eventName = "Temperature"
+  type = "float"

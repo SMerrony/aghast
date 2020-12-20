@@ -50,6 +50,19 @@ type Daikin struct {
 	evChan                chan events.EventT
 	mqttChan              chan mqtt.MessageT
 	mq                    mqtt.MQTT
+	httpReqClient         *http.Client
+}
+
+type inverterT struct {
+	// MACAddress string
+	Label   string
+	found   bool // we have found the unit at some point
+	online  bool // the unit is currently accesible
+	address string
+	basicInfo, remoteMethodInfo,
+	modelInfo, controlInfo,
+	sensorInfo infoMap
+	// clientChan chan mqtt.MessageT
 }
 
 // ControlInfoMsgT is the type of messaage sent out both as an Event and via MQTT
@@ -82,11 +95,12 @@ const (
 const setControlFmt = "?pow=%s&mode=%s&stemp=%s&f_rate=%s&f_dir=%s&shum=%s"
 
 const (
-	udpPort     = ":30050"
-	udpQuery    = "DAIKIN_UDP" + getBasicInfo
-	mqttPrefix  = "aghast/daikin/"
-	maxUnits    = 20
-	scanTimeout = 10 * time.Second
+	udpPort            = ":30050"
+	udpQuery           = "DAIKIN_UDP" + getBasicInfo
+	mqttPrefix         = "aghast/daikin/"
+	maxUnits           = 20
+	scanTimeout        = 10 * time.Second
+	inverterReqTimeout = 5 * time.Second
 )
 
 type infoT int
@@ -114,18 +128,6 @@ type infoElement struct {
 
 type infoMap map[string]infoElement
 
-type inverterT struct {
-	// MACAddress string
-	Label   string
-	found   bool // we have found the unit at some point
-	online  bool // the unit is currently accesible
-	address string
-	basicInfo, remoteMethodInfo,
-	modelInfo, controlInfo,
-	sensorInfo infoMap
-	// clientChan chan mqtt.MessageT
-}
-
 // LoadConfig loads and stores the configuration for this Integration
 func (d *Daikin) LoadConfig(confdir string) error {
 	conf, err := toml.LoadFile(confdir + configFilename)
@@ -147,7 +149,7 @@ func (d *Daikin) LoadConfig(confdir string) error {
 		inv.Label = details["label"].(string)
 		d.inverters[mac] = inv
 		d.invertersByLabel[inv.Label] = mac
-		log.Printf("DEBUG: Configured Daikin Inverter at %s as %s\n", mac, inv.Label)
+		// log.Printf("DEBUG: Configured Daikin Inverter at %s as %s\n", mac, inv.Label)
 	}
 
 	return nil
@@ -164,6 +166,9 @@ func (d *Daikin) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	d.evChan = evChan
 	d.mqttChan = mq.PublishChan
 	d.mq = mq
+	d.httpReqClient = &http.Client{
+		Timeout: inverterReqTimeout,
+	}
 	d.runDiscovery(maxUnits, scanTimeout)
 
 	msg := mqtt.MessageT{
@@ -217,6 +222,7 @@ func (d *Daikin) rerunDiscovery(maxUnits int, scanTimeout time.Duration) {
 	}
 }
 
+// monitorClients waits for client (front-end user) events coming via MQTT and handles them
 func (d *Daikin) monitorClients() {
 	clientChan := d.mq.SubscribeToTopic(mqttPrefix + "client/#")
 	for {
@@ -226,14 +232,15 @@ func (d *Daikin) monitorClients() {
 		// topic format is aghast/daikin/client/<Label>/<control>
 		topicSlice := strings.Split(msg.Topic, "/")
 		unitMAC := d.invertersByLabel[topicSlice[3]]
-		inv := d.inverters[unitMAC]
 
 		// get the existing settings from the unit
-		err := inv.requestControlInfo()
+		ci, err := d.requestControlInfo(unitMAC)
 		if err != nil {
 			log.Printf("WARNING: Could not retrieve Control info for unit: %s\n", topicSlice[3])
 			continue
 		}
+		inv := d.inverters[unitMAC]
+
 		control := topicSlice[4]
 		var power, setting, mode, fan, sweep string
 
@@ -244,7 +251,7 @@ func (d *Daikin) monitorClients() {
 				power = "0"
 			}
 		} else {
-			if inv.controlInfo["pow"].boolValue {
+			if ci["pow"].boolValue {
 				power = "1"
 			} else {
 				power = "0"
@@ -254,43 +261,48 @@ func (d *Daikin) monitorClients() {
 		if control == "setting" {
 			setting = payload
 		} else {
-			setting = fmt.Sprintf("%.1f", inv.controlInfo["stemp"].floatValue)
+			setting = fmt.Sprintf("%.1f", ci["stemp"].floatValue)
 		}
 
 		if control == "mode" {
 			mode = payload
 		} else {
-			mode = fmt.Sprintf("%d", inv.controlInfo["mode"].intValue)
+			mode = fmt.Sprintf("%d", ci["mode"].intValue)
 		}
 
 		if control == "fan" {
 			fan = payload
 		} else {
-			fan = inv.controlInfo["f_rate"].stringValue
+			fan = ci["f_rate"].stringValue
 		}
 
 		if control == "sweep" {
 			sweep = payload
 		} else {
-			sweep = fmt.Sprintf("%d", inv.controlInfo["f_dir"].intValue)
+			sweep = fmt.Sprintf("%d", ci["f_dir"].intValue)
 		}
 
 		cmd := fmt.Sprintf(setControlFmt, power, mode, setting, fan, sweep, "0")
 		// send the command
 		addr := d.inverters[unitMAC].address
 		//debugging
-		log.Printf("DEBUG: Daikin Control Command to: %s%s is: %s\n", addr, setControlInfo, cmd)
+		log.Printf("DEBUG: Daikin Sending F/E-Client Control to: %s as: %s\n", d.inverters[unitMAC].Label, cmd)
 		resp, err := http.Get(addr + setControlInfo + cmd)
 
 		if err != nil {
 			log.Printf("WARNING: Daikin - error sending control command %v\v", err)
 			continue
 		}
-		// var b []byte
-		//_, err = resp.Body.Read(b)
-		log.Printf("DEBUG: Daikin response was %s\n", resp.Status)
-		resp.Body.Close() // TODO check return code from unit?
-		// TODO refresh the data
+		if resp.Status != "200 OK" {
+			log.Printf("WARNING: Daikin control response from %s was %s\n", addr, resp.Status)
+		}
+		resp.Body.Close()
+
+		// refresh our copy the unit data
+		qci, err := d.requestControlInfo(unitMAC)
+		if err == nil {
+			inv.controlInfo = qci
+		}
 	}
 }
 
@@ -299,13 +311,14 @@ func (d *Daikin) monitorUnits() {
 	for {
 		// <-everyMinute.C
 		// log.Println("DEBUG: Running Daikin monitor probe")
-		for _, unit := range d.inverters {
+		for mac, unit := range d.inverters {
 			if unit.found {
-				err := unit.requestSensorInfo()
+				si, err := d.requestSensorInfo(mac)
 				if err != nil {
-					log.Printf("WARNING: Daikin sensor probe failed with %v\n", err)
-					log.Printf("... Unit data is %v\n", unit)
+					log.Printf("INFO: Daikin Sensor probe of %s failed with %v\n", unit.Label, err)
+					// log.Printf("... Unit data is %v\n", unit)
 					unit.online = false
+
 				} else {
 					unit.online = true
 					// log.Printf("DEBUG: ... Unit - %s, Unit Temp - %f, Outside Temp - %f\n", unit.Label, unit.sensorInfo["htemp"].floatValue, unit.sensorInfo["otemp"].floatValue)
@@ -314,42 +327,43 @@ func (d *Daikin) monitorUnits() {
 						DeviceType:  "Inverter",
 						DeviceName:  unit.Label,
 						EventName:   "Temperature",
-						Value:       fmt.Sprintf("%.1f", unit.sensorInfo["htemp"].floatValue),
+						Value:       fmt.Sprintf("%.1f", si["htemp"].floatValue),
 					}
 					d.evChan <- events.EventT{
 						Integration: "Daikin",
 						DeviceType:  "Inverter",
 						DeviceName:  unit.Label,
 						EventName:   "OutsideTemperature",
-						Value:       fmt.Sprintf("%.1f", unit.sensorInfo["otemp"].floatValue),
+						Value:       fmt.Sprintf("%.1f", si["otemp"].floatValue),
 					}
 					d.mqttChan <- mqtt.MessageT{
 						Topic:    mqttPrefix + unit.Label + "/temperature",
 						Qos:      0,
 						Retained: true,
-						Payload:  fmt.Sprintf("%.1f", unit.sensorInfo["htemp"].floatValue),
+						Payload:  fmt.Sprintf("%.1f", si["htemp"].floatValue),
 					}
 					d.mqttChan <- mqtt.MessageT{
 						Topic:    mqttPrefix + unit.Label + "/outsidetemperature",
 						Qos:      0,
 						Retained: true,
-						Payload:  fmt.Sprintf("%.1f", unit.sensorInfo["otemp"].floatValue),
+						Payload:  fmt.Sprintf("%.1f", si["otemp"].floatValue),
 					}
+					unit.sensorInfo = si
 				}
-				err = unit.requestControlInfo()
+				ci, err := d.requestControlInfo(mac)
 				if err != nil {
-					log.Printf("WARNING: Daikin control probe failed with %v\n", err)
-					log.Printf("... Unit data is %v\n", unit)
+					log.Printf("INFO: Daikin Control probe of %s failed with %v\n", unit.Label, err)
+					// log.Printf("... Unit data is %v\n", unit)
 					unit.online = false
 				} else {
 					unit.online = true
-					var ci ControlInfoMsgT
-					ci.Power = fmt.Sprintf("%v", unit.controlInfo["pow"].boolValue)
-					ci.Mode = int(unit.controlInfo["mode"].intValue)
-					ci.Stemp = unit.controlInfo["stemp"].floatValue
-					ci.Frate = unit.controlInfo["f_rate"].stringValue
-					ci.Fdir = int(unit.controlInfo["f_dir"].intValue)
-					payload, err := json.Marshal(ci)
+					var pubCi ControlInfoMsgT
+					pubCi.Power = fmt.Sprintf("%v", ci["pow"].boolValue)
+					pubCi.Mode = int(ci["mode"].intValue)
+					pubCi.Stemp = ci["stemp"].floatValue
+					pubCi.Frate = ci["f_rate"].stringValue
+					pubCi.Fdir = int(ci["f_dir"].intValue)
+					payload, err := json.Marshal(pubCi)
 					if err != nil {
 						panic(err)
 					}
@@ -365,9 +379,12 @@ func (d *Daikin) monitorUnits() {
 						DeviceType:  "Inverter",
 						DeviceName:  unit.Label,
 						EventName:   "ControInfo",
-						Value:       ci,
+						Value:       pubCi,
 					}
+					unit.controlInfo = ci
 				}
+				// write the updated unit back into the map
+				d.inverters[mac] = unit
 			}
 		}
 		<-everyMinute.C
@@ -427,42 +444,40 @@ func discoverDaikinUnits(maxUnits int, timeout time.Duration) (units []inverterT
 	return units
 }
 
-func (du *inverterT) requestSensorInfo() (e error) {
-	if len(du.sensorInfo) == 0 {
-		du.sensorInfo = infoMap{
-			"ret":     {label: "Return Code", infoType: stringT},
-			"htemp":   {label: "Current Temperature", infoType: floatT},
-			"hhum":    {label: "Current Humidity", infoType: floatT},
-			"otemp":   {label: "Outside Temperature", infoType: floatT},
-			"err":     {label: "Error Code", infoType: intT},
-			"cmpfreq": {label: "Compressor Freq.", infoType: intT},
-		}
+// func (du *inverterT) requestSensorInfo() (e error) {
+func (d *Daikin) requestSensorInfo(mac string) (si infoMap, e error) {
+	si = infoMap{
+		"ret":     {label: "Return Code", infoType: stringT},
+		"htemp":   {label: "Current Temperature", infoType: floatT},
+		"hhum":    {label: "Current Humidity", infoType: floatT},
+		"otemp":   {label: "Outside Temperature", infoType: floatT},
+		"err":     {label: "Error Code", infoType: intT},
+		"cmpfreq": {label: "Compressor Freq.", infoType: intT},
 	}
-	e = du.requestInfo(getSensorInfo, du.sensorInfo)
-	return e
+	e = d.requestInfo(mac, getSensorInfo, si)
+	return si, e
 }
 
-func (du *inverterT) requestControlInfo() (e error) {
-	if len(du.controlInfo) == 0 {
-		du.controlInfo = infoMap{
-			"ret":    {label: "Return Code", infoType: stringT},
-			"pow":    {label: "Power", infoType: zeroOneBoolT},
-			"mode":   {label: "Mode", infoType: intT},
-			"stemp":  {label: "Set Temperature", infoType: floatT},
-			"shum":   {label: "Set Humidity", infoType: floatT},
-			"alert":  {label: "Alert", infoType: intT},
-			"f_rate": {label: "Fan Rate", infoType: stringT},
-			"f_dir":  {label: "Fan Sweep", infoType: intT},
-		}
+func (d *Daikin) requestControlInfo(mac string) (ci infoMap, e error) {
+	ci = infoMap{
+		"ret":    {label: "Return Code", infoType: stringT},
+		"pow":    {label: "Power", infoType: zeroOneBoolT},
+		"mode":   {label: "Mode", infoType: intT},
+		"stemp":  {label: "Set Temperature", infoType: floatT},
+		"shum":   {label: "Set Humidity", infoType: floatT},
+		"alert":  {label: "Alert", infoType: intT},
+		"f_rate": {label: "Fan Rate", infoType: stringT},
+		"f_dir":  {label: "Fan Sweep", infoType: intT},
 	}
-	e = du.requestInfo(getControlInfo, du.controlInfo)
-	return e
+	e = d.requestInfo(mac, getControlInfo, ci)
+	return ci, e
 }
 
 // requestInfo sends an HTTP Get request to the unit provided and attempts
 // to parse the response.  It is internal to this package.
-func (du *inverterT) requestInfo(req string, dest infoMap) (e error) {
-	resp, err := http.Get(du.address + req)
+func (d *Daikin) requestInfo(mac string, req string, dest infoMap) (e error) {
+	du := d.inverters[mac]
+	resp, err := d.httpReqClient.Get(du.address + req)
 	if err != nil {
 		return err
 	}
@@ -478,21 +493,21 @@ func (du *inverterT) requestInfo(req string, dest infoMap) (e error) {
 	return nil
 }
 
-func (du *inverterT) setControls(ci ControlInfoMsgT) error {
-	v := url.Values{}
-	v.Set("pow", ci.Power)
-	v.Add("mode", fmt.Sprintf("%d", ci.Mode))
-	v.Add("stemp", fmt.Sprintf("%.1f", ci.Stemp))
-	v.Add("f_rate", ci.Frate)
-	v.Add("f_dir", fmt.Sprintf("%d", ci.Fdir))
+// func (d *Daikin) setControls(mac string, ci ControlInfoMsgT) error {
+// 	v := url.Values{}
+// 	v.Set("pow", ci.Power)
+// 	v.Add("mode", fmt.Sprintf("%d", ci.Mode))
+// 	v.Add("stemp", fmt.Sprintf("%.1f", ci.Stemp))
+// 	v.Add("f_rate", ci.Frate)
+// 	v.Add("f_dir", fmt.Sprintf("%d", ci.Fdir))
 
-	resp, err := http.PostForm(du.address+setControlInfo, v)
-	if err != nil {
-		return err
-	}
-	resp.Body.Close() // TODO check return code from unit?
-	return nil
-}
+// 	resp, err := http.PostForm(d.inverters[mac].address+setControlInfo, v)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	resp.Body.Close() // TODO check return code from unit?
+// 	return nil
+// }
 
 func (du *inverterT) prepareBasicInfo() {
 	if len(du.basicInfo) == 0 {

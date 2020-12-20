@@ -80,7 +80,7 @@ func (i *Influx) LoadConfig(confdir string) error {
 
 // ProvidesDeviceTypes returns a slice of device types that this Integration supplies.
 func (i *Influx) ProvidesDeviceTypes() []string {
-	return []string{"Database"}
+	return []string{"Logger"}
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
@@ -99,7 +99,7 @@ func (i *Influx) logger(name string, l loggerT) {
 		log.Printf("WARNING: Influx Integration (logger) could not subscribe to event for %v\n", l)
 		return
 	}
-	log.Printf("DEBUG: Influx logger starting for %s, %s, subscriber #: %d\n", l.integration, l.eventName, sid)
+	// log.Printf("DEBUG: Influx logger starting for %s, %s, subscriber #: %d\n", l.integration, l.eventName, sid)
 	for {
 		ev := <-ch
 		switch l.dataType {
@@ -151,7 +151,6 @@ func (i *Influx) logger(name string, l loggerT) {
 				time.Now())
 			i.writeAPI.WritePoint(p)
 		}
-
-		log.Printf("DEBUG: Influx logger wrote for %s, %s\n", l.integration, l.eventName)
+		// log.Printf("DEBUG: Influx logger wrote for %s, %s\n", l.integration, l.eventName)
 	}
 }

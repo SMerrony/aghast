@@ -17,6 +17,7 @@ We believe that end-users of HA systems are generally not interested in the nuts
  * Network - Includes: HostChecker
  * DataLogger - Log Data to CSV files
  * Daikin - HVAC Control and Monitoring
+ * Influx - Log Data to InfluxDB
  * Scraper - Web Scraping
 
 ## Configuration
