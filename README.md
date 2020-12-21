@@ -45,10 +45,10 @@ integrations = [
 ]
 ```
 
-Every Integration _must_ have an associated `[Integration].toml` configuration file in the same directory,
+Every Integration _must_ have an associated `<Integration>.toml` configuration file in the same directory,
 eg. `time.toml`, `daikin.toml`, etc.
 
-N.B. Even if no special configuration is required for an enabled Integration, an empty `[Integration].toml` configuration file must exist.
+N.B. Even if no special configuration is required for an enabled Integration, an empty `<Integration>.toml` configuration file must exist.
 
 ## Running
 

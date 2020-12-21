@@ -30,6 +30,7 @@ import (
 
 const (
 	automationsSubDir = "/automations"
+	subscribeName     = "AutomationManager"
 )
 
 // The Automation type encapsulates Automation
@@ -114,7 +115,7 @@ func StartAutomations(confDir string, evChan chan events.EventT) {
 	}
 
 	// for each automation, subscribe to its event
-	sid := events.GetSubscriberID()
+	sid := events.GetSubscriberID(subscribeName)
 	for _, a := range autos.automations {
 		go autos.waitForEvent(sid, a)
 	}

@@ -51,21 +51,21 @@ type subscriptionT struct {
 var (
 	eventMgrChan  chan EventT
 	idMu          sync.Mutex
-	subIDs        []bool
+	subIDs        []string
 	subsMu        sync.RWMutex
 	subscriptions map[string][]subscriptionT
 	logEvents     bool
 )
 
 // GetSubscriberID returns a subscriber ID which must be used when calling Subscribe or Unsubscribe
-func GetSubscriberID() int {
+func GetSubscriberID(name string) int {
 	idMu.Lock()
 	if subIDs == nil {
-		subIDs = make([]bool, maxSubscriptions)
+		subIDs = make([]string, maxSubscriptions)
 	}
 	for i, used := range subIDs {
-		if !used {
-			subIDs[i] = true
+		if used == "" {
+			subIDs[i] = name
 			idMu.Unlock()
 			return i
 		}
@@ -97,7 +97,7 @@ func eventManager() {
 		if any {
 			for _, dest := range subs {
 				if logEvents {
-					log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+					log.Printf("DEBUG: ... forwarding event to subscriber %d (%s)\n", dest.subscriber, subIDs[dest.subscriber])
 				}
 				dest.channel <- ev
 			}
@@ -107,7 +107,7 @@ func eventManager() {
 		if any {
 			for _, dest := range subs {
 				if logEvents {
-					log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+					log.Printf("DEBUG: ... forwarding event to subscriber %d (%s)\n", dest.subscriber, subIDs[dest.subscriber])
 				}
 				dest.channel <- ev
 			}
@@ -117,7 +117,7 @@ func eventManager() {
 		if any {
 			for _, dest := range subs {
 				if logEvents {
-					log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+					log.Printf("DEBUG: ... forwarding event to subscriber %d (%s)\n", dest.subscriber, subIDs[dest.subscriber])
 				}
 				dest.channel <- ev
 			}
@@ -127,7 +127,7 @@ func eventManager() {
 		if any {
 			for _, dest := range subs {
 				if logEvents {
-					log.Printf("DEBUG: ... forwarding event to subscriber %d\n", dest.subscriber)
+					log.Printf("DEBUG: ... forwarding event to subscriber %d (%s)\n", dest.subscriber, subIDs[dest.subscriber])
 				}
 				dest.channel <- ev
 			}

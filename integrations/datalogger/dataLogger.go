@@ -31,7 +31,10 @@ import (
 	"github.com/pelletier/go-toml"
 )
 
-const configFilename = "/datalogger.toml"
+const (
+	configFilename = "/datalogger.toml"
+	subscribeName  = "Logger"
+)
 
 // The DataLogger type encapsulates the Data Logging Integration
 type DataLogger struct {
@@ -96,7 +99,7 @@ func (d *DataLogger) logger(l loggerT) {
 		return
 	}
 	csvWriter := csv.NewWriter(file)
-	sid := events.GetSubscriberID()
+	sid := events.GetSubscriberID(subscribeName)
 	ch, err := events.Subscribe(sid, l.integration, l.deviceType, l.deviceName, l.eventName)
 	if err != nil {
 		log.Printf("WARNING: DataLogger Integration could not subscribe to event for %v\n", l)

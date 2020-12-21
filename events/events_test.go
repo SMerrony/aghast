@@ -24,12 +24,12 @@ import (
 )
 
 func TestGetSubscriberID(t *testing.T) {
-	subIDs = make([]bool, 20)
-	first := GetSubscriberID()
+	subIDs = make([]string, 20)
+	first := GetSubscriberID("test")
 	if first != 0 {
 		t.Errorf("got %d, expected 0", first)
 	}
-	second := GetSubscriberID()
+	second := GetSubscriberID("test")
 	if second != 1 {
 		t.Errorf("got %d, expected 1", second)
 	}
@@ -43,9 +43,9 @@ func TestGetSubKey(t *testing.T) {
 }
 
 func TestSubscription(t *testing.T) {
-	subIDs = make([]bool, 20)
+	subIDs = make([]string, 20)
 	subscriptions = make(map[string][]subscriptionT)
-	sid := GetSubscriberID()
+	sid := GetSubscriberID("test")
 	if isSubscribed(sid, "integ", "devtype", "devname", "eventName") {
 		t.Error("isSubscribed gave false positive")
 	}

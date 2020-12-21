@@ -38,7 +38,7 @@ type Integration interface {
 	// The LoadConfig func should simply load any config (TOML) files for this Integration
 	LoadConfig(string) error
 
-	// The Start func begins running the Integration GoRoutines
+	// The Start func begins running the Integration GoRoutines and should return quickly
 	Start(chan events.EventT, mqtt.MQTT)
 
 	// ProvidesDeviceType returns a list of Device Type supported by this Integration

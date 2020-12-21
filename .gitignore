@@ -6,6 +6,7 @@
 *.dylib
 *.wasm
 cmd/aghastServer/aghastServer
+aghastServer
 
 # Test binary, built with `go test -c`
 *.test

@@ -33,6 +33,7 @@ import (
 
 const (
 	configFilename = "/influx.toml"
+	subscribeName  = "Influx"
 )
 
 // The Influx type encapsulates the Data Logging Integration
@@ -93,7 +94,7 @@ func (i *Influx) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 }
 
 func (i *Influx) logger(name string, l loggerT) {
-	sid := events.GetSubscriberID()
+	sid := events.GetSubscriberID(subscribeName)
 	ch, err := events.Subscribe(sid, l.integration, l.deviceType, l.deviceName, l.eventName)
 	if err != nil {
 		log.Printf("WARNING: Influx Integration (logger) could not subscribe to event for %v\n", l)

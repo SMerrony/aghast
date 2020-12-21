@@ -14,7 +14,7 @@ Here we describe the main ideas that make up the system.
 
 ### Integrations
 
-An Integration is all the software that provides support for a type of a concrete or abstract object within the HAS.  An Integration may provide Devices, Events, MQTT topics, etc..
+An Integration is all the software that provides support for a type of a concrete or abstract object within the HAS.  An Integration may provide Devices, Events, MQTT messages, etc..
 
 Example Integrations might include...
  * Time
@@ -23,6 +23,22 @@ Example Integrations might include...
 
 Where practical, anything in AGHAST is part of an Integration.  Maybe having 'Time', 'Network' etc. as explicit
 integrations (albeit pre-installed) will facilitate easier maintenance of them in the future.
+
+Integrations are compiled into the server, no plug-in technique is used.  An interface in the `integrationManager.go`  describes the
+minimum that any Integration must provide...
+
+```
+type Integration interface {
+	// The LoadConfig func should simply load any config (TOML) files for this Integration
+	LoadConfig(string) error
+
+	// The Start func begins running the Integration GoRoutines and should return quickly
+	Start(chan events.EventT, mqtt.MQTT)
+
+	// ProvidesDeviceType returns a list of Device Type supported by this Integration
+	ProvidesDeviceTypes() []string
+}
+```
 
 ### Devices
 
@@ -48,6 +64,8 @@ Every instance of a Device must have a unique name, eg. ModemPinger, SystemClock
 We have both internal Events (described here) and external events which are handled either by specific 
 Integrations or by MQTT.
 
+Internal Events are high-speed and low overhead.  There is no external dependency for them.
+
 Integrations and Devices may pubilsh Events to indicate something has happened.
 
 | Integration | Device | Event | Possible Meaning |
@@ -59,14 +77,18 @@ Integrations and Devices may pubilsh Events to indicate something has happened.
 
 Events have a source device/integration, event name, and optional Value.
 
-All Events are sent to an 'event manager' which forwards copies of Events to any subscribers.  Integrations, Devices and Automations may all subscribe to Events.  
+All Events are sent to an 'event manager' which forwards copies of Events to any subscribers.  Integrations and Automations may subscribe to Events.  
 
 Events do not persist, and if there are no subscribers for an Event when it is published it 
 simply disappears.  Events cannot be queried - that is why Device Values (below) may be requested.
 
 Automations subscribe to Events using the "event" configuration which specifies the source and specific event:
 ```
-event = { from = "<sourceName>", name = "<eventName>"}
+[event]
+  integration = "Time"
+  deviceType = "Events"
+  deviceName = "TimedEvent"
+  eventName = "TenBeforeWork"
 ```
 
 ### Values
@@ -80,6 +102,8 @@ Eg. on/off, temperature, brightness.
 
 Integrations and Devices may provide Controls to manipulate the state of something.
 
+_...Write up internal and external Controls here..._
+
 ### Automations
 
 Automations are used to manipulate controls.  Automations subscribe to a single Event.  
@@ -88,26 +112,29 @@ and then manipulate Controls.
 
 Here is an idea of how an Automation could be defined...
 ```
-name = "MorningOfficeWarmup"       # unique name for this Automation
-description = "Warm up the office"   
+name = "MorningOfficeWarmup"
+description = "Warm up the office"
+enabled = true
 
-# wait for scheduler to send a halfHourBeforeWork event
-event = { from = "scheduler", name = "halfHourBeforeWork"} 
+[event]
+  integration = "Time"
+  deviceType = "Events"
+  deviceName = "TimedEvent"
+  eventName = "TenBeforeWork"
 
-[[conditions]]                      # only if
-device = "officeHVAC"               #   officeHVAC device
-value = "outsideTemperature"        #     is reporting an outsideTemperature                    
-test = ["<", 18]                    #     less than 18
-
-[[actions]]                          # set the
-device = "officeHVAC"                #   officeHVAC device
-control = "mode"                     #     mode
-setting = "heat"                     #     to 'heat'
-
-[[actions]]
-device = "officeHVAC"                #   and the officeHVAC device
-control = "temperature"              #     temperature  
-setting = 20                         #     to 20
+[action.1]
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceLabel = "Steve's Office"
+  control = "temperature"
+  setting = 20
+ 
+[action.2]
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceLabel = "Steve's Office"
+  control = "mode"
+  setting = "heat" 
 ```
 
 #### Conditions
