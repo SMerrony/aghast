@@ -29,6 +29,9 @@ const (
 	maxSubscriptions         = 1000
 	managerEventsBuffer      = 1000
 	subscriberEventsBuffered = 100
+
+	// ActionControlDeviceType must be subscribed to by Integrations providing Action Controls
+	ActionControlDeviceType = "Control"
 )
 
 // EventT - we keep events as simple as possible.
@@ -172,7 +175,6 @@ func Unsubscribe(subscriberID int, integ, devtyp, devname, evName string) error 
 			newSubs = append(newSubs, s)
 		}
 	}
-	// TODO we should remove the key if there are no subscribers left
 	subscriptions[k] = newSubs
 	return nil
 }

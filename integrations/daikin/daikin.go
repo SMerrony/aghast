@@ -39,7 +39,10 @@ import (
 	"github.com/pelletier/go-toml"
 )
 
-const configFilename = "/daikin.toml"
+const (
+	configFilename = "/daikin.toml"
+	subscriberName = "Daikin"
+)
 
 // The Daikin type encapsulates the 'Daikin' HVAC Integration.
 type Daikin struct {
@@ -157,7 +160,7 @@ func (d *Daikin) LoadConfig(confdir string) error {
 
 // ProvidesDeviceTypes returns a slice of device types that this Integration supplies.
 func (d *Daikin) ProvidesDeviceTypes() []string {
-	return []string{"Inverter"}
+	return []string{"Inverter", "Control"}
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
@@ -181,6 +184,7 @@ func (d *Daikin) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	// configured and accessible units are now in d, we can start monitoring etc.
 	go d.monitorUnits()
 	go d.monitorClients()
+	go d.monitorActions()
 	go d.rerunDiscovery(maxUnits, scanTimeout)
 
 }
@@ -231,7 +235,11 @@ func (d *Daikin) monitorClients() {
 		log.Printf("DEBUG: Got msg from Daikin client, topic: %s, payload: %s\n", msg.Topic, payload)
 		// topic format is aghast/daikin/client/<Label>/<control>
 		topicSlice := strings.Split(msg.Topic, "/")
-		unitMAC := d.invertersByLabel[topicSlice[3]]
+		unitMAC, found := d.invertersByLabel[topicSlice[3]]
+		if !found {
+			log.Printf("WARNING: Daikin front-end monitor got command for unknown unit <%s>\n", topicSlice[3])
+			continue
+		}
 
 		// get the existing settings from the unit
 		ci, err := d.requestControlInfo(unitMAC)
@@ -391,6 +399,97 @@ func (d *Daikin) monitorUnits() {
 	}
 }
 
+// monitorActions listens for Control Actions from Automations and performs them
+func (d *Daikin) monitorActions() {
+	sid := events.GetSubscriberID(subscriberName)
+	ch, err := events.Subscribe(sid, "Daikin", events.ActionControlDeviceType, "+", "+")
+	if err != nil {
+		log.Printf("WARNING: Daikin Integration could not subscribe to event - %v\n", err)
+		return
+	}
+	for {
+		ev := <-ch
+		log.Printf("DEBUG: Daikin Action Monitor got %v\n", ev)
+		unitMAC, found := d.invertersByLabel[ev.DeviceName]
+		if !found {
+			log.Printf("WARNING: Daikin automation got Action for unknown unit <%s>\n", ev.DeviceName)
+			continue
+		}
+
+		// get the existing settings from the unit
+		ci, err := d.requestControlInfo(unitMAC)
+		if err != nil {
+			log.Printf("WARNING: Could not retrieve Control info for unit: %s\n", ev.DeviceName)
+			continue
+		}
+		inv := d.inverters[unitMAC]
+		control := ev.EventName
+
+		var power, setting, mode, fan, sweep string
+
+		if control == "power" {
+			if ev.Value.(string) == "on" {
+				power = "1"
+			} else {
+				power = "0"
+			}
+		} else {
+			if ci["pow"].boolValue {
+				power = "1"
+			} else {
+				power = "0"
+			}
+		}
+
+		if control == "temperature" {
+			setting = fmt.Sprintf("%.1f", ev.Value.(float64))
+		} else {
+			setting = fmt.Sprintf("%.1f", ci["stemp"].floatValue)
+		}
+
+		if control == "mode" {
+			modeInt, ok := stringToAcMode(ev.Value.(string))
+			if !ok {
+				log.Printf("WARNING: Daikin automation handler got invalid MODE: <%s>\n", ev.Value.(string))
+				continue
+			}
+			mode = fmt.Sprintf("%d", modeInt)
+		} else {
+			mode = fmt.Sprintf("%d", ci["mode"].intValue)
+		}
+
+		if control == "fan" {
+			fan = ev.Value.(string)
+		} else {
+			fan = ci["f_rate"].stringValue
+		}
+
+		sweep = fmt.Sprintf("%d", ci["f_dir"].intValue)
+
+		cmd := fmt.Sprintf(setControlFmt, power, mode, setting, fan, sweep, "0")
+		// send the command
+		addr := d.inverters[unitMAC].address
+		//debugging
+		log.Printf("DEBUG: Daikin Sending F/E-Client Control to: %s as: %s\n", d.inverters[unitMAC].Label, cmd)
+		resp, err := http.Get(addr + setControlInfo + cmd)
+
+		if err != nil {
+			log.Printf("WARNING: Daikin - error sending control command %v\v", err)
+			continue
+		}
+		if resp.Status != "200 OK" {
+			log.Printf("WARNING: Daikin control response from %s was %s\n", addr, resp.Status)
+		}
+		resp.Body.Close()
+
+		// refresh our copy the unit data
+		qci, err := d.requestControlInfo(unitMAC)
+		if err == nil {
+			inv.controlInfo = qci
+		}
+	}
+}
+
 // discoverDaikinUnits searches for Inverters on the local network
 func discoverDaikinUnits(maxUnits int, timeout time.Duration) (units []inverterT) {
 	pc, err := net.ListenPacket("udp4", udpPort)
@@ -505,7 +604,7 @@ func (d *Daikin) requestInfo(mac string, req string, dest infoMap) (e error) {
 // 	if err != nil {
 // 		return err
 // 	}
-// 	resp.Body.Close() // TODO check return code from unit?
+// 	resp.Body.Close()
 // 	return nil
 // }
 

@@ -50,7 +50,6 @@ type automationT struct {
 
 type actionT struct { // TODO should this be defined elsewhere?
 	integration string
-	deviceType  string
 	deviceLabel string
 	control     string
 	setting     interface{}
@@ -86,7 +85,6 @@ func (a *Automation) LoadConfig(confDir string) error {
 			var act actionT
 			details := a.(map[string]interface{})
 			act.integration = details["integration"].(string)
-			act.deviceType = details["deviceType"].(string)
 			act.deviceLabel = details["deviceLabel"].(string)
 			act.control = details["control"].(string)
 			act.setting = details["setting"] // not cast
@@ -104,6 +102,7 @@ func (a *Automation) LoadConfig(confDir string) error {
 	return nil
 }
 
+// StartAutomations launches a Goroutine for each Automation
 func StartAutomations(confDir string, evChan chan events.EventT) {
 
 	var autos Automation
@@ -136,12 +135,12 @@ func (a *Automation) waitForEvent(sid int, auto automationT) {
 			ac := auto.actions[k]
 			a.evChan <- events.EventT{
 				Integration: ac.integration,
-				DeviceType:  ac.deviceType,
+				DeviceType:  events.ActionControlDeviceType,
 				DeviceName:  ac.deviceLabel,
 				EventName:   ac.control,
 				Value:       ac.setting,
 			}
-			log.Printf("DEBUG: Automation Manager sent to %s\n", ac.integration)
+			log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
 		}
 	}
 }

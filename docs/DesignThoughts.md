@@ -137,7 +137,7 @@ enabled = true
   setting = "heat" 
 ```
 
-#### Conditions
+#### Conditions - NOT YET IMPLEMENTED
 
 If any conditions are specified, they must all be satisfied for the Automation to proceed.
 Conditions examine the state of Values.
@@ -159,7 +159,7 @@ Initially, we define two types of Action...
 
 The first type is shown above in the "MorningOfficeWarmup" Automation, the second type looks like this...
 ```
-[[actions]
+[action]
 script = "turnAllLightsOff.toml"
 ```
 Where the script file is a list of Actions that might be reused in different Automations.
@@ -167,22 +167,11 @@ Where the script file is a list of Actions that might be reused in different Aut
 
 ### Configuration
 
-All configuration is to be stored in TOML files - not in the database which is used exclusively for persisting the state of the system and providing history.
+All configuration is to be stored in TOML files.
 
 The main configuration file `config.toml` will be quite small, containing only some general information about
-the system itself, and a list of enabled Integrations, eg.
-```
-systemName = "Our House"
+the system itself, and a list of enabled Integrations.
 
-longitude = 43.5
-latitude = 2.0
-
-integrations = [
-  "time",
-  "network",
-  "daikin",
-]
-```
 When the server is started, it is passed only the configuration directory path.  The structure of this directory is well-defined...
 
   * One master configuration file with high-level info and list of enabled Integrations

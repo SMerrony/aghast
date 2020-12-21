@@ -7,17 +7,25 @@ enabled = true
   deviceType = "Events"
   deviceName = "TimedEvent"
   eventName = "TenBeforeWork"
+#  deviceType = "Ticker"
+#  deviceName = "SystemTicker"
+#  eventName = "Minute"
 
 [action.1]
   integration = "Daikin"
-  deviceType = "Inverter"
   deviceLabel = "Steve's Office"
   control = "temperature"
-  setting = 20
+  setting = 20.0
  
 [action.2]
   integration = "Daikin"
-  deviceType = "Inverter"
   deviceLabel = "Steve's Office"
   control = "mode"
-  setting = "heat" 
+  setting = "Heat" 
+
+[action.3]
+  integration = "Daikin"
+  deviceLabel = "Steve's Office"
+  control = "power"
+  setting = "on" 
+ 
