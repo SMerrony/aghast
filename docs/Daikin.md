@@ -21,18 +21,21 @@ Please let us know if you can add to the above information.
 
 ## Configuration
 This Integration is enabled by adding a `"daikin",` line to the main `config.toml` file in the "integrations" list. 
-A `daikin.toml` file must exist in you configurations directory.
+
+A `daikin.toml` file must also exist in you configurations directory.
 
 Its format is...
 ```
 [Inverter.123456789ABC]     # The key is the unpunctuated MAC address of the unit
   label = "Steve's Office"  # A user-friendly label for the unit - must be unique
 
-[Inverter.123456789ABC]   
+[Inverter.123456789ABD]   
   label = "Living Room"     
 ```
+We use the MAC address of the interface unit as the IP address or user-assigned unit name (via one of the Daikin apps) could change.
+
 Note that the `label` in the configuration file will form part of the MQTT topic for a specific unit.
-Eg. `daikin/Steve's Office/controlinfo` and `daikin/Living Room/temperature`.
+Eg. `daikin/Steve's Office/controlinfo` and `daikin/Living Room/temperature`.  Do not include a forward-slash in the label.
 
 ## Usage
 ### Device Discovery

@@ -19,7 +19,7 @@ We believe that end-users of HA systems are generally not interested in the nuts
 | Network     | Includes: HostChecker        | [](docs/) |
 | DataLogger  | Log Data to CSV files        | [](docs/) |
 | Daikin      | HVAC Control and Monitoring  | [Daikin](docs/Daikin.md) |
-| Influx      | Log Data to InfluxDB         | [](docs/) |
+| Influx      | Log Data to InfluxDB         | [Influx](docs/Influx.md) |
 | Scraper     | Web Scraping                 | [](docs/) |
 
 ## Configuration
@@ -29,7 +29,7 @@ The main configuration file `config.toml` is quite simple, containing only some 
 systemName = "Our House"      # Label for the system
 
 longitude = 43.6
-latitude = 2.24
+latitude = "!!SECRET!!"       # Get latitude from secrets.toml
 
 mqttBroker = "mediaserver01"  # Hostname or IP of MQTT Broker
 mqttPort = 1883               # MQTT Broker port
@@ -46,11 +46,20 @@ integrations = [
   "scraper",
 ]
 ```
-
 Every Integration _must_ have an associated `<Integration>.toml` configuration file in the same directory,
 eg. `time.toml`, `daikin.toml`, etc.
 
 N.B. Even if no special configuration is required for an enabled Integration, an empty `<Integration>.toml` configuration file must exist.
+
+### Secrets and Constants
+
+You may replace a value that you don't want to share with the special string `"!!SECRET!!"` (even if it is a number).
+AGHAST will then look for the matching value in the `secrets.toml` file.
+
+Similarly, you can replace a value with `"!!CONSTANT!!"` and it will be fetched from the `constants.toml` file.
+This could be especially useful in Automations, where values could be reused several times.
+
+Currently, secrets and constants are supported for string, integer and floating-point values.
 
 ## Running
 

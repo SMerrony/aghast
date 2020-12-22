@@ -16,3 +16,6 @@ aghastServer
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Private stuff
+secrets.toml
