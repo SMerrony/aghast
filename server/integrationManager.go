@@ -22,6 +22,7 @@ package server
 import (
 	"log"
 
+	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/integrations/daikin"
 	"github.com/SMerrony/aghast/integrations/datalogger"
@@ -46,7 +47,7 @@ type Integration interface {
 }
 
 // StartIntegrations asks each enabled Integration to configure itself, then starts them.
-func StartIntegrations(conf MainConfigT, evChan chan events.EventT, mqtt mqtt.MQTT) {
+func StartIntegrations(conf config.MainConfigT, evChan chan events.EventT, mqtt mqtt.MQTT) {
 	var integ Integration
 	for _, i := range conf.Integrations {
 		switch i {
@@ -68,7 +69,7 @@ func StartIntegrations(conf MainConfigT, evChan chan events.EventT, mqtt mqtt.MQ
 		}
 
 		log.Println("DEBUG: Integration ", i, integ.ProvidesDeviceTypes())
-		if err := integ.LoadConfig(conf.configDir); err != nil {
+		if err := integ.LoadConfig(conf.ConfigDir); err != nil {
 			log.Printf("ERROR: %s Integration could not load its configuration", i)
 			// log.Fatalln("ABORT: Time Integration must run")
 		}

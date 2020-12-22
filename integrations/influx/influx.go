@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -58,10 +59,10 @@ func (i *Influx) LoadConfig(confdir string) error {
 		return err
 	}
 	confMap := conf.ToMap()
-	i.bucket = confMap["bucket"].(string)
-	i.org = confMap["org"].(string)
-	i.token = confMap["token"].(string)
-	i.url = confMap["url"].(string)
+	i.bucket = config.GetString(confdir, conf, "influxBucket")
+	i.org = config.GetString(confdir, conf, "influxOrg")
+	i.token = config.GetString(confdir, conf, "influxToken")
+	i.url = config.GetString(confdir, conf, "influxURL")
 	i.loggers = make(map[string]loggerT)
 	loggersConf := confMap["Logger"].(map[string]interface{})
 	for name, l := range loggersConf {

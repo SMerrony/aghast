@@ -1,7 +1,7 @@
 systemName = "Our House"      # Label for the system
 
 longitude = 43.6
-latitude = 2.24
+latitude = "!!SECRET!!"       # Get latitude value from secrets.toml
 
 mqttBroker = "mediaserver01"  # Hostname or IP of MQTT Broker
 mqttPort = 1883               # MQTT Broker port

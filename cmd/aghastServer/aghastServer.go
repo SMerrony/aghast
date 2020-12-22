@@ -26,6 +26,7 @@ import (
 	"os/signal"
 	"sync"
 
+	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/SMerrony/aghast/server"
@@ -41,13 +42,13 @@ func main() {
 	}
 
 	// sanity check on config directory
-	err := server.CheckMainConfig(*configFlag)
+	err := config.CheckMainConfig(*configFlag)
 	if err != nil {
 		log.Println("ERROR: Main configuration check failed")
 		log.Fatalln("ERROR: " + err.Error())
 	}
 
-	conf, err := server.LoadMainConfig(*configFlag)
+	conf, err := config.LoadMainConfig(*configFlag)
 	if err != nil {
 		log.Fatalf("ERROR: Failed to load main config file with: %s", err.Error())
 	}
