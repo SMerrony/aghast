@@ -71,11 +71,12 @@ type inverterT struct {
 // ControlInfoMsgT is the type of messaage sent out both as an Event and via MQTT
 // containing the interesting Control state from the unit
 type ControlInfoMsgT struct {
-	Power string
-	Mode  int
-	Stemp float64
-	Frate string
-	Fdir  int
+	Power      string
+	Mode       int
+	Stemp      float64
+	Frate      string
+	Fdir       int
+	LastUpdate string // "HH:MM:SS"
 }
 
 type reqT string
@@ -371,6 +372,7 @@ func (d *Daikin) monitorUnits() {
 					pubCi.Stemp = ci["stemp"].floatValue
 					pubCi.Frate = ci["f_rate"].stringValue
 					pubCi.Fdir = int(ci["f_dir"].intValue)
+					pubCi.LastUpdate = time.Now().Format("15:04:05")
 					payload, err := json.Marshal(pubCi)
 					if err != nil {
 						panic(err)
