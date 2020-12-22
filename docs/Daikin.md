@@ -6,7 +6,7 @@ N.B. This code has been independently developed using information freely availab
 The Daikin Integration provides facilities to control and monitor certain popular Daikin HVAC units.
 
 ### Supported Devices
-Note the the Integration does not *directly* support particular HVAC units, rather it communicates with the network adapters that may be built-in, or added-to, various 'inverters'.
+Note the the Integration does not *directly* support specific HVAC units, rather it communicates with the network adapters that may be built-in, or added-to, various 'inverters'.
 
 * BRP069B41 - the Integration has been extensively tested with the BRP069B41 adapters.
 We would expect all of the BRP069B41/2/3/4/5 adapters to work.
@@ -22,7 +22,7 @@ Please let us know if you can add to the above information.
 ## Configuration
 This Integration is enabled by adding a `"daikin",` line to the main `config.toml` file in the "integrations" list. 
 
-A `daikin.toml` file must also exist in you configurations directory.
+A `daikin.toml` file must also exist in your configurations directory.
 
 Its format is...
 ```

@@ -59,7 +59,7 @@ AGHAST will then look for the matching value in the `secrets.toml` file.
 Similarly, you can replace a value with `"!!CONSTANT!!"` and it will be fetched from the `constants.toml` file.
 This could be especially useful in Automations, where values could be reused several times.
 
-Currently, secrets and constants are supported for string, integer and floating-point values.
+Currently, secrets and constants are supported for string, integer and floating-point values; they are not supported by all Integrations yet.
 
 ## Running
 
