@@ -4,9 +4,9 @@ enabled = true
 
 [event]
   integration = "Time"
-  deviceType = "Events"
-  deviceName = "TimedEvent"
-  eventName = "TenBeforeWork"
+  deviceType  = "Events"
+  deviceName  = "TimedEvent"
+  eventName   = "TenBeforeWork"
 #  deviceType = "Ticker"
 #  deviceName = "SystemTicker"
 #  eventName = "Minute"

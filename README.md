@@ -13,12 +13,14 @@ We believe that end-users of HA systems are generally not interested in the nuts
 
 ## Integrations
 
- * Time - Includes: Tickers
- * Network - Includes: HostChecker
- * DataLogger - Log Data to CSV files
- * Daikin - HVAC Control and Monitoring
- * Influx - Log Data to InfluxDB
- * Scraper - Web Scraping
+| Integration | Description                  | Documentation |
+| ----------- | :--------------------------  | ------------- |
+| Time        | Includes: Tickers            | [Time](docs/Time.md) |
+| Network     | Includes: HostChecker        | [](docs/) |
+| DataLogger  | Log Data to CSV files        | [](docs/) |
+| Daikin      | HVAC Control and Monitoring  | [Daikin](docs/Daikin.md) |
+| Influx      | Log Data to InfluxDB         | [](docs/) |
+| Scraper     | Web Scraping                 | [](docs/) |
 
 ## Configuration
 
