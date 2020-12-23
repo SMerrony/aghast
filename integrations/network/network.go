@@ -23,6 +23,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/pelletier/go-toml"
@@ -41,12 +42,16 @@ type Network struct {
 // LoadConfig loads and stores the configuration for this Integration
 func (n *Network) LoadConfig(confdir string) error {
 
-	conf, err := toml.LoadFile(confdir + configFilename)
+	t, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
 		log.Println("ERROR: Could not load Network configuration ", err.Error())
 		return err
 	}
-
+	conf, err := toml.LoadBytes(t)
+	if err != nil {
+		log.Println("ERROR: Could not parse Network configuration ", err.Error())
+		return err
+	}
 	n.hostCheckersMu.Lock()
 	defer n.hostCheckersMu.Unlock()
 	n.hostCheckers = make(map[string]hostCheckerT)

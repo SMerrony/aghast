@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/gocolly/colly/v2"
@@ -63,9 +64,14 @@ type detailsT struct {
 // LoadConfig loads and stores the configuration for this Integration
 func (s *Scraper) LoadConfig(confdir string) error {
 
-	conf, err := toml.LoadFile(confdir + configFilename)
+	t, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
 		log.Println("ERROR: Could not load Scraper configuration ", err.Error())
+		return err
+	}
+	conf, err := toml.LoadBytes(t)
+	if err != nil {
+		log.Println("ERROR: Could not parse Scraper configuration ", err.Error())
 		return err
 	}
 	s.scrapers = make(map[string]scraperT)

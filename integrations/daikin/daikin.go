@@ -34,6 +34,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/pelletier/go-toml"
@@ -134,9 +135,14 @@ type infoMap map[string]infoElement
 
 // LoadConfig loads and stores the configuration for this Integration
 func (d *Daikin) LoadConfig(confdir string) error {
-	conf, err := toml.LoadFile(confdir + configFilename)
+	t, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
-		log.Println("ERROR: Could not load configuration ", err.Error())
+		log.Println("ERROR: Could not load Daikin configuration ", err.Error())
+		return err
+	}
+	conf, err := toml.LoadBytes(t)
+	if err != nil {
+		log.Println("ERROR: Could not parse Daikin configuration ", err.Error())
 		return err
 	}
 	d.invertersMu.Lock()

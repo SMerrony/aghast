@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/pelletier/go-toml"
@@ -52,11 +53,15 @@ type timeEventT struct {
 
 // LoadConfig is required to satisfy the Integration interface.
 func (t *Time) LoadConfig(confdir string) error {
-	conf, err := toml.LoadFile(confdir + configFilename)
+	tc, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
-		log.Println("ERROR: Could not load configuration ", err.Error())
+		log.Println("ERROR: Could not load Time configuration ", err.Error())
 		return err
-
+	}
+	conf, err := toml.LoadBytes(tc)
+	if err != nil {
+		log.Println("ERROR: Could not parse Time configuration ", err.Error())
+		return err
 	}
 	confMap := conf.ToMap()
 	eventsConf := confMap["event"].(map[string]interface{})

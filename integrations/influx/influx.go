@@ -59,6 +59,10 @@ func (i *Influx) LoadConfig(confdir string) error {
 		return err
 	}
 	conf, err := toml.LoadBytes(t)
+	if err != nil {
+		log.Println("ERROR: Could not parse Influx configuration ", err.Error())
+		return err
+	}
 	confMap := conf.ToMap()
 	i.bucket = conf.Get("bucket").(string)
 	i.org = conf.Get("org").(string)

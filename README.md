@@ -53,13 +53,13 @@ N.B. Even if no special configuration is required for an enabled Integration, an
 
 ### Secrets and Constants
 
-You may replace a value that you don't want to share with the special string `"!!SECRET(name)"` (even if it is a number).
+You may replace a **value** that you don't want to share with the special string `"!!SECRET(name)"` (even if it is a number).
 AGHAST will then look for the matching name-value pair in the `secrets.toml` file and substitute the value found.
 
-Similarly, you can replace a value with `"!!CONSTANT(name)"` and it will be fetched from the `constants.toml` file.
+Similarly, you can replace a **value** with `"!!CONSTANT(name)"` and it will be fetched from the `constants.toml` file.
 This could be especially useful in Automations, where values might be reused several times.
 
-Currently, secrets and constants are supported for string, integer and floating-point values; they are not supported by all Integrations yet.
+Currently, secrets and constants are supported for string, integer and floating-point values.
 
 ## Running
 
