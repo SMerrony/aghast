@@ -53,16 +53,17 @@ type loggerT struct {
 
 // LoadConfig loads and stores the configuration for this Integration
 func (i *Influx) LoadConfig(confdir string) error {
-	conf, err := toml.LoadFile(confdir + configFilename)
+	t, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
 		log.Println("ERROR: Could not load Influx configuration ", err.Error())
 		return err
 	}
+	conf, err := toml.LoadBytes(t)
 	confMap := conf.ToMap()
-	i.bucket = config.GetString(confdir, conf, "influxBucket")
-	i.org = config.GetString(confdir, conf, "influxOrg")
-	i.token = config.GetString(confdir, conf, "influxToken")
-	i.url = config.GetString(confdir, conf, "influxURL")
+	i.bucket = conf.Get("bucket").(string)
+	i.org = conf.Get("org").(string)
+	i.token = conf.Get("token").(string)
+	i.url = conf.Get("url").(string)
 	i.loggers = make(map[string]loggerT)
 	loggersConf := confMap["Logger"].(map[string]interface{})
 	for name, l := range loggersConf {

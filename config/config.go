@@ -20,10 +20,14 @@
 package config
 
 import (
+	"bufio"
 	"errors"
+	"fmt"
+	"io"
 	"log"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/pelletier/go-toml"
 )
@@ -32,8 +36,8 @@ const (
 	mainConfigFilename = "/config.toml"
 	secretsFilename    = "/secrets.toml"
 	constantsFilename  = "/constants.toml"
-	secretLabel        = "!!SECRET!!"
-	constantLabel      = "!!CONSTANT!!"
+	secretLabel        = "!!SECRET("
+	constantLabel      = "!!CONSTANT("
 )
 
 // A MainConfigT holds the top-level configuration details
@@ -87,17 +91,18 @@ func CheckMainConfig(configDir string) error {
 // LoadMainConfig does what it says on the tin
 func LoadMainConfig(configDir string) (MainConfigT, error) {
 	var conf MainConfigT
-	mainConfig, err := toml.LoadFile(configDir + mainConfigFilename)
+	t, err := PreprocessTOML(configDir, mainConfigFilename)
+	mainConfig, err := toml.LoadBytes(t)
 	if err != nil {
 		log.Println("ERROR: Could not load main configuration ", err.Error())
 		return conf, err
 	}
-	conf.SystemName = GetString(configDir, mainConfig, "systemName")
-	conf.Longitude = GetFloat64(configDir, mainConfig, "longitude")
-	conf.Latitude = GetFloat64(configDir, mainConfig, "latitude")
-	conf.MqttBroker = GetString(configDir, mainConfig, "mqttBroker")
-	conf.MqttPort = GetInt(configDir, mainConfig, "mqttPort")
-	conf.MqttClientID = GetString(configDir, mainConfig, "mqttClientID")
+	conf.SystemName = mainConfig.Get("systemName").(string)
+	conf.Longitude = mainConfig.Get("longitude").(float64)
+	conf.Latitude = mainConfig.Get("latitude").(float64)
+	conf.MqttBroker = mainConfig.Get("mqttBroker").(string)
+	conf.MqttPort = int(mainConfig.Get("mqttPort").(int64))
+	conf.MqttClientID = mainConfig.Get("mqttClientID").(string)
 	conf.LogEvents = mainConfig.Get("logEvents").(bool)
 
 	log.Printf("DEBUG: Main config for %s loaded, MQTT Broker is %s\n", conf.SystemName, conf.MqttBroker)
@@ -111,95 +116,86 @@ func LoadMainConfig(configDir string) (MainConfigT, error) {
 	return conf, nil
 }
 
-// GetString retrieves a string value from the config file.
-// It looks in secrets.toml or constants.toml if necessary.
-func GetString(configDir string, conf *toml.Tree, id string) string {
-	raw := conf.Get(id).(string)
-	switch raw {
-	case secretLabel:
-		return getSecretString(configDir, id)
-	case constantLabel:
-		return getConstantString(configDir, id)
+// PreprocessTOML reads a TOML config file and substitutes !!SECRET() and !!CONSTANT()
+// strings for their corresponding values.
+func PreprocessTOML(configDir string, fileName string) (preprocessed []byte, e error) {
+	rawFile, err := os.Open(configDir + fileName)
+	if err != nil {
+		return nil, err
 	}
-	return raw
-}
+	rawReader := bufio.NewReader(rawFile)
 
-// GetInt retrieves an int value from the config file.
-// It looks in secrets.toml or constants.toml if necessary.
-func GetInt(configDir string, conf *toml.Tree, id string) int {
-	raw := conf.Get(id)
-	if reflect.ValueOf(raw).Kind() == reflect.String {
-		switch raw.(string) {
-		case secretLabel:
-			return getSecretInt(configDir, id)
-		case constantLabel:
-			return getConstantInt(configDir, id)
+	// preload the secrets and constants configs
+	secretsConf, err := toml.LoadFile(configDir + secretsFilename)
+	if err != nil {
+		log.Println("ERROR: Could not load secrets configuration ", err.Error())
+		return nil, err
+	}
+	constantsConf, err := toml.LoadFile(configDir + constantsFilename)
+	if err != nil {
+		log.Println("ERROR: Could not load constants configuration ", err.Error())
+		return nil, err
+	}
+
+	for {
+		rawLine, err := rawReader.ReadString('\n')
+		if err != nil && err != io.EOF {
+			return nil, err
 		}
-	}
-	return int(raw.(int64))
-}
-
-// GetFloat64 retrieves a float64 value from the config file.
-// It looks in secrets.toml or constants.toml if necessary.
-func GetFloat64(configDir string, conf *toml.Tree, id string) float64 {
-	raw := conf.Get(id)
-	if reflect.ValueOf(raw).Kind() == reflect.String {
-		switch raw.(string) {
-		case secretLabel:
-			return getSecretFloat64(configDir, id)
-		case constantLabel:
-			return getConstantFloat64(configDir, id)
+		if err == io.EOF && len(rawLine) < 3 {
+			log.Printf("DEBUG: ... new TOML file is:\n%s\n", preprocessed)
+			return preprocessed, nil
 		}
+		if sIx := strings.Index(rawLine, secretLabel); sIx != -1 {
+			// we have a line like this: port = "!!SECRET(portnum)"
+			log.Printf("DEBUG: Found config line with secret: %s\n", rawLine)
+			procdLine := rawLine[:sIx-1]
+			rawLine = rawLine[sIx+len(secretLabel):]
+			closingIx := strings.IndexByte(rawLine, ')')
+			newName := rawLine[:closingIx]
+			log.Printf("DEBUG: ... substitute name is: %s\n", newName)
+			if !secretsConf.Has(newName) {
+				return nil, errors.New("Secret not found")
+			}
+			newVal := secretsConf.Get(newName)
+			switch reflect.ValueOf(newVal).Kind() {
+			case reflect.String:
+				procdLine += "\"" + newVal.(string) + "\"\n"
+			case reflect.Int64:
+				procdLine += fmt.Sprintf("%d\n", newVal.(int64))
+			case reflect.Float64:
+				procdLine += fmt.Sprintf("%f\n", newVal.(float64))
+			}
+			log.Printf("DEBUG: ... replacement line is: %s\n", procdLine)
+			preprocessed = append(preprocessed, []byte(procdLine)...)
+			continue
+		}
+		if cIx := strings.Index(rawLine, constantLabel); cIx != -1 {
+			// we have a line like this: port = "!!CONSTANT(portnum)"
+			log.Printf("DEBUG: Found config line with constant: %s\n", rawLine)
+			procdLine := rawLine[:cIx-1]
+			rawLine = rawLine[cIx+len(constantLabel):]
+			closingIx := strings.IndexByte(rawLine, ')')
+			newName := rawLine[:closingIx]
+			log.Printf("DEBUG: ... substitute name is: %s\n", newName)
+			if !constantsConf.Has(newName) {
+				return nil, errors.New("Constant not found")
+			}
+			newVal := constantsConf.Get(newName)
+			switch reflect.ValueOf(newVal).Kind() {
+			case reflect.String:
+				procdLine += "\"" + newVal.(string) + "\"\n"
+			case reflect.Int64:
+				procdLine += fmt.Sprintf("%d\n", newVal.(int64))
+			case reflect.Float64:
+				procdLine += fmt.Sprintf("%f\n", newVal.(float64))
+			}
+			log.Printf("DEBUG: ... replacement line is: %s\n", procdLine)
+			preprocessed = append(preprocessed, []byte(procdLine)...)
+			continue
+		}
+		preprocessed = append(preprocessed, []byte(rawLine)...)
 	}
-	return raw.(float64)
-}
 
-func getSecretString(configDir string, id string) string {
-	secretsConfig, err := toml.LoadFile(configDir + secretsFilename)
-	if err != nil {
-		log.Panicln("ERROR: Could not load secrets.toml configuration ", err.Error())
-	}
-	return secretsConfig.Get(id).(string)
-}
-
-func getConstantString(configDir string, id string) string {
-	constConfig, err := toml.LoadFile(configDir + constantsFilename)
-	if err != nil {
-		log.Panicln("ERROR: Could not load constants.toml configuration ", err.Error())
-	}
-	return constConfig.Get(id).(string)
-}
-
-func getSecretInt(configDir string, id string) int {
-	secretsConfig, err := toml.LoadFile(configDir + secretsFilename)
-	if err != nil {
-		log.Panicln("ERROR: Could not load secrets.toml configuration ", err.Error())
-	}
-	log.Printf("DEBUG: Looking for %s in secrets file %s\n", id, configDir+secretsFilename)
-	return int(secretsConfig.Get(id).(int64))
-}
-
-func getConstantInt(configDir string, id string) int {
-	constConfig, err := toml.LoadFile(configDir + constantsFilename)
-	if err != nil {
-		log.Panicln("ERROR: Could not load constants.toml configuration ", err.Error())
-	}
-	return int(constConfig.Get(id).(int64))
-}
-
-func getSecretFloat64(configDir string, id string) float64 {
-	secretsConfig, err := toml.LoadFile(configDir + secretsFilename)
-	if err != nil {
-		log.Panicln("ERROR: Could not load secrets.toml configuration ", err.Error())
-	}
-	log.Printf("DEBUG: Looking for %s in secrets file %s\n", id, configDir+secretsFilename)
-	return secretsConfig.Get(id).(float64)
-}
-
-func getConstantFloat64(configDir string, id string) float64 {
-	constConfig, err := toml.LoadFile(configDir + constantsFilename)
-	if err != nil {
-		log.Panicln("ERROR: Could not load constants.toml configuration ", err.Error())
-	}
-	return constConfig.Get(id).(float64)
+	// return preprocessed, nil
 }

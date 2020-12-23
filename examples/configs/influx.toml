@@ -1,8 +1,8 @@
 # InfluxDB connection details
-influxBucket = "aghast"
-influxOrg = "aghast"
-influxToken = "!!SECRET!!"
-influxURL = "http://localhost:8086"
+bucket = "aghast"
+org = "aghast"
+token = "!!SECRET(influxToken)"
+url = "http://localhost:8086"
 
 # Data to log
 [Logger.OutsideTemp]

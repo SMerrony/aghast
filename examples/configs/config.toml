@@ -1,9 +1,10 @@
 systemName = "Our House"      # Label for the system
 
 longitude = 43.6
-latitude = "!!SECRET!!"       # Get latitude value from secrets.toml
+latitude = "!!SECRET(latitude)"       # Get latitude value from secrets.toml
+postcode = "!!SECRET(postcode)"
 
-mqttBroker = "mediaserver01"  # Hostname or IP of MQTT Broker
+mqttBroker = "!!CONSTANT(mqttBroker)"  # Hostname or IP of MQTT Broker
 mqttPort = 1883               # MQTT Broker port
 mqttClientID = "aghast"       # MQTT Client ID
 
