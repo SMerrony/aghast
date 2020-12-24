@@ -4,6 +4,8 @@ AGHAST is primarily an automation _server_ - it does not mandate a specific fron
 All data and controls that should be provided to end-users (i.e. not administrators) are exposed via MQTT.
 Node-Red is being used as a front-end during development and example flows are provided, but other MQTT-connected dashboards could be used if prefered.
 
+![](examples/node-red/Screenshots/Network-0.0.0.png)
+
 We believe that end-users of HA systems are generally not interested in the nuts and bolts, so configuration is performed entirely at the back-end by the in-house geek ;-)
 
 ## Requirements
@@ -31,7 +33,7 @@ systemName = "Our House"      # Label for the system
 longitude = 43.6
 latitude = "!!SECRET!!"       # Get latitude from secrets.toml
 
-mqttBroker = "mediaserver01"  # Hostname or IP of MQTT Broker
+mqttBroker = "!!CONSTANT(mqttBroker)"  # Hostname or IP of MQTT Broker
 mqttPort = 1883               # MQTT Broker port
 mqttClientID = "aghast"       # MQTT Client ID
 
@@ -46,7 +48,7 @@ integrations = [
   "scraper",
 ]
 ```
-Every Integration _must_ have an associated `<Integration>.toml` configuration file in the same directory,
+Every Integration **must** have an associated `<Integration>.toml` configuration file in the same directory,
 eg. `time.toml`, `daikin.toml`, etc.
 
 N.B. Even if no special configuration is required for an enabled Integration, an empty `<Integration>.toml` configuration file must exist.

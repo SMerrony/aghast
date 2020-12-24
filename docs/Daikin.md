@@ -2,6 +2,8 @@
 
 N.B. This code has been independently developed using information freely available on the Internet.  It is not endorsed or supported by Daikin in any way whatsoever.  You use this software at your own risk.
 
+![](../examples/node-red/Screenshots/HVAC-0.0.0.png)
+
 ## Description and Purpose
 The Daikin Integration provides facilities to control and monitor certain popular Daikin HVAC units.
 
