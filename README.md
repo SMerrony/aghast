@@ -22,7 +22,7 @@ We believe that end-users of HA systems are generally not interested in the nuts
 | DataLogger  | Log Data to CSV files        | [](docs/) |
 | Daikin      | HVAC Control and Monitoring  | [Daikin](docs/Daikin.md) |
 | Influx      | Log Data to InfluxDB         | [Influx](docs/Influx.md) |
-| Scraper     | Web Scraping                 | [](docs/) |
+| Scraper     | Web Scraping                 | [Scraper](docs/Scraper.md) |
 
 ## Configuration
 
