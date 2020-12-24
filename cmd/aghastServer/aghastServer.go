@@ -24,7 +24,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 
 	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
@@ -52,17 +51,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("ERROR: Failed to load main config file with: %s", err.Error())
 	}
-	var wg sync.WaitGroup
 
-	//mq := new(mqtt.MQTT)
 	mq := mqtt.MQTT{}
 	mqttChan := mq.Start(conf.MqttBroker, conf.MqttPort, conf.MqttClientID)
 
 	// start the event manager - this should happen before Integrations are started
-	wg.Add(1)
 	eventChan := events.StartEventManager(conf.LogEvents)
 
-	wg.Add(1)
 	server.StartIntegrations(conf, eventChan, mq)
 
 	msg := mqtt.MessageT{
@@ -75,18 +70,8 @@ func main() {
 
 	server.StartAutomations(*configFlag, eventChan)
 
-	// wg.Wait()
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
 	<-sigChan
-
-	// h := &app.Handler{
-	// 	Title:  "Hello Demo",
-	// 	Author: "Maxence Charriere",
-	// }
-
-	// if err := http.ListenAndServe(":7777", h); err != nil {
-	// 	panic(err)
-	// }
 
 }

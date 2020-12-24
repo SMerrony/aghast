@@ -8,9 +8,9 @@ url = "http://localhost:8086"
 [Logger.OutsideTemp]
   integration = "Daikin"
   deviceType = "Inverter"
-  deviceName = "Hall"          # A specific unit
+  deviceName = "Hall"         
   eventName = "OutsideTemperature"
-  type = "float"               # Either 'float', 'integer', or 'string'
+  type = "float"                    # Either 'float', 'integer', or 'string'
   
 [Logger.HallTemp]
   integration = "Daikin"
