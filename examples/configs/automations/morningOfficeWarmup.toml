@@ -1,6 +1,6 @@
 name = "MorningOfficeWarmup"
 description = "Warm up the office"
-enabled = true
+enabled = false
 
 [event]
   integration = "Time"

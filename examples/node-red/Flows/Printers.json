@@ -1,0 +1,689 @@
+[
+    {
+        "id": "16c2235e.92d1a5",
+        "type": "tab",
+        "label": "Printers",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "d74a90e3.2668d",
+        "type": "mqtt in",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "topic": "aghast/scraper/BrotherA3/Black",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 200,
+        "wires": [
+            [
+                "8548ad76.30a1a"
+            ]
+        ]
+    },
+    {
+        "id": "bbd3785d.50f728",
+        "type": "mqtt in",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "topic": "aghast/scraper/BrotherA3/Yellow",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 260,
+        "wires": [
+            [
+                "6a3f1b1e.af3044"
+            ]
+        ]
+    },
+    {
+        "id": "e7d9669e.237fa8",
+        "type": "mqtt in",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "topic": "aghast/scraper/BrotherA3/Magenta",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 200,
+        "y": 380,
+        "wires": [
+            [
+                "c5b24123.018ee8"
+            ]
+        ]
+    },
+    {
+        "id": "d4922dc2.aaf7b8",
+        "type": "mqtt in",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "topic": "aghast/scraper/BrotherA3/Cyan",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 320,
+        "wires": [
+            [
+                "c0a064d6.07f0c8"
+            ]
+        ]
+    },
+    {
+        "id": "b1c3df59.676898",
+        "type": "ui_gauge",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "group": "7545f21f.64fe6c",
+        "order": 1,
+        "width": "2",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Black",
+        "label": "%",
+        "format": "{{value}} ",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#000000",
+            "#000000",
+            "#000000"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 570,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "c23ed62a.43725",
+        "type": "ui_gauge",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "group": "7545f21f.64fe6c",
+        "order": 4,
+        "width": "2",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Yellow",
+        "label": "%",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#ffff00",
+            "#ffff00",
+            "#ffff00"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 570,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "64c006c9.a04778",
+        "type": "ui_gauge",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "group": "7545f21f.64fe6c",
+        "order": 2,
+        "width": "2",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Cyan",
+        "label": "%",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#00ffff",
+            "#00ffff",
+            "#00ffff"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 570,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "949294eb.53657",
+        "type": "ui_gauge",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "group": "7545f21f.64fe6c",
+        "order": 3,
+        "width": "2",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Magenta",
+        "label": "%",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#ff00ff",
+            "#ff00ff",
+            "#ff00ff"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 580,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "8548ad76.30a1a",
+        "type": "change",
+        "z": "16c2235e.92d1a5",
+        "name": "toPct",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round($number(payload) * 1.88)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 200,
+        "wires": [
+            [
+                "b1c3df59.676898"
+            ]
+        ]
+    },
+    {
+        "id": "6a3f1b1e.af3044",
+        "type": "change",
+        "z": "16c2235e.92d1a5",
+        "name": "toPct",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round($number(payload) * 1.88)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 260,
+        "wires": [
+            [
+                "c23ed62a.43725"
+            ]
+        ]
+    },
+    {
+        "id": "c0a064d6.07f0c8",
+        "type": "change",
+        "z": "16c2235e.92d1a5",
+        "name": "toPct",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round($number(payload) * 1.88)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 320,
+        "wires": [
+            [
+                "64c006c9.a04778"
+            ]
+        ]
+    },
+    {
+        "id": "c5b24123.018ee8",
+        "type": "change",
+        "z": "16c2235e.92d1a5",
+        "name": "toPct",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round($number(payload) * 1.88)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 380,
+        "wires": [
+            [
+                "949294eb.53657"
+            ]
+        ]
+    },
+    {
+        "id": "c41d5f5b.b77ec",
+        "type": "mqtt in",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "topic": "aghast/scraper/EpsonInkjet/Black",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 480,
+        "wires": [
+            [
+                "feb99441.657b58"
+            ]
+        ]
+    },
+    {
+        "id": "90a6e649.82667",
+        "type": "ui_gauge",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "group": "46c590e.d14edf",
+        "order": 1,
+        "width": "2",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Black",
+        "label": "%",
+        "format": "{{value}} ",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#000000",
+            "#000000",
+            "#000000"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 570,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "feb99441.657b58",
+        "type": "change",
+        "z": "16c2235e.92d1a5",
+        "name": "toPct",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round($number(payload) * 1.92)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 480,
+        "wires": [
+            [
+                "90a6e649.82667"
+            ]
+        ]
+    },
+    {
+        "id": "d1939711.ad565",
+        "type": "mqtt in",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "topic": "aghast/scraper/EpsonInkjet/Photo Black",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 210,
+        "y": 720,
+        "wires": [
+            [
+                "f3735b4f.4758c8"
+            ]
+        ]
+    },
+    {
+        "id": "6c873743.604da8",
+        "type": "ui_gauge",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "group": "46c590e.d14edf",
+        "order": 5,
+        "width": "2",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Ph. Black",
+        "label": "%",
+        "format": "{{value}} ",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#000000",
+            "#000000",
+            "#000000"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 580,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "f3735b4f.4758c8",
+        "type": "change",
+        "z": "16c2235e.92d1a5",
+        "name": "toPct",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round($number(payload) * 1.92)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 720,
+        "wires": [
+            [
+                "6c873743.604da8"
+            ]
+        ]
+    },
+    {
+        "id": "ac8cbe30.55d79",
+        "type": "mqtt in",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "topic": "aghast/scraper/EpsonInkjet/Magenta",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 200,
+        "y": 660,
+        "wires": [
+            [
+                "ac7639de.98bbd8"
+            ]
+        ]
+    },
+    {
+        "id": "71d555dc.4c40dc",
+        "type": "ui_gauge",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "group": "46c590e.d14edf",
+        "order": 3,
+        "width": "2",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Magenta",
+        "label": "%",
+        "format": "{{value}} ",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#ff00ff",
+            "#ff00ff",
+            "#ff00ff"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 580,
+        "y": 660,
+        "wires": []
+    },
+    {
+        "id": "ac7639de.98bbd8",
+        "type": "change",
+        "z": "16c2235e.92d1a5",
+        "name": "toPct",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round($number(payload) * 1.92)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 660,
+        "wires": [
+            [
+                "71d555dc.4c40dc"
+            ]
+        ]
+    },
+    {
+        "id": "c35c143.755cb68",
+        "type": "mqtt in",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "topic": "aghast/scraper/EpsonInkjet/Yellow",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 200,
+        "y": 600,
+        "wires": [
+            [
+                "c3008aa9.f1cc1"
+            ]
+        ]
+    },
+    {
+        "id": "7012a97a.881f4",
+        "type": "ui_gauge",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "group": "46c590e.d14edf",
+        "order": 4,
+        "width": "2",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Yellow",
+        "label": "%",
+        "format": "{{value}} ",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#ffff00",
+            "#ffff00",
+            "#ffff00"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 570,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "c3008aa9.f1cc1",
+        "type": "change",
+        "z": "16c2235e.92d1a5",
+        "name": "toPct",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round($number(payload) * 1.92)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 600,
+        "wires": [
+            [
+                "7012a97a.881f4"
+            ]
+        ]
+    },
+    {
+        "id": "8fcdecad.c3bee",
+        "type": "mqtt in",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "topic": "aghast/scraper/EpsonInkjet/Cyan",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 540,
+        "wires": [
+            [
+                "d37572e4.b386c"
+            ]
+        ]
+    },
+    {
+        "id": "1830d0ca.1b4737",
+        "type": "ui_gauge",
+        "z": "16c2235e.92d1a5",
+        "name": "",
+        "group": "46c590e.d14edf",
+        "order": 2,
+        "width": "2",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Cyan",
+        "label": "%",
+        "format": "{{value}} ",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#00ffff",
+            "#00ffff",
+            "#00ffff"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 570,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "d37572e4.b386c",
+        "type": "change",
+        "z": "16c2235e.92d1a5",
+        "name": "toPct",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round($number(payload) * 1.92)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 540,
+        "wires": [
+            [
+                "1830d0ca.1b4737"
+            ]
+        ]
+    },
+    {
+        "id": "fb4e4d64.1c3728",
+        "type": "mqtt-broker",
+        "name": "Local MQTT Broker",
+        "broker": "mediaserver01",
+        "port": "1883",
+        "clientid": "",
+        "usetls": false,
+        "compatmode": false,
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": ""
+    },
+    {
+        "id": "7545f21f.64fe6c",
+        "type": "ui_group",
+        "name": "Brother A3",
+        "tab": "2d5f6c97.567c3c",
+        "order": 1,
+        "disp": true,
+        "width": "8",
+        "collapse": false
+    },
+    {
+        "id": "46c590e.d14edf",
+        "type": "ui_group",
+        "name": "Epson",
+        "tab": "2d5f6c97.567c3c",
+        "order": 2,
+        "disp": true,
+        "width": "10",
+        "collapse": false
+    },
+    {
+        "id": "2d5f6c97.567c3c",
+        "type": "ui_tab",
+        "name": "Printers",
+        "icon": "dashboard",
+        "order": 5,
+        "disabled": false,
+        "hidden": false
+    }
+]

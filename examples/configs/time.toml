@@ -21,5 +21,6 @@
 
 # [event.TenBeforeWork]
 #  time = "16:39:00"
-  
-  
+
+[event.MorningHeatingOn]
+  time = "06:30:00"          # 20mins before off-peak ends

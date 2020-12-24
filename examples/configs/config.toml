@@ -8,7 +8,7 @@ mqttBroker = "!!CONSTANT(mqttBroker)"  # Hostname or IP of MQTT Broker
 mqttPort = 1883               # MQTT Broker port
 mqttClientID = "aghast"       # MQTT Client ID
 
-logEvents = true             # A LOT of stuff will be logged if this is true!
+logEvents = false             # A LOT of stuff will be logged if this is true!
 
 # List of Integrations we want enabled
 integrations = [

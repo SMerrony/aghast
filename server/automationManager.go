@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"log"
 	"sort"
+	"time"
 
 	"github.com/SMerrony/aghast/events"
 	"github.com/pelletier/go-toml"
@@ -141,6 +142,7 @@ func (a *Automation) waitForEvent(sid int, auto automationT) {
 				Value:       ac.setting,
 			}
 			log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
+			time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
 		}
 	}
 }

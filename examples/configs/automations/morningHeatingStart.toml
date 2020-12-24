@@ -1,0 +1,63 @@
+name = "MorningHeatingStart"
+description = "Main Downstairs Heaters On"
+enabled = true
+
+[event]
+  integration = "Time"
+  deviceType  = "Events"
+  deviceName  = "TimedEvent"
+  eventName   = "MorningHeatingOn"
+
+[action.1]
+  integration = "Daikin"
+  deviceLabel = "Hall"
+  control = "temperature"
+  setting = 21.0
+ 
+[action.2]
+  integration = "Daikin"
+  deviceLabel = "Hall"
+  control = "mode"
+  setting = "Heat" 
+
+[action.3]
+  integration = "Daikin"
+  deviceLabel = "Hall"
+  control = "power"
+  setting = "on" 
+
+[action.4]
+  integration = "Daikin"
+  deviceLabel = "Living Room"
+  control = "temperature"
+  setting = 19.0
+ 
+[action.5]
+  integration = "Daikin"
+  deviceLabel = "Living Room"
+  control = "mode"
+  setting = "Heat" 
+
+[action.6]
+  integration = "Daikin"
+  deviceLabel = "Living Room"
+  control = "power"
+  setting = "on" 
+
+[action.7]
+  integration = "Daikin"
+  deviceLabel = "Music Room"
+  control = "temperature"
+  setting = 18.0
+ 
+[action.8]
+  integration = "Daikin"
+  deviceLabel = "Music Room"
+  control = "mode"
+  setting = "Heat" 
+
+[action.9]
+  integration = "Daikin"
+  deviceLabel = "Music Room"
+  control = "power"
+  setting = "on" 

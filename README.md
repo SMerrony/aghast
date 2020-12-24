@@ -31,7 +31,8 @@ The main configuration file `config.toml` is quite simple, containing only some 
 systemName = "Our House"      # Label for the system
 
 longitude = 43.6
-latitude = "!!SECRET!!"       # Get latitude from secrets.toml
+latitude = "!!SECRET(latitude)"       # Get latitude value from secrets.toml
+postcode = "!!SECRET(postcode)"
 
 mqttBroker = "!!CONSTANT(mqttBroker)"  # Hostname or IP of MQTT Broker
 mqttPort = 1883               # MQTT Broker port

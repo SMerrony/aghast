@@ -1,0 +1,2453 @@
+[
+    {
+        "id": "4b791646.563ff",
+        "type": "tab",
+        "label": "Ground Floor",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "29f3e347.447c9c",
+        "type": "ui_chart",
+        "z": "4b791646.563ff",
+        "name": "Temps",
+        "group": "a9b28f4d.fcc1d",
+        "order": 1,
+        "width": "12",
+        "height": "8",
+        "label": "Temperatures",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "Waiting for Data",
+        "dot": false,
+        "ymin": "0",
+        "ymax": "40",
+        "removeOlder": "24",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "x": 750,
+        "y": 1300,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "23534b9.32d6ab4",
+        "type": "mqtt in",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "aghast/daikin/Dining Room/temperature",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 1340,
+        "wires": [
+            [
+                "564f8f09.63ecc",
+                "9b164d98.ec8ea"
+            ]
+        ],
+        "outputLabels": [
+            "fred"
+        ]
+    },
+    {
+        "id": "564f8f09.63ecc",
+        "type": "change",
+        "z": "4b791646.563ff",
+        "name": "Rename 3",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "Dining Room",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 470,
+        "y": 1340,
+        "wires": [
+            [
+                "29f3e347.447c9c"
+            ]
+        ]
+    },
+    {
+        "id": "55d38723.2727d",
+        "type": "mqtt in",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "aghast/daikin/Steve's Office/outsidetemperature",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 220,
+        "y": 1220,
+        "wires": [
+            [
+                "de702a88.ba6b58",
+                "7503a2aa.67385c"
+            ]
+        ]
+    },
+    {
+        "id": "de702a88.ba6b58",
+        "type": "change",
+        "z": "4b791646.563ff",
+        "name": "Rename 2",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "Outside",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 490,
+        "y": 1240,
+        "wires": [
+            [
+                "29f3e347.447c9c"
+            ]
+        ]
+    },
+    {
+        "id": "7503a2aa.67385c",
+        "type": "ui_level",
+        "z": "4b791646.563ff",
+        "group": "a9b28f4d.fcc1d",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Outside",
+        "colorHi": "#e60000",
+        "colorWarn": "#00ff2c",
+        "colorNormal": "#004ab3",
+        "colorOff": "#595959",
+        "min": "-10",
+        "max": "40",
+        "segWarn": "0",
+        "segHigh": "30",
+        "unit": "°C",
+        "layout": "sh",
+        "channelA": "",
+        "channelB": "",
+        "decimals": 0,
+        "animations": "soft",
+        "shape": "3",
+        "colorschema": "valuedriven",
+        "textoptions": "custom",
+        "colorText": "#eeeeee",
+        "fontLabel": "",
+        "fontValue": "1.8",
+        "fontSmall": "0.8",
+        "colorFromTheme": true,
+        "textAnimations": false,
+        "hideValue": false,
+        "tickmode": "segments",
+        "peakmode": false,
+        "property": "payload",
+        "peaktime": 3000,
+        "x": 470,
+        "y": 1200,
+        "wires": []
+    },
+    {
+        "id": "595570a4.1b23a",
+        "type": "mqtt in",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "aghast/daikin/Dining Room/controlinfo",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 380,
+        "wires": [
+            [
+                "f61c7cf4.dc5958"
+            ]
+        ]
+    },
+    {
+        "id": "c6104d7e.a71bf",
+        "type": "function",
+        "z": "4b791646.563ff",
+        "name": "",
+        "func": "msg.topic = \"aghast/daikin/client/Dining Room/\" + msg.topic\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 1060,
+        "y": 380,
+        "wires": [
+            [
+                "bbf681a7.49c028"
+            ]
+        ]
+    },
+    {
+        "id": "bbf681a7.49c028",
+        "type": "mqtt out",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "",
+        "qos": "0",
+        "retain": "false",
+        "broker": "fb4e4d64.1c3728",
+        "x": 1230,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "f9a589d.74e49f8",
+        "type": "change",
+        "z": "4b791646.563ff",
+        "name": "StrTruthToBool",
+        "rules": [
+            {
+                "t": "change",
+                "p": "payload",
+                "pt": "msg",
+                "from": "true",
+                "fromt": "str",
+                "to": "true",
+                "tot": "bool"
+            },
+            {
+                "t": "change",
+                "p": "payload",
+                "pt": "msg",
+                "from": "false",
+                "fromt": "str",
+                "to": "false",
+                "tot": "bool"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 840,
+        "y": 300,
+        "wires": [
+            [
+                "82a9e19c.d8de58"
+            ]
+        ]
+    },
+    {
+        "id": "82a9e19c.d8de58",
+        "type": "ui_switch",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "",
+        "tooltip": "Power",
+        "group": "9e979116.8992b8",
+        "order": 2,
+        "width": "1",
+        "height": "1",
+        "passthru": true,
+        "decouple": "false",
+        "topic": "power",
+        "style": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "officon": "",
+        "offcolor": "",
+        "x": 990,
+        "y": 300,
+        "wires": [
+            [
+                "797fd6c2.a252e8"
+            ]
+        ]
+    },
+    {
+        "id": "42171264.6dea64",
+        "type": "ui_dropdown",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Fan",
+        "tooltip": "Fan Speed",
+        "place": "Select option",
+        "group": "9e979116.8992b8",
+        "order": 6,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "Auto",
+                "value": "A",
+                "type": "str"
+            },
+            {
+                "label": "Silent",
+                "value": "B",
+                "type": "str"
+            },
+            {
+                "label": "Low",
+                "value": "3",
+                "type": "str"
+            },
+            {
+                "label": "Medium-Low",
+                "value": "4",
+                "type": "str"
+            },
+            {
+                "label": "Medium",
+                "value": "5",
+                "type": "str"
+            },
+            {
+                "label": "Medium-High",
+                "value": "6",
+                "type": "str"
+            },
+            {
+                "label": "High",
+                "value": "7",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "fan",
+        "x": 810,
+        "y": 420,
+        "wires": [
+            [
+                "c6104d7e.a71bf"
+            ]
+        ]
+    },
+    {
+        "id": "8aef2126.9c4de",
+        "type": "ui_dropdown",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Mode",
+        "tooltip": "Heating, Cooling, etc.",
+        "place": "Select option",
+        "group": "9e979116.8992b8",
+        "order": 4,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "Auto",
+                "value": 0,
+                "type": "num"
+            },
+            {
+                "label": "Auto 1",
+                "value": 1,
+                "type": "num"
+            },
+            {
+                "label": "Dehumidify",
+                "value": 2,
+                "type": "num"
+            },
+            {
+                "label": "Cool",
+                "value": 3,
+                "type": "num"
+            },
+            {
+                "label": "Heat",
+                "value": 4,
+                "type": "num"
+            },
+            {
+                "label": "Mode 5",
+                "value": 5,
+                "type": "num"
+            },
+            {
+                "label": "Fan",
+                "value": 6,
+                "type": "num"
+            },
+            {
+                "label": "Auto 2",
+                "value": 7,
+                "type": "num"
+            }
+        ],
+        "payload": "",
+        "topic": "mode",
+        "x": 810,
+        "y": 340,
+        "wires": [
+            [
+                "c6104d7e.a71bf"
+            ]
+        ]
+    },
+    {
+        "id": "f61c7cf4.dc5958",
+        "type": "json",
+        "z": "4b791646.563ff",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 410,
+        "y": 380,
+        "wires": [
+            [
+                "b48ece61.c05218"
+            ]
+        ]
+    },
+    {
+        "id": "b48ece61.c05218",
+        "type": "split",
+        "z": "4b791646.563ff",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "topic",
+        "x": 530,
+        "y": 380,
+        "wires": [
+            [
+                "3288e501.1127ea"
+            ]
+        ]
+    },
+    {
+        "id": "3288e501.1127ea",
+        "type": "switch",
+        "z": "4b791646.563ff",
+        "name": "",
+        "property": "parts.key",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "Power",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Mode",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Stemp",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Frate",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Fdir",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "LastUpdate",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 7,
+        "x": 650,
+        "y": 380,
+        "wires": [
+            [
+                "f9a589d.74e49f8"
+            ],
+            [
+                "8aef2126.9c4de"
+            ],
+            [
+                "f3fb7a5d.5b10b8"
+            ],
+            [
+                "42171264.6dea64"
+            ],
+            [
+                "abc13a39.b95588"
+            ],
+            [
+                "7f08683f.b5fd3"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "abc13a39.b95588",
+        "type": "ui_dropdown",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Sweep",
+        "tooltip": "Fan Direction/Movement",
+        "place": "Select option",
+        "group": "9e979116.8992b8",
+        "order": 7,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "Off",
+                "value": 0,
+                "type": "num"
+            },
+            {
+                "label": "Vertical",
+                "value": 1,
+                "type": "num"
+            },
+            {
+                "label": "Horizontal",
+                "value": 2,
+                "type": "num"
+            },
+            {
+                "label": "3-D",
+                "value": 3,
+                "type": "num"
+            }
+        ],
+        "payload": "",
+        "topic": "sweep",
+        "x": 810,
+        "y": 460,
+        "wires": [
+            [
+                "c6104d7e.a71bf"
+            ]
+        ]
+    },
+    {
+        "id": "7f08683f.b5fd3",
+        "type": "ui_text",
+        "z": "4b791646.563ff",
+        "group": "9e979116.8992b8",
+        "order": 1,
+        "width": "5",
+        "height": "1",
+        "name": "",
+        "label": "Dining Room",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "x": 250,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "9b164d98.ec8ea",
+        "type": "ui_level",
+        "z": "4b791646.563ff",
+        "group": "9e979116.8992b8",
+        "order": 3,
+        "width": "0",
+        "height": "0",
+        "name": "",
+        "label": "",
+        "colorHi": "#e60000",
+        "colorWarn": "#00ff2c",
+        "colorNormal": "#004ab3",
+        "colorOff": "#595959",
+        "min": "5",
+        "max": "35",
+        "segWarn": "15",
+        "segHigh": "25",
+        "unit": "°C",
+        "layout": "sh",
+        "channelA": "",
+        "channelB": "",
+        "decimals": 0,
+        "animations": "soft",
+        "shape": "3",
+        "colorschema": "valuedriven",
+        "textoptions": "custom",
+        "colorText": "#eeeeee",
+        "fontLabel": "",
+        "fontValue": "1.8",
+        "fontSmall": "0.8",
+        "colorFromTheme": true,
+        "textAnimations": false,
+        "hideValue": false,
+        "tickmode": "segments",
+        "peakmode": false,
+        "property": "payload",
+        "peaktime": 3000,
+        "x": 450,
+        "y": 1300,
+        "wires": []
+    },
+    {
+        "id": "c437e463.465e8",
+        "type": "mqtt in",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "aghast/daikin/Living Room/controlinfo",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 620,
+        "wires": [
+            [
+                "85ecd53b.df177"
+            ]
+        ]
+    },
+    {
+        "id": "835033f2.2c5fb",
+        "type": "function",
+        "z": "4b791646.563ff",
+        "name": "",
+        "func": "msg.topic = \"aghast/daikin/client/Living Room/\" + msg.topic\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 1060,
+        "y": 620,
+        "wires": [
+            [
+                "8e748016.55d5e8"
+            ]
+        ]
+    },
+    {
+        "id": "8e748016.55d5e8",
+        "type": "mqtt out",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "",
+        "qos": "0",
+        "retain": "false",
+        "broker": "fb4e4d64.1c3728",
+        "x": 1230,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "90a59944.2845a8",
+        "type": "change",
+        "z": "4b791646.563ff",
+        "name": "StrTruthToBool",
+        "rules": [
+            {
+                "t": "change",
+                "p": "payload",
+                "pt": "msg",
+                "from": "true",
+                "fromt": "str",
+                "to": "true",
+                "tot": "bool"
+            },
+            {
+                "t": "change",
+                "p": "payload",
+                "pt": "msg",
+                "from": "false",
+                "fromt": "str",
+                "to": "false",
+                "tot": "bool"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 840,
+        "y": 540,
+        "wires": [
+            [
+                "8cc49c9d.38186"
+            ]
+        ]
+    },
+    {
+        "id": "8cc49c9d.38186",
+        "type": "ui_switch",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "",
+        "tooltip": "Power",
+        "group": "1f364058.48bfb8",
+        "order": 2,
+        "width": "1",
+        "height": "1",
+        "passthru": true,
+        "decouple": "false",
+        "topic": "power",
+        "style": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "officon": "",
+        "offcolor": "",
+        "x": 990,
+        "y": 540,
+        "wires": [
+            [
+                "d1cead8.c10c5d"
+            ]
+        ]
+    },
+    {
+        "id": "a02c983f.e9845",
+        "type": "ui_dropdown",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Fan",
+        "tooltip": "Fan Speed",
+        "place": "Select option",
+        "group": "1f364058.48bfb8",
+        "order": 6,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "Auto",
+                "value": "A",
+                "type": "str"
+            },
+            {
+                "label": "Silent",
+                "value": "B",
+                "type": "str"
+            },
+            {
+                "label": "Low",
+                "value": "3",
+                "type": "str"
+            },
+            {
+                "label": "Medium-Low",
+                "value": "4",
+                "type": "str"
+            },
+            {
+                "label": "Medium",
+                "value": "5",
+                "type": "str"
+            },
+            {
+                "label": "Medium-High",
+                "value": "6",
+                "type": "str"
+            },
+            {
+                "label": "High",
+                "value": "7",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "fan",
+        "x": 810,
+        "y": 660,
+        "wires": [
+            [
+                "835033f2.2c5fb"
+            ]
+        ]
+    },
+    {
+        "id": "c3d6139f.4436c",
+        "type": "ui_dropdown",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Mode",
+        "tooltip": "Heating, Cooling, etc.",
+        "place": "Select option",
+        "group": "1f364058.48bfb8",
+        "order": 4,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "Auto",
+                "value": 0,
+                "type": "num"
+            },
+            {
+                "label": "Auto 1",
+                "value": 1,
+                "type": "num"
+            },
+            {
+                "label": "Dehumidify",
+                "value": 2,
+                "type": "num"
+            },
+            {
+                "label": "Cool",
+                "value": 3,
+                "type": "num"
+            },
+            {
+                "label": "Heat",
+                "value": 4,
+                "type": "num"
+            },
+            {
+                "label": "Mode 5",
+                "value": 5,
+                "type": "num"
+            },
+            {
+                "label": "Fan",
+                "value": 6,
+                "type": "num"
+            },
+            {
+                "label": "Auto 2",
+                "value": 7,
+                "type": "num"
+            }
+        ],
+        "payload": "",
+        "topic": "mode",
+        "x": 810,
+        "y": 580,
+        "wires": [
+            [
+                "835033f2.2c5fb"
+            ]
+        ]
+    },
+    {
+        "id": "85ecd53b.df177",
+        "type": "json",
+        "z": "4b791646.563ff",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 410,
+        "y": 620,
+        "wires": [
+            [
+                "f332a35f.d87358"
+            ]
+        ]
+    },
+    {
+        "id": "f332a35f.d87358",
+        "type": "split",
+        "z": "4b791646.563ff",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "topic",
+        "x": 530,
+        "y": 620,
+        "wires": [
+            [
+                "f75d10e.8f47a7"
+            ]
+        ]
+    },
+    {
+        "id": "f75d10e.8f47a7",
+        "type": "switch",
+        "z": "4b791646.563ff",
+        "name": "",
+        "property": "parts.key",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "Power",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Mode",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Stemp",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Frate",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Fdir",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "LastUpdate",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 7,
+        "x": 650,
+        "y": 620,
+        "wires": [
+            [
+                "90a59944.2845a8"
+            ],
+            [
+                "c3d6139f.4436c"
+            ],
+            [
+                "7d528622.dc19c8"
+            ],
+            [
+                "a02c983f.e9845"
+            ],
+            [
+                "8c1c0c31.907848"
+            ],
+            [
+                "307430c.2ff605"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "8c1c0c31.907848",
+        "type": "ui_dropdown",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Sweep",
+        "tooltip": "Fan Direction/Movement",
+        "place": "Select option",
+        "group": "1f364058.48bfb8",
+        "order": 7,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "Off",
+                "value": 0,
+                "type": "num"
+            },
+            {
+                "label": "Vertical",
+                "value": 1,
+                "type": "num"
+            },
+            {
+                "label": "Horizontal",
+                "value": 2,
+                "type": "num"
+            },
+            {
+                "label": "3-D",
+                "value": 3,
+                "type": "num"
+            }
+        ],
+        "payload": "",
+        "topic": "sweep",
+        "x": 810,
+        "y": 700,
+        "wires": [
+            [
+                "835033f2.2c5fb"
+            ]
+        ]
+    },
+    {
+        "id": "307430c.2ff605",
+        "type": "ui_text",
+        "z": "4b791646.563ff",
+        "group": "1f364058.48bfb8",
+        "order": 1,
+        "width": "5",
+        "height": "1",
+        "name": "",
+        "label": "Living Room",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "x": 250,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "72965a9e.4671dc",
+        "type": "mqtt in",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "aghast/daikin/Living Room/temperature",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 1440,
+        "wires": [
+            [
+                "bc354cbc.5ea7e",
+                "7c55632f.396eb4"
+            ]
+        ],
+        "outputLabels": [
+            "fred"
+        ]
+    },
+    {
+        "id": "bc354cbc.5ea7e",
+        "type": "change",
+        "z": "4b791646.563ff",
+        "name": "Rename 3",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "Living Room",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 470,
+        "y": 1440,
+        "wires": [
+            [
+                "29f3e347.447c9c"
+            ]
+        ]
+    },
+    {
+        "id": "7c55632f.396eb4",
+        "type": "ui_level",
+        "z": "4b791646.563ff",
+        "group": "1f364058.48bfb8",
+        "order": 3,
+        "width": "0",
+        "height": "0",
+        "name": "",
+        "label": "",
+        "colorHi": "#e60000",
+        "colorWarn": "#00ff2c",
+        "colorNormal": "#004ab3",
+        "colorOff": "#595959",
+        "min": "5",
+        "max": "35",
+        "segWarn": "15",
+        "segHigh": "25",
+        "unit": "°C",
+        "layout": "sh",
+        "channelA": "",
+        "channelB": "",
+        "decimals": 0,
+        "animations": "soft",
+        "shape": "3",
+        "colorschema": "valuedriven",
+        "textoptions": "custom",
+        "colorText": "#eeeeee",
+        "fontLabel": "",
+        "fontValue": "1.8",
+        "fontSmall": "0.8",
+        "colorFromTheme": true,
+        "textAnimations": false,
+        "hideValue": false,
+        "tickmode": "segments",
+        "peakmode": false,
+        "property": "payload",
+        "peaktime": 3000,
+        "x": 450,
+        "y": 1400,
+        "wires": []
+    },
+    {
+        "id": "797fd6c2.a252e8",
+        "type": "rbe",
+        "z": "4b791646.563ff",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "property": "payload",
+        "x": 1150,
+        "y": 300,
+        "wires": [
+            [
+                "c6104d7e.a71bf"
+            ]
+        ]
+    },
+    {
+        "id": "d1cead8.c10c5d",
+        "type": "rbe",
+        "z": "4b791646.563ff",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "property": "payload",
+        "x": 1140,
+        "y": 540,
+        "wires": [
+            [
+                "835033f2.2c5fb"
+            ]
+        ]
+    },
+    {
+        "id": "7ee91d2f.1f7344",
+        "type": "mqtt in",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "aghast/daikin/Hall/controlinfo",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 200,
+        "y": 860,
+        "wires": [
+            [
+                "4024d67b.0cb93"
+            ]
+        ]
+    },
+    {
+        "id": "e3d28ffb.59452",
+        "type": "function",
+        "z": "4b791646.563ff",
+        "name": "",
+        "func": "msg.topic = \"aghast/daikin/client/Hall/\" + msg.topic\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 1060,
+        "y": 860,
+        "wires": [
+            [
+                "b1c7659.f101298"
+            ]
+        ]
+    },
+    {
+        "id": "b1c7659.f101298",
+        "type": "mqtt out",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "",
+        "qos": "0",
+        "retain": "false",
+        "broker": "fb4e4d64.1c3728",
+        "x": 1230,
+        "y": 860,
+        "wires": []
+    },
+    {
+        "id": "ec66be52.e91f08",
+        "type": "change",
+        "z": "4b791646.563ff",
+        "name": "StrTruthToBool",
+        "rules": [
+            {
+                "t": "change",
+                "p": "payload",
+                "pt": "msg",
+                "from": "true",
+                "fromt": "str",
+                "to": "true",
+                "tot": "bool"
+            },
+            {
+                "t": "change",
+                "p": "payload",
+                "pt": "msg",
+                "from": "false",
+                "fromt": "str",
+                "to": "false",
+                "tot": "bool"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 840,
+        "y": 780,
+        "wires": [
+            [
+                "6d0f1e54.c8d3e8"
+            ]
+        ]
+    },
+    {
+        "id": "6d0f1e54.c8d3e8",
+        "type": "ui_switch",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "",
+        "tooltip": "Power",
+        "group": "e67be051.c2de1",
+        "order": 2,
+        "width": "1",
+        "height": "1",
+        "passthru": true,
+        "decouple": "false",
+        "topic": "power",
+        "style": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "officon": "",
+        "offcolor": "",
+        "x": 990,
+        "y": 780,
+        "wires": [
+            [
+                "d3090d22.a8f988"
+            ]
+        ]
+    },
+    {
+        "id": "b5c8d2ed.2cef98",
+        "type": "ui_dropdown",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Fan",
+        "tooltip": "Fan Speed",
+        "place": "Select option",
+        "group": "e67be051.c2de1",
+        "order": 6,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "Auto",
+                "value": "A",
+                "type": "str"
+            },
+            {
+                "label": "Silent",
+                "value": "B",
+                "type": "str"
+            },
+            {
+                "label": "Low",
+                "value": "3",
+                "type": "str"
+            },
+            {
+                "label": "Medium-Low",
+                "value": "4",
+                "type": "str"
+            },
+            {
+                "label": "Medium",
+                "value": "5",
+                "type": "str"
+            },
+            {
+                "label": "Medium-High",
+                "value": "6",
+                "type": "str"
+            },
+            {
+                "label": "High",
+                "value": "7",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "fan",
+        "x": 810,
+        "y": 900,
+        "wires": [
+            [
+                "e3d28ffb.59452"
+            ]
+        ]
+    },
+    {
+        "id": "6fd4ddbb.b264c4",
+        "type": "ui_dropdown",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Mode",
+        "tooltip": "Heating, Cooling, etc.",
+        "place": "Select option",
+        "group": "e67be051.c2de1",
+        "order": 4,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "Auto",
+                "value": 0,
+                "type": "num"
+            },
+            {
+                "label": "Auto 1",
+                "value": 1,
+                "type": "num"
+            },
+            {
+                "label": "Dehumidify",
+                "value": 2,
+                "type": "num"
+            },
+            {
+                "label": "Cool",
+                "value": 3,
+                "type": "num"
+            },
+            {
+                "label": "Heat",
+                "value": 4,
+                "type": "num"
+            },
+            {
+                "label": "Mode 5",
+                "value": 5,
+                "type": "num"
+            },
+            {
+                "label": "Fan",
+                "value": 6,
+                "type": "num"
+            },
+            {
+                "label": "Auto 2",
+                "value": 7,
+                "type": "num"
+            }
+        ],
+        "payload": "",
+        "topic": "mode",
+        "x": 810,
+        "y": 820,
+        "wires": [
+            [
+                "e3d28ffb.59452"
+            ]
+        ]
+    },
+    {
+        "id": "4024d67b.0cb93",
+        "type": "json",
+        "z": "4b791646.563ff",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 410,
+        "y": 860,
+        "wires": [
+            [
+                "f103102d.668aa"
+            ]
+        ]
+    },
+    {
+        "id": "f103102d.668aa",
+        "type": "split",
+        "z": "4b791646.563ff",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "topic",
+        "x": 530,
+        "y": 860,
+        "wires": [
+            [
+                "93b99021.17d258"
+            ]
+        ]
+    },
+    {
+        "id": "93b99021.17d258",
+        "type": "switch",
+        "z": "4b791646.563ff",
+        "name": "",
+        "property": "parts.key",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "Power",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Mode",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Stemp",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Frate",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Fdir",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "LastUpdate",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 7,
+        "x": 650,
+        "y": 860,
+        "wires": [
+            [
+                "ec66be52.e91f08"
+            ],
+            [
+                "6fd4ddbb.b264c4"
+            ],
+            [
+                "35e50a9e.79b45e"
+            ],
+            [
+                "b5c8d2ed.2cef98"
+            ],
+            [
+                "974e2111.e9ed68"
+            ],
+            [
+                "f412be09.fc4fc"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "974e2111.e9ed68",
+        "type": "ui_dropdown",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Sweep",
+        "tooltip": "Fan Direction/Movement",
+        "place": "Select option",
+        "group": "e67be051.c2de1",
+        "order": 7,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "Off",
+                "value": 0,
+                "type": "num"
+            },
+            {
+                "label": "Vertical",
+                "value": 1,
+                "type": "num"
+            },
+            {
+                "label": "Horizontal",
+                "value": 2,
+                "type": "num"
+            },
+            {
+                "label": "3-D",
+                "value": 3,
+                "type": "num"
+            }
+        ],
+        "payload": "",
+        "topic": "sweep",
+        "x": 810,
+        "y": 940,
+        "wires": [
+            [
+                "e3d28ffb.59452"
+            ]
+        ]
+    },
+    {
+        "id": "f412be09.fc4fc",
+        "type": "ui_text",
+        "z": "4b791646.563ff",
+        "group": "e67be051.c2de1",
+        "order": 1,
+        "width": "5",
+        "height": "1",
+        "name": "",
+        "label": "Hall",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "x": 270,
+        "y": 780,
+        "wires": []
+    },
+    {
+        "id": "d3090d22.a8f988",
+        "type": "rbe",
+        "z": "4b791646.563ff",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "property": "payload",
+        "x": 1140,
+        "y": 780,
+        "wires": [
+            [
+                "e3d28ffb.59452"
+            ]
+        ]
+    },
+    {
+        "id": "e9764a4b.7c8b48",
+        "type": "mqtt in",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "aghast/daikin/Hall/temperature",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 160,
+        "y": 1540,
+        "wires": [
+            [
+                "bc79e6f5.9163b",
+                "2a930189.f64a6e"
+            ]
+        ],
+        "outputLabels": [
+            "fred"
+        ]
+    },
+    {
+        "id": "bc79e6f5.9163b",
+        "type": "change",
+        "z": "4b791646.563ff",
+        "name": "Rename 3",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "Hall",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 470,
+        "y": 1540,
+        "wires": [
+            [
+                "29f3e347.447c9c"
+            ]
+        ]
+    },
+    {
+        "id": "2a930189.f64a6e",
+        "type": "ui_level",
+        "z": "4b791646.563ff",
+        "group": "e67be051.c2de1",
+        "order": 3,
+        "width": "0",
+        "height": "0",
+        "name": "",
+        "label": "",
+        "colorHi": "#e60000",
+        "colorWarn": "#00ff2c",
+        "colorNormal": "#004ab3",
+        "colorOff": "#595959",
+        "min": "5",
+        "max": "35",
+        "segWarn": "15",
+        "segHigh": "25",
+        "unit": "°C",
+        "layout": "sh",
+        "channelA": "",
+        "channelB": "",
+        "decimals": 0,
+        "animations": "soft",
+        "shape": "3",
+        "colorschema": "valuedriven",
+        "textoptions": "custom",
+        "colorText": "#eeeeee",
+        "fontLabel": "",
+        "fontValue": "1.8",
+        "fontSmall": "0.8",
+        "colorFromTheme": true,
+        "textAnimations": false,
+        "hideValue": false,
+        "tickmode": "segments",
+        "peakmode": false,
+        "property": "payload",
+        "peaktime": 3000,
+        "x": 450,
+        "y": 1500,
+        "wires": []
+    },
+    {
+        "id": "26d9b7e9.5d6ae",
+        "type": "mqtt in",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "aghast/daikin/Music Room/controlinfo",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 1080,
+        "wires": [
+            [
+                "2d274f25.aa465"
+            ]
+        ]
+    },
+    {
+        "id": "2f8a26a1.aa8ae2",
+        "type": "function",
+        "z": "4b791646.563ff",
+        "name": "",
+        "func": "msg.topic = \"aghast/daikin/client/Music Room/\" + msg.topic\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 1060,
+        "y": 1100,
+        "wires": [
+            [
+                "74b2b143.d81a08"
+            ]
+        ]
+    },
+    {
+        "id": "74b2b143.d81a08",
+        "type": "mqtt out",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "",
+        "qos": "0",
+        "retain": "false",
+        "broker": "fb4e4d64.1c3728",
+        "x": 1230,
+        "y": 1100,
+        "wires": []
+    },
+    {
+        "id": "83fd284d.7a94a8",
+        "type": "change",
+        "z": "4b791646.563ff",
+        "name": "StrTruthToBool",
+        "rules": [
+            {
+                "t": "change",
+                "p": "payload",
+                "pt": "msg",
+                "from": "true",
+                "fromt": "str",
+                "to": "true",
+                "tot": "bool"
+            },
+            {
+                "t": "change",
+                "p": "payload",
+                "pt": "msg",
+                "from": "false",
+                "fromt": "str",
+                "to": "false",
+                "tot": "bool"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 840,
+        "y": 1020,
+        "wires": [
+            [
+                "38f91df4.cf95f2"
+            ]
+        ]
+    },
+    {
+        "id": "38f91df4.cf95f2",
+        "type": "ui_switch",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "",
+        "tooltip": "Power",
+        "group": "60676532.31220c",
+        "order": 2,
+        "width": "1",
+        "height": "1",
+        "passthru": true,
+        "decouple": "false",
+        "topic": "power",
+        "style": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "officon": "",
+        "offcolor": "",
+        "x": 990,
+        "y": 1020,
+        "wires": [
+            [
+                "e376f0f3.20fd78"
+            ]
+        ]
+    },
+    {
+        "id": "9d0be6b2.9a3a38",
+        "type": "ui_dropdown",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Fan",
+        "tooltip": "Fan Speed",
+        "place": "Select option",
+        "group": "60676532.31220c",
+        "order": 6,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "Auto",
+                "value": "A",
+                "type": "str"
+            },
+            {
+                "label": "Silent",
+                "value": "B",
+                "type": "str"
+            },
+            {
+                "label": "Low",
+                "value": "3",
+                "type": "str"
+            },
+            {
+                "label": "Medium-Low",
+                "value": "4",
+                "type": "str"
+            },
+            {
+                "label": "Medium",
+                "value": "5",
+                "type": "str"
+            },
+            {
+                "label": "Medium-High",
+                "value": "6",
+                "type": "str"
+            },
+            {
+                "label": "High",
+                "value": "7",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "fan",
+        "x": 810,
+        "y": 1140,
+        "wires": [
+            [
+                "2f8a26a1.aa8ae2"
+            ]
+        ]
+    },
+    {
+        "id": "67395ffd.753a18",
+        "type": "ui_dropdown",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Mode",
+        "tooltip": "Heating, Cooling, etc.",
+        "place": "Select option",
+        "group": "60676532.31220c",
+        "order": 4,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "Auto",
+                "value": 0,
+                "type": "num"
+            },
+            {
+                "label": "Auto 1",
+                "value": 1,
+                "type": "num"
+            },
+            {
+                "label": "Dehumidify",
+                "value": 2,
+                "type": "num"
+            },
+            {
+                "label": "Cool",
+                "value": 3,
+                "type": "num"
+            },
+            {
+                "label": "Heat",
+                "value": 4,
+                "type": "num"
+            },
+            {
+                "label": "Mode 5",
+                "value": 5,
+                "type": "num"
+            },
+            {
+                "label": "Fan",
+                "value": 6,
+                "type": "num"
+            },
+            {
+                "label": "Auto 2",
+                "value": 7,
+                "type": "num"
+            }
+        ],
+        "payload": "",
+        "topic": "mode",
+        "x": 810,
+        "y": 1060,
+        "wires": [
+            [
+                "2f8a26a1.aa8ae2"
+            ]
+        ]
+    },
+    {
+        "id": "2d274f25.aa465",
+        "type": "json",
+        "z": "4b791646.563ff",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 410,
+        "y": 1080,
+        "wires": [
+            [
+                "c5b035ad.580eb"
+            ]
+        ]
+    },
+    {
+        "id": "c5b035ad.580eb",
+        "type": "split",
+        "z": "4b791646.563ff",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "topic",
+        "x": 530,
+        "y": 1080,
+        "wires": [
+            [
+                "b0a2255.ea59b58"
+            ]
+        ]
+    },
+    {
+        "id": "b0a2255.ea59b58",
+        "type": "switch",
+        "z": "4b791646.563ff",
+        "name": "",
+        "property": "parts.key",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "Power",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Mode",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Stemp",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Frate",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Fdir",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "LastUpdate",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 7,
+        "x": 650,
+        "y": 1080,
+        "wires": [
+            [
+                "83fd284d.7a94a8"
+            ],
+            [
+                "67395ffd.753a18"
+            ],
+            [
+                "53b41bc9.316f2c"
+            ],
+            [
+                "9d0be6b2.9a3a38"
+            ],
+            [
+                "5fb49c25.1f978c"
+            ],
+            [
+                "2a050efb.dd3072"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "5fb49c25.1f978c",
+        "type": "ui_dropdown",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Sweep",
+        "tooltip": "Fan Direction/Movement",
+        "place": "Select option",
+        "group": "60676532.31220c",
+        "order": 7,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "options": [
+            {
+                "label": "Off",
+                "value": 0,
+                "type": "num"
+            },
+            {
+                "label": "Vertical",
+                "value": 1,
+                "type": "num"
+            },
+            {
+                "label": "Horizontal",
+                "value": 2,
+                "type": "num"
+            },
+            {
+                "label": "3-D",
+                "value": 3,
+                "type": "num"
+            }
+        ],
+        "payload": "",
+        "topic": "sweep",
+        "x": 810,
+        "y": 1180,
+        "wires": [
+            [
+                "2f8a26a1.aa8ae2"
+            ]
+        ]
+    },
+    {
+        "id": "2a050efb.dd3072",
+        "type": "ui_text",
+        "z": "4b791646.563ff",
+        "group": "60676532.31220c",
+        "order": 1,
+        "width": "5",
+        "height": "1",
+        "name": "",
+        "label": "Music Room",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "x": 250,
+        "y": 1000,
+        "wires": []
+    },
+    {
+        "id": "e376f0f3.20fd78",
+        "type": "rbe",
+        "z": "4b791646.563ff",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "property": "payload",
+        "x": 1140,
+        "y": 1020,
+        "wires": [
+            [
+                "2f8a26a1.aa8ae2"
+            ]
+        ]
+    },
+    {
+        "id": "b091891e.9a5308",
+        "type": "mqtt in",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "aghast/daikin/Music Room/temperature",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 1640,
+        "wires": [
+            [
+                "bfd8d72a.6977d8",
+                "839a13a2.6a68f"
+            ]
+        ],
+        "outputLabels": [
+            "fred"
+        ]
+    },
+    {
+        "id": "bfd8d72a.6977d8",
+        "type": "change",
+        "z": "4b791646.563ff",
+        "name": "Rename 3",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "Music Room",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 470,
+        "y": 1640,
+        "wires": [
+            [
+                "29f3e347.447c9c"
+            ]
+        ]
+    },
+    {
+        "id": "839a13a2.6a68f",
+        "type": "ui_level",
+        "z": "4b791646.563ff",
+        "group": "60676532.31220c",
+        "order": 3,
+        "width": "0",
+        "height": "0",
+        "name": "",
+        "label": "",
+        "colorHi": "#e60000",
+        "colorWarn": "#00ff2c",
+        "colorNormal": "#004ab3",
+        "colorOff": "#595959",
+        "min": "5",
+        "max": "35",
+        "segWarn": "15",
+        "segHigh": "25",
+        "unit": "°C",
+        "layout": "sh",
+        "channelA": "",
+        "channelB": "",
+        "decimals": 0,
+        "animations": "soft",
+        "shape": "3",
+        "colorschema": "valuedriven",
+        "textoptions": "custom",
+        "colorText": "#eeeeee",
+        "fontLabel": "",
+        "fontValue": "1.8",
+        "fontSmall": "0.8",
+        "colorFromTheme": true,
+        "textAnimations": false,
+        "hideValue": false,
+        "tickmode": "segments",
+        "peakmode": false,
+        "property": "payload",
+        "peaktime": 3000,
+        "x": 450,
+        "y": 1600,
+        "wires": []
+    },
+    {
+        "id": "f3fb7a5d.5b10b8",
+        "type": "ui_numeric",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Setting",
+        "tooltip": "",
+        "group": "9e979116.8992b8",
+        "order": 5,
+        "width": "3",
+        "height": "1",
+        "wrap": false,
+        "passthru": false,
+        "topic": "setting",
+        "format": "{{value}}",
+        "min": "12",
+        "max": "32",
+        "step": 1,
+        "x": 820,
+        "y": 380,
+        "wires": [
+            [
+                "c6104d7e.a71bf"
+            ]
+        ]
+    },
+    {
+        "id": "7d528622.dc19c8",
+        "type": "ui_numeric",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Setting",
+        "tooltip": "",
+        "group": "1f364058.48bfb8",
+        "order": 5,
+        "width": "3",
+        "height": "1",
+        "wrap": false,
+        "passthru": false,
+        "topic": "setting",
+        "format": "{{value}}",
+        "min": "12",
+        "max": "32",
+        "step": 1,
+        "x": 820,
+        "y": 620,
+        "wires": [
+            [
+                "835033f2.2c5fb"
+            ]
+        ]
+    },
+    {
+        "id": "35e50a9e.79b45e",
+        "type": "ui_numeric",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Setting",
+        "tooltip": "",
+        "group": "e67be051.c2de1",
+        "order": 5,
+        "width": "3",
+        "height": "1",
+        "wrap": false,
+        "passthru": false,
+        "topic": "setting",
+        "format": "{{value}}",
+        "min": "12",
+        "max": "32",
+        "step": 1,
+        "x": 820,
+        "y": 860,
+        "wires": [
+            [
+                "e3d28ffb.59452"
+            ]
+        ]
+    },
+    {
+        "id": "53b41bc9.316f2c",
+        "type": "ui_numeric",
+        "z": "4b791646.563ff",
+        "name": "",
+        "label": "Setting",
+        "tooltip": "",
+        "group": "60676532.31220c",
+        "order": 5,
+        "width": "3",
+        "height": "1",
+        "wrap": false,
+        "passthru": false,
+        "topic": "setting",
+        "format": "{{value}}",
+        "min": "12",
+        "max": "32",
+        "step": 1,
+        "x": 820,
+        "y": 1100,
+        "wires": [
+            [
+                "2f8a26a1.aa8ae2"
+            ]
+        ]
+    },
+    {
+        "id": "4c1c2a23.6dd82c",
+        "type": "ui_button",
+        "z": "4b791646.563ff",
+        "name": "",
+        "group": "faf6cb79.556738",
+        "order": 2,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "label": "All Off",
+        "tooltip": "Turn off all DOWNSTAIRS units",
+        "color": "",
+        "bgcolor": "",
+        "icon": "mi-close",
+        "payload": "false",
+        "payloadType": "bool",
+        "topic": "",
+        "x": 1350,
+        "y": 700,
+        "wires": [
+            [
+                "82a9e19c.d8de58",
+                "8cc49c9d.38186",
+                "6d0f1e54.c8d3e8",
+                "38f91df4.cf95f2"
+            ]
+        ]
+    },
+    {
+        "id": "99aa9221.9553a8",
+        "type": "ui_template",
+        "z": "4b791646.563ff",
+        "group": "9e979116.8992b8",
+        "name": "Styling",
+        "order": 8,
+        "width": 0,
+        "height": 0,
+        "format": "<style>\n    .nr-dashboard-text p {\n        font-size: 23px;\n    }\n    .nr-dashboard-text .value {\n        font-size: 10px;\n    }\n   .nr-dashboard-theme md-select-menu md-option {\n        background-color: #333333;\n        color: #eeeeee;\n        height:24px;\n    }\n    .nr-dashboard-theme md-select-menu md-option:nth-child(even) {\n        background-color: #3c3c3c;\n    }\n</style>",
+        "storeOutMessages": false,
+        "fwdInMessages": false,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "x": 410,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a9b28f4d.fcc1d",
+        "type": "ui_group",
+        "name": "GF Charts",
+        "tab": "c3756570.b70f2",
+        "order": 6,
+        "disp": false,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "fb4e4d64.1c3728",
+        "type": "mqtt-broker",
+        "name": "Local MQTT Broker",
+        "broker": "mediaserver01",
+        "port": "1883",
+        "clientid": "",
+        "usetls": false,
+        "compatmode": false,
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": ""
+    },
+    {
+        "id": "9e979116.8992b8",
+        "type": "ui_group",
+        "name": "Dining Room",
+        "tab": "c3756570.b70f2",
+        "order": 1,
+        "disp": false,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "1f364058.48bfb8",
+        "type": "ui_group",
+        "name": "Living Room",
+        "tab": "c3756570.b70f2",
+        "order": 2,
+        "disp": false,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "e67be051.c2de1",
+        "type": "ui_group",
+        "name": "Hall",
+        "tab": "c3756570.b70f2",
+        "order": 3,
+        "disp": false,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "60676532.31220c",
+        "type": "ui_group",
+        "name": "Music Room",
+        "tab": "c3756570.b70f2",
+        "order": 4,
+        "disp": false,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "faf6cb79.556738",
+        "type": "ui_group",
+        "name": "Ground Floor Controls",
+        "tab": "c3756570.b70f2",
+        "order": 5,
+        "disp": false,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "c3756570.b70f2",
+        "type": "ui_tab",
+        "name": "Ground Floor HVAC",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    }
+]
