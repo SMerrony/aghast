@@ -4,28 +4,17 @@ enabled = false
 
 [event]
   integration = "Time"
-  deviceType  = "Events"
-  deviceName  = "TimedEvent"
-  eventName   = "TenBeforeWork"
-#  deviceType = "Ticker"
-#  deviceName = "SystemTicker"
-#  eventName = "Minute"
+  # deviceType  = "Events"
+  # deviceName  = "TimedEvent"
+  # eventName   = "TenBeforeWork"
+ deviceType = "Ticker"
+ deviceName = "SystemTicker"
+ eventName = "Minute"
 
 [action.1]
   integration = "Daikin"
   deviceLabel = "Steve's Office"
-  control = "temperature"
-  setting = 20.0
- 
-[action.2]
-  integration = "Daikin"
-  deviceLabel = "Steve's Office"
-  control = "mode"
-  setting = "Heat" 
-
-[action.3]
-  integration = "Daikin"
-  deviceLabel = "Steve's Office"
-  control = "power"
-  setting = "on" 
+  execute = [ { control = "temperature", setting = 20.0 },
+              { control = "mode",        setting = "Heat" },
+              { control = "power",       setting = "on" } ]
  

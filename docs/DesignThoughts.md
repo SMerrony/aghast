@@ -1,6 +1,19 @@
 # Home Automation System Design Ideas
 "A Go Home Automation SysTem" - AGHAST
 
+- [Home Automation System Design Ideas](#home-automation-system-design-ideas)
+  - [Concepts](#concepts)
+    - [Integrations](#integrations)
+    - [Devices](#devices)
+    - [Event System](#event-system)
+    - [Values](#values)
+    - [Controls](#controls)
+    - [Automations](#automations)
+      - [Conditions - NOT YET IMPLEMENTED](#conditions---not-yet-implemented)
+      - [Actions](#actions)
+    - [Configuration](#configuration)
+  - [Design Decisions](#design-decisions)
+
 This document will be updated as ideas are refined and experience is gained with the system; parts of this document will become obsolete as development progresses.
 
 AGHAST is primarily an automation server - it does not mandate a specific front-end.
@@ -135,6 +148,25 @@ enabled = true
   deviceLabel = "Steve's Office"
   control = "mode"
   setting = "heat" 
+```
+
+Possible better "execute" syntax...
+```
+[action.1]
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceLabel = "Steve's Office"
+  execute = [ {control = "temperature", setting = 20.0 },
+              {control = "mode",        setting = "Heat" },
+              {control = "power",       setting = "on" } ]
+```
+
+```
+[action.1]
+  integration = "Daikin"
+  deviceType = "Inverter"
+  deviceLabel = "Steve's Office"
+  execute = [ {control = "power", setting = "off"}]
 ```
 
 #### Conditions - NOT YET IMPLEMENTED

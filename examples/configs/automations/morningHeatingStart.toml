@@ -11,53 +11,20 @@ enabled = true
 [action.1]
   integration = "Daikin"
   deviceLabel = "Hall"
-  control = "temperature"
-  setting = 21.0
- 
+  execute = [ { control = "temperature", setting = 21.0 },
+              { control = "mode",        setting = "Heat" },
+              { control = "power",       setting = "on" } ]
+
 [action.2]
   integration = "Daikin"
-  deviceLabel = "Hall"
-  control = "mode"
-  setting = "Heat" 
+  deviceLabel = "Living Room"
+  execute = [ { control = "temperature", setting = 19.0 },
+              { control = "mode",        setting = "Heat" },
+              { control = "power",       setting = "on" } ]  
 
 [action.3]
   integration = "Daikin"
-  deviceLabel = "Hall"
-  control = "power"
-  setting = "on" 
-
-[action.4]
-  integration = "Daikin"
-  deviceLabel = "Living Room"
-  control = "temperature"
-  setting = 19.0
- 
-[action.5]
-  integration = "Daikin"
-  deviceLabel = "Living Room"
-  control = "mode"
-  setting = "Heat" 
-
-[action.6]
-  integration = "Daikin"
-  deviceLabel = "Living Room"
-  control = "power"
-  setting = "on" 
-
-[action.7]
-  integration = "Daikin"
   deviceLabel = "Music Room"
-  control = "temperature"
-  setting = 18.0
- 
-[action.8]
-  integration = "Daikin"
-  deviceLabel = "Music Room"
-  control = "mode"
-  setting = "Heat" 
-
-[action.9]
-  integration = "Daikin"
-  deviceLabel = "Music Room"
-  control = "power"
-  setting = "on" 
+  execute = [ { control = "temperature", setting = 18.0 },
+              { control = "mode",        setting = "Heat" },
+              { control = "power",       setting = "on" } ]  

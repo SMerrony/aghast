@@ -52,8 +52,8 @@ type automationT struct {
 type actionT struct { // TODO should this be defined elsewhere?
 	integration string
 	deviceLabel string
-	control     string
-	setting     interface{}
+	controls    []string
+	settings    []interface{}
 }
 
 // LoadConfig loads and stores the configuration for this Integration
@@ -87,8 +87,12 @@ func (a *Automation) LoadConfig(confDir string) error {
 			details := a.(map[string]interface{})
 			act.integration = details["integration"].(string)
 			act.deviceLabel = details["deviceLabel"].(string)
-			act.control = details["control"].(string)
-			act.setting = details["setting"] // not cast
+			executes := details["execute"].([]interface{})
+			for _, ac := range executes {
+				cs := ac.(map[string]interface{})
+				act.controls = append(act.controls, cs["control"].(string))
+				act.settings = append(act.settings, cs["setting"]) // not cast
+			}
 			newAuto.actions[order] = act
 		}
 		newAuto.sortedActionKeys = make([]string, 0, len(newAuto.actions))
@@ -99,7 +103,6 @@ func (a *Automation) LoadConfig(confDir string) error {
 		a.automations = append(a.automations, newAuto)
 		log.Printf("DEBUG: ... %v\n", newAuto)
 	}
-
 	return nil
 }
 
@@ -117,7 +120,9 @@ func StartAutomations(confDir string, evChan chan events.EventT) {
 	// for each automation, subscribe to its event
 	sid := events.GetSubscriberID(subscribeName)
 	for _, a := range autos.automations {
-		go autos.waitForEvent(sid, a)
+		if a.enabled {
+			go autos.waitForEvent(sid, a)
+		}
 	}
 
 }
@@ -134,15 +139,17 @@ func (a *Automation) waitForEvent(sid int, auto automationT) {
 		log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
 		for _, k := range auto.sortedActionKeys {
 			ac := auto.actions[k]
-			a.evChan <- events.EventT{
-				Integration: ac.integration,
-				DeviceType:  events.ActionControlDeviceType,
-				DeviceName:  ac.deviceLabel,
-				EventName:   ac.control,
-				Value:       ac.setting,
+			for i := 0; i < len(ac.controls); i++ {
+				a.evChan <- events.EventT{
+					Integration: ac.integration,
+					DeviceType:  events.ActionControlDeviceType,
+					DeviceName:  ac.deviceLabel,
+					EventName:   ac.controls[i],
+					Value:       ac.settings[i],
+				}
+				log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
+				time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
 			}
-			log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
-			time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
 		}
 	}
 }
