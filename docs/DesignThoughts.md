@@ -139,23 +139,6 @@ enabled = true
   integration = "Daikin"
   deviceType = "Inverter"
   deviceLabel = "Steve's Office"
-  control = "temperature"
-  setting = 20
- 
-[action.2]
-  integration = "Daikin"
-  deviceType = "Inverter"
-  deviceLabel = "Steve's Office"
-  control = "mode"
-  setting = "heat" 
-```
-
-Possible better "execute" syntax...
-```
-[action.1]
-  integration = "Daikin"
-  deviceType = "Inverter"
-  deviceLabel = "Steve's Office"
   execute = [ {control = "temperature", setting = 20.0 },
               {control = "mode",        setting = "Heat" },
               {control = "power",       setting = "on" } ]

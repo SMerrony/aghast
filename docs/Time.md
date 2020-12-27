@@ -9,7 +9,18 @@ The Time Integration must be enabled for AGHAST to function.
 User-defined Events are available for Automations and other Integrations to use, eg. to trigger Actions at a specific time.
 
 ## Configuration
-The Tickers are defined internally and have no configuration.  User-defined Events are defined via the `time.toml` file (which must exist even if no Events are defined).
+
+### System Tickers
+These Tickers are defined internally and have no configuration. 
+
+They publish events every new second, minute, hour, and day to...
+ * integration - "Time"
+ * deviceType - "Ticker"
+ * deviceName - "SystemTicker"
+ * eventName - one of "Second", "Minute", "Hour", or "Day"
+
+### User-Defined Events
+User-defined Events are defined via the `time.toml` file (which must exist even if no Events are defined).
 
 Configuration of User-defined Events is simple...
 
