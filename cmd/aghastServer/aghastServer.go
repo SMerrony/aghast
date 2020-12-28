@@ -68,7 +68,7 @@ func main() {
 	}
 	mqttChan <- msg
 
-	server.StartAutomations(*configFlag, eventChan)
+	server.StartAutomations(*configFlag, eventChan, mq)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)

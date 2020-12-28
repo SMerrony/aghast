@@ -1,0 +1,14 @@
+name = "ExampleMQTT"
+description = "Respond to an MQTT event"
+enabled = true
+
+[event]
+  topic = "aghast/client/DemoButton"
+
+[action.1]
+  integration = "Daikin"
+  deviceLabel = "Hall"
+  execute = [ { control = "temperature", setting = 21.0 },
+              { control = "mode",        setting = "Heat" },
+              { control = "power",       setting = "on" } ]
+

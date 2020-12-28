@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/SMerrony/aghast/events"
+	"github.com/SMerrony/aghast/mqtt"
 	"github.com/pelletier/go-toml"
 )
 
@@ -34,17 +35,28 @@ const (
 	subscribeName     = "AutomationManager"
 )
 
+const (
+	noEvent eventTypeT = iota
+	integrationEvent
+	mqttEvent
+)
+
 // The Automation type encapsulates Automation
 type Automation struct {
 	automations []automationT
 	evChan      chan events.EventT
+	mq          mqtt.MQTT
 }
+
+type eventTypeT int
 
 type automationT struct {
 	name             string
 	description      string
 	enabled          bool
+	eventType        eventTypeT
 	event            events.EventT
+	mqttTopic        string
 	actions          map[string]actionT
 	sortedActionKeys []string
 }
@@ -76,10 +88,21 @@ func (a *Automation) LoadConfig(confDir string) error {
 		newAuto.description = conf.Get("description").(string)
 		newAuto.enabled = conf.Get("enabled").(bool)
 		log.Printf("DEBUG: ... %s, %s\n", newAuto.name, newAuto.description)
-		newAuto.event.Integration = conf.Get("event.integration").(string)
-		newAuto.event.DeviceType = conf.Get("event.deviceType").(string)
-		newAuto.event.DeviceName = conf.Get("event.deviceName").(string)
-		newAuto.event.EventName = conf.Get("event.eventName").(string)
+		if conf.Get("event.integration") != nil {
+			newAuto.eventType = integrationEvent
+			newAuto.event.Integration = conf.Get("event.integration").(string)
+			newAuto.event.DeviceType = conf.Get("event.deviceType").(string)
+			newAuto.event.DeviceName = conf.Get("event.deviceName").(string)
+			newAuto.event.EventName = conf.Get("event.eventName").(string)
+		}
+		if conf.Get("event.topic") != nil {
+			newAuto.eventType = mqttEvent
+			newAuto.mqttTopic = conf.Get("event.topic").(string)
+		}
+		if newAuto.eventType == noEvent {
+			log.Printf("WARNING: Automations - no event specified for %s, ignoring it\n", newAuto.name)
+			continue
+		}
 		confMap := conf.ToMap()
 		actsConf := confMap["action"].(map[string]interface{})
 		for order, a := range actsConf {
@@ -107,11 +130,12 @@ func (a *Automation) LoadConfig(confDir string) error {
 }
 
 // StartAutomations launches a Goroutine for each Automation
-func StartAutomations(confDir string, evChan chan events.EventT) {
+func StartAutomations(confDir string, evChan chan events.EventT, mq mqtt.MQTT) {
 
 	var autos Automation
 
 	autos.evChan = evChan
+	autos.mq = mq
 
 	if err := autos.LoadConfig(confDir); err != nil {
 		log.Fatal("ERROR: Cannot proceed with invalid Automations config")
@@ -121,13 +145,18 @@ func StartAutomations(confDir string, evChan chan events.EventT) {
 	sid := events.GetSubscriberID(subscribeName)
 	for _, a := range autos.automations {
 		if a.enabled {
-			go autos.waitForEvent(sid, a)
+			switch a.eventType {
+			case integrationEvent:
+				go autos.waitForIntegrationEvent(sid, a)
+			case mqttEvent:
+				go autos.waitForMqttEvent(sid, a)
+			}
 		}
 	}
 
 }
 
-func (a *Automation) waitForEvent(sid int, auto automationT) {
+func (a *Automation) waitForIntegrationEvent(sid int, auto automationT) {
 	ch, err := events.Subscribe(sid, auto.event.Integration, auto.event.DeviceType, auto.event.DeviceName, auto.event.EventName)
 	if err != nil {
 		log.Fatalf("ERROR: Automation Manager could not subscribe to event, %v\n", err)
@@ -135,6 +164,29 @@ func (a *Automation) waitForEvent(sid int, auto automationT) {
 	for {
 		log.Printf("DEBUG: Automation Manager waiting for event %s\n", auto.event.EventName)
 		_ = <-ch
+		log.Printf("DEBUG: Automation Manager received event %s\n", auto.event.EventName)
+		log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
+		for _, k := range auto.sortedActionKeys {
+			ac := auto.actions[k]
+			for i := 0; i < len(ac.controls); i++ {
+				a.evChan <- events.EventT{
+					Integration: ac.integration,
+					DeviceType:  events.ActionControlDeviceType,
+					DeviceName:  ac.deviceLabel,
+					EventName:   ac.controls[i],
+					Value:       ac.settings[i],
+				}
+				log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
+				time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
+			}
+		}
+	}
+}
+
+func (a *Automation) waitForMqttEvent(sid int, auto automationT) {
+	mqChan := a.mq.SubscribeToTopic(auto.mqttTopic)
+	for {
+		_ = <-mqChan
 		log.Printf("DEBUG: Automation Manager received event %s\n", auto.event.EventName)
 		log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
 		for _, k := range auto.sortedActionKeys {

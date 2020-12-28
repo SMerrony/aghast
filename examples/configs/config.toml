@@ -15,7 +15,7 @@ integrations = [
   "time",         # the Time integration MUST be enabled
   "network",
   "datalogger",
-  "daikin",
+#  "daikin",
   "influx",
   "scraper",
 ]
