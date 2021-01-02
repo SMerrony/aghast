@@ -41,6 +41,12 @@
   label = "Brother A3 Printer"
   period = 120
 
+[HostChecker.Epson]
+  host = "192.168.1.30"
+  port = 80
+  label = "Epson Printer"
+  period = 120
+  
 [HostChecker.Deco_Main]
   host = "192.168.1.40"
   port = 80

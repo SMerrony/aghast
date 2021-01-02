@@ -67,49 +67,45 @@ func (n *Network) hostChecker(dev string, evChan chan events.EventT) {
 	n.hostCheckersMu.RUnlock()
 
 	dest := fmt.Sprintf("%s:%d", hcConf.Host, hcConf.Port)
-	log.Printf("DEBUG: Network.HostChecker will monitor host %s\n", dest)
+	log.Printf("INFO: Network.HostChecker will monitor host %s\n", dest)
 
 	for {
 		before := time.Now()
 		_, err := net.DialTimeout(netType, dest, timeout)
 		after := time.Now()
 		n.hostCheckersMu.Lock()
-		if err != nil && !hcConf.firstCheck {
-			if hcConf.alive { // has state changed?
+		if err != nil {
+			if hcConf.alive || hcConf.firstCheck { // has state changed?
 				evChan <- events.EventT{
 					Integration: "Network",
 					DeviceType:  "HostChecker",
 					DeviceName:  dev,
 					EventName:   "StateChanged",
 					Value:       "Unavailable"}
-				log.Printf("DEBUG: Hostchecker about to send MQTT msg\n")
 				mqMsg := mqtt.MessageT{
 					Topic:    mqttPrefix + dev + "/state",
 					Qos:      0,
 					Retained: true,
-					Payload:  "Unavailable",
+					Payload:  "false",
 				}
 				n.mqttChan <- mqMsg
-				log.Printf("DEBUG: Hostchecker sent MQTT msg: %v", mqMsg)
 			}
 			hcConf.alive = false
 		} else {
-			if !hcConf.alive && !hcConf.firstCheck {
+			if !hcConf.alive || hcConf.firstCheck {
 				evChan <- events.EventT{
 					Integration: "Network",
 					DeviceType:  "HostChecker",
 					DeviceName:  dev,
 					EventName:   "StateChanged",
 					Value:       "Available"}
-				log.Printf("DEBUG: Hostchecker about to send MQTT msg\n")
 				mqMsg := mqtt.MessageT{
 					Topic:    mqttPrefix + dev + "/state",
 					Qos:      0,
 					Retained: true,
-					Payload:  "Available",
+					Payload:  "true",
 				}
 				n.mqttChan <- mqMsg
-				log.Printf("DEBUG: Hostchecker sent MQTT msg: %v", mqMsg)
 			}
 			hcConf.alive = true
 			hcConf.responseTime = after.Sub(before)
