@@ -18,11 +18,12 @@ We believe that end-users of HA systems are generally not interested in the nuts
 | Integration | Description                  | Documentation |
 | ----------- | :--------------------------  | ------------- |
 | Time        | Includes: Tickers            | [Time](docs/Time.md) |
-| Network     | Includes: HostChecker        | [](docs/) |
+| Network     | Includes: HostChecker        | [Network](docs/Network.md) |
 | DataLogger  | Log Data to CSV files        | [](docs/) |
 | Daikin      | HVAC Control and Monitoring  | [Daikin](docs/Daikin.md) |
 | Influx      | Log Data to InfluxDB         | [Influx](docs/Influx.md) |
 | Scraper     | Web Scraping                 | [Scraper](docs/Scraper.md) |
+| Tuya        | Tuya WiFi lights             | [](docs/) |
 
 ## Configuration
 
@@ -42,11 +43,13 @@ logEvents = false             # A LOT of stuff will be logged if this is true!
 
 # List of Integrations we want enabled
 integrations = [
-  "time",
+  "time",         # the Time integration MUST be enabled
   "network",
-  "datalogger",
+#  "datalogger",  # commented-out, so will not be enabled
   "daikin",
+  "influx",
   "scraper",
+  "tuya",
 ]
 ```
 Every Integration **must** have an associated `<Integration>.toml` configuration file in the same directory,
