@@ -30,6 +30,7 @@ import (
 	"github.com/SMerrony/aghast/integrations/network"
 	"github.com/SMerrony/aghast/integrations/scraper"
 	"github.com/SMerrony/aghast/integrations/time"
+	"github.com/SMerrony/aghast/integrations/tuya"
 	"github.com/SMerrony/aghast/mqtt"
 )
 
@@ -57,12 +58,14 @@ func StartIntegrations(conf config.MainConfigT, evChan chan events.EventT, mqtt 
 			integ = new(datalogger.DataLogger)
 		case "influx":
 			integ = new(influx.Influx)
+		case "network":
+			integ = new(network.Network)
 		case "scraper":
 			integ = new(scraper.Scraper)
 		case "time":
 			integ = new(time.Time)
-		case "network":
-			integ = new(network.Network)
+		case "tuya":
+			integ = new(tuya.Tuya)
 		default:
 			log.Printf("WARNING: Integration '%s' is not yet handled\n", i)
 			continue

@@ -8,4 +8,5 @@ require (
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/influxdata/influxdb-client-go/v2 v2.2.0
 	github.com/pelletier/go-toml v1.8.1
+	github.com/tuya/tuya-cloud-sdk-go v0.0.0-20201215025652-fb4377540ad3
 )

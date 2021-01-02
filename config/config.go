@@ -143,17 +143,17 @@ func PreprocessTOML(configDir string, fileName string) (preprocessed []byte, e e
 			return nil, err
 		}
 		if err == io.EOF && len(rawLine) < 3 {
-			log.Printf("DEBUG: ... new TOML file is:\n%s\n", preprocessed)
+			// log.Printf("DEBUG: ... new TOML file is:\n%s\n", preprocessed)
 			return preprocessed, nil
 		}
 		if sIx := strings.Index(rawLine, secretLabel); sIx != -1 {
 			// we have a line like this: port = "!!SECRET(portnum)"
-			log.Printf("DEBUG: Found config line with secret: %s\n", rawLine)
+			// log.Printf("DEBUG: Found config line with secret: %s", rawLine)
 			procdLine := rawLine[:sIx-1]
 			rawLine = rawLine[sIx+len(secretLabel):]
 			closingIx := strings.IndexByte(rawLine, ')')
 			newName := rawLine[:closingIx]
-			log.Printf("DEBUG: ... substitute name is: %s\n", newName)
+			// log.Printf("DEBUG: ... substitute name is: %s\n", newName)
 			if !secretsConf.Has(newName) {
 				return nil, errors.New("Secret not found")
 			}
@@ -166,18 +166,18 @@ func PreprocessTOML(configDir string, fileName string) (preprocessed []byte, e e
 			case reflect.Float64:
 				procdLine += fmt.Sprintf("%f\n", newVal.(float64))
 			}
-			log.Printf("DEBUG: ... replacement line is: %s\n", procdLine)
+			// log.Printf("DEBUG: ... replacement line is: %s", procdLine)
 			preprocessed = append(preprocessed, []byte(procdLine)...)
 			continue
 		}
 		if cIx := strings.Index(rawLine, constantLabel); cIx != -1 {
 			// we have a line like this: port = "!!CONSTANT(portnum)"
-			log.Printf("DEBUG: Found config line with constant: %s\n", rawLine)
+			// log.Printf("DEBUG: Found config line with constant: %s\n", rawLine)
 			procdLine := rawLine[:cIx-1]
 			rawLine = rawLine[cIx+len(constantLabel):]
 			closingIx := strings.IndexByte(rawLine, ')')
 			newName := rawLine[:closingIx]
-			log.Printf("DEBUG: ... substitute name is: %s\n", newName)
+			// log.Printf("DEBUG: ... substitute name is: %s\n", newName)
 			if !constantsConf.Has(newName) {
 				return nil, errors.New("Constant not found")
 			}
@@ -190,7 +190,7 @@ func PreprocessTOML(configDir string, fileName string) (preprocessed []byte, e e
 			case reflect.Float64:
 				procdLine += fmt.Sprintf("%f\n", newVal.(float64))
 			}
-			log.Printf("DEBUG: ... replacement line is: %s\n", procdLine)
+			// log.Printf("DEBUG: ... replacement line is: %s\n", procdLine)
 			preprocessed = append(preprocessed, []byte(procdLine)...)
 			continue
 		}

@@ -1,0 +1,18 @@
+# TODO - API details should not be part of config
+ApiID = "!!SECRET(tuyaApiID)"
+ApiKey = "!!SECRET(tuyaApiKey)"
+TuyaRegion = "EU" # One of CN, EU, IN, or US
+
+[[Lamp]]
+  DeviceID = "!!SECRET(tuyaLamp01)"
+  Label = "Office Tuya Lamp"
+  Dimmable = true
+  Colour = true
+  Temperature = true
+
+[[Lamp]]
+  DeviceID = "does_not_exist"
+  Label = "Testing absent Tuya Lamp"
+  Dimmable = false
+  Colour = false
+  Temperature = true
