@@ -1,4 +1,4 @@
-// Copyright ©2020 Steve Merrony
+// Copyright ©2020,2021 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -76,7 +76,10 @@ func CheckMainConfig(configDir string) error {
 	timeFound := false
 	for _, i := range integrations {
 		if _, err := os.Stat(configDir + "/" + i + ".toml"); err != nil {
-			return errors.New("No config file found for Integration: " + i)
+			// or a directory of configs...
+			if _, err := os.Stat(configDir + "/" + i); err != nil {
+				return errors.New("No config file found for Integration: " + i)
+			}
 		}
 		if i == "time" {
 			timeFound = true

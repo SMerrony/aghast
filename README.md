@@ -44,6 +44,7 @@ logEvents = false             # A LOT of stuff will be logged if this is true!
 # List of Integrations we want enabled
 integrations = [
   "time",         # the Time integration MUST be enabled
+  "automation",
   "network",
 #  "datalogger",  # commented-out, so will not be enabled
   "daikin",
@@ -52,10 +53,10 @@ integrations = [
   "tuya",
 ]
 ```
-Every Integration **must** have an associated `<Integration>.toml` configuration file in the same directory,
-eg. `time.toml`, `daikin.toml`, etc.
+Every Integration **must** have an associated `<Integration>.toml` configuration file or `<Integration>` subdirectory in the same directory,
+eg. `time.toml`, `daikin.toml`, `automation`, etc.
 
-N.B. Even if no special configuration is required for an enabled Integration, an empty `<Integration>.toml` configuration file must exist.
+N.B. Even if no special configuration is required for an enabled Integration, an empty `<Integration>.toml` configuration file or `<Integration>` subdirectory must exist.
 
 ### Secrets and Constants
 

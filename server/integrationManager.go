@@ -1,4 +1,4 @@
-// Copyright ©2020 Steve Merrony
+// Copyright ©2020,2021 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@ import (
 
 	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
+	"github.com/SMerrony/aghast/integrations/automation"
 	"github.com/SMerrony/aghast/integrations/daikin"
 	"github.com/SMerrony/aghast/integrations/datalogger"
 	"github.com/SMerrony/aghast/integrations/influx"
@@ -52,6 +53,8 @@ func StartIntegrations(conf config.MainConfigT, evChan chan events.EventT, mqtt 
 	var integ Integration
 	for _, i := range conf.Integrations {
 		switch i {
+		case "automation":
+			integ = new(automation.Automation)
 		case "daikin":
 			integ = new(daikin.Daikin)
 		case "datalogger":

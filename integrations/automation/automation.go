@@ -1,4 +1,4 @@
-// Copyright ©2020 Steve Merrony
+// Copyright ©2021 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -17,7 +17,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package server
+package automation
 
 import (
 	"io/ioutil"
@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	automationsSubDir = "/automations"
+	automationsSubDir = "/automation"
 	subscribeName     = "AutomationManager"
 )
 
@@ -46,6 +46,7 @@ type Automation struct {
 	automations []automationT
 	evChan      chan events.EventT
 	mq          mqtt.MQTT
+	stopChans   []chan bool // this could be a map[string]chan bool to stop by name
 }
 
 type eventTypeT int
@@ -129,78 +130,116 @@ func (a *Automation) LoadConfig(confDir string) error {
 	return nil
 }
 
-// StartAutomations launches a Goroutine for each Automation
-func StartAutomations(confDir string, evChan chan events.EventT, mq mqtt.MQTT) {
+// ProvidesDeviceTypes returns a slice of device types that this Integration supplies.
+func (a *Automation) ProvidesDeviceTypes() []string {
+	return []string{"Automation"}
+}
 
-	var autos Automation
+// // StartAutomations launches a Goroutine for each Automation
+// func StartAutomations(confDir string, evChan chan events.EventT, mq mqtt.MQTT) {
 
-	autos.evChan = evChan
-	autos.mq = mq
+// 	var autos Automation
 
-	if err := autos.LoadConfig(confDir); err != nil {
-		log.Fatal("ERROR: Cannot proceed with invalid Automations config")
-	}
+// 	autos.evChan = evChan
+// 	autos.mq = mq
+
+// 	if err := autos.LoadConfig(confDir); err != nil {
+// 		log.Fatal("ERROR: Cannot proceed with invalid Automations config")
+// 	}
+
+// 	// for each automation, subscribe to its event
+// 	sid := events.GetSubscriberID(subscribeName)
+// 	for _, a := range autos.automations {
+// 		if a.enabled {
+// 			sc := make(chan bool)
+// 			switch a.eventType {
+// 			case integrationEvent:
+// 				go autos.waitForIntegrationEvent(sc, sid, a)
+// 			case mqttEvent:
+// 				go autos.waitForMqttEvent(sc, a)
+// 			}
+// 			autos.stopChans = append(autos.stopChans, sc)
+// 		}
+// 	}
+
+// }
+
+// Start launches a Goroutine for each Automation, LoadConfig() should have been called beforehand.
+func (a *Automation) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+	a.evChan = evChan
+	a.mq = mq
 
 	// for each automation, subscribe to its event
 	sid := events.GetSubscriberID(subscribeName)
-	for _, a := range autos.automations {
-		if a.enabled {
-			switch a.eventType {
+	for _, auto := range a.automations {
+		if auto.enabled {
+			sc := make(chan bool)
+			switch auto.eventType {
 			case integrationEvent:
-				go autos.waitForIntegrationEvent(sid, a)
+				go a.waitForIntegrationEvent(sc, sid, auto)
 			case mqttEvent:
-				go autos.waitForMqttEvent(sid, a)
+				go a.waitForMqttEvent(sc, auto)
 			}
+			a.stopChans = append(a.stopChans, sc)
 		}
 	}
 
 }
-
-func (a *Automation) waitForIntegrationEvent(sid int, auto automationT) {
+func (a *Automation) waitForIntegrationEvent(stopChan chan bool, sid int, auto automationT) {
 	ch, err := events.Subscribe(sid, auto.event.Integration, auto.event.DeviceType, auto.event.DeviceName, auto.event.EventName)
 	if err != nil {
 		log.Fatalf("ERROR: Automation Manager could not subscribe to event, %v\n", err)
 	}
 	for {
 		log.Printf("DEBUG: Automation Manager waiting for event %s\n", auto.event.EventName)
-		_ = <-ch
-		log.Printf("DEBUG: Automation Manager received event %s\n", auto.event.EventName)
-		log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
-		for _, k := range auto.sortedActionKeys {
-			ac := auto.actions[k]
-			for i := 0; i < len(ac.controls); i++ {
-				a.evChan <- events.EventT{
-					Integration: ac.integration,
-					DeviceType:  events.ActionControlDeviceType,
-					DeviceName:  ac.deviceLabel,
-					EventName:   ac.controls[i],
-					Value:       ac.settings[i],
+		select {
+		case <-stopChan:
+			log.Printf("DEBUG: Automation %s wait stopping", auto.name)
+			return
+		case <-ch:
+			log.Printf("DEBUG: Automation Manager received event %s\n", auto.event.EventName)
+			log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
+			for _, k := range auto.sortedActionKeys {
+				ac := auto.actions[k]
+				for i := 0; i < len(ac.controls); i++ {
+					a.evChan <- events.EventT{
+						Integration: ac.integration,
+						DeviceType:  events.ActionControlDeviceType,
+						DeviceName:  ac.deviceLabel,
+						EventName:   ac.controls[i],
+						Value:       ac.settings[i],
+					}
+					log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
+					time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
 				}
-				log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
-				time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
 			}
 		}
 	}
 }
 
-func (a *Automation) waitForMqttEvent(sid int, auto automationT) {
+func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
 	mqChan := a.mq.SubscribeToTopic(auto.mqttTopic)
 	for {
-		_ = <-mqChan
-		log.Printf("DEBUG: Automation Manager received event %s\n", auto.event.EventName)
-		log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
-		for _, k := range auto.sortedActionKeys {
-			ac := auto.actions[k]
-			for i := 0; i < len(ac.controls); i++ {
-				a.evChan <- events.EventT{
-					Integration: ac.integration,
-					DeviceType:  events.ActionControlDeviceType,
-					DeviceName:  ac.deviceLabel,
-					EventName:   ac.controls[i],
-					Value:       ac.settings[i],
+		select {
+		case <-stopChan:
+			log.Printf("DEBUG: Automation %s wait stopping", auto.name)
+			return
+		case <-mqChan:
+			log.Printf("DEBUG: Automation Manager received event %s\n", auto.event.EventName)
+			log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
+			for _, k := range auto.sortedActionKeys {
+				ac := auto.actions[k]
+				for i := 0; i < len(ac.controls); i++ {
+					a.evChan <- events.EventT{
+						Integration: ac.integration,
+						DeviceType:  events.ActionControlDeviceType,
+						DeviceName:  ac.deviceLabel,
+						EventName:   ac.controls[i],
+						Value:       ac.settings[i],
+					}
+					log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
+					time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
 				}
-				log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
-				time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
 			}
 		}
 	}
