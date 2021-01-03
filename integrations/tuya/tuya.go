@@ -116,6 +116,11 @@ func (t *Tuya) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	go t.monitorClients()
 }
 
+// Stop terminates the Integration and all Goroutines it contains
+func (t *Tuya) Stop() { // TODO
+
+}
+
 // monitorClients waits for client (front-end user) events coming via MQTT and handles them
 func (t *Tuya) monitorClients() {
 

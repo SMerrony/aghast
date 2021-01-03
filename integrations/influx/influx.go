@@ -99,6 +99,11 @@ func (i *Influx) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	}
 }
 
+// Stop terminates the Integration and all Goroutines it contains
+func (i *Influx) Stop() { // TODO
+
+}
+
 func (i *Influx) logger(name string, l loggerT) {
 	sid := events.GetSubscriberID(subscribeName)
 	ch, err := events.Subscribe(sid, l.integration, l.deviceType, l.deviceName, l.eventName)

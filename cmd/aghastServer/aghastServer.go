@@ -60,13 +60,12 @@ func main() {
 
 	server.StartIntegrations(conf, eventChan, mq)
 
-	msg := mqtt.MessageT{
+	mqttChan <- mqtt.MessageT{
 		Topic:    "aghast/status",
 		Qos:      0,
 		Retained: false,
 		Payload:  "Started",
 	}
-	mqttChan <- msg
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)

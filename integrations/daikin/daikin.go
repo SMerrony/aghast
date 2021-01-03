@@ -196,6 +196,11 @@ func (d *Daikin) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 
 }
 
+// Stop terminates the Integration and all Goroutines it contains
+func (d *Daikin) Stop() { // TODO
+
+}
+
 func (d *Daikin) runDiscovery(maxUnits int, scanTimeout time.Duration) {
 	// scan the local network for Daikin Inverter units
 	foundUnits := discoverDaikinUnits(maxUnits, scanTimeout)

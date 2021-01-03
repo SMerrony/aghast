@@ -21,6 +21,9 @@ package server
 
 import (
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
@@ -44,41 +47,63 @@ type Integration interface {
 	// The Start func begins running the Integration GoRoutines and should return quickly
 	Start(chan events.EventT, mqtt.MQTT)
 
+	// Stop terminates the Integration and all Goroutines it contains
+	Stop()
+
 	// ProvidesDeviceType returns a list of Device Type supported by this Integration
 	ProvidesDeviceTypes() []string
 }
 
+var integs = make(map[string]Integration)
+
 // StartIntegrations asks each enabled Integration to configure itself, then starts them.
 func StartIntegrations(conf config.MainConfigT, evChan chan events.EventT, mqtt mqtt.MQTT) {
-	var integ Integration
 	for _, i := range conf.Integrations {
 		switch i {
 		case "automation":
-			integ = new(automation.Automation)
+			integs[i] = new(automation.Automation)
 		case "daikin":
-			integ = new(daikin.Daikin)
+			integs[i] = new(daikin.Daikin)
 		case "datalogger":
-			integ = new(datalogger.DataLogger)
+			integs[i] = new(datalogger.DataLogger)
 		case "influx":
-			integ = new(influx.Influx)
+			integs[i] = new(influx.Influx)
 		case "network":
-			integ = new(network.Network)
+			integs[i] = new(network.Network)
 		case "scraper":
-			integ = new(scraper.Scraper)
+			integs[i] = new(scraper.Scraper)
 		case "time":
-			integ = new(time.Time)
+			integs[i] = new(time.Time)
 		case "tuya":
-			integ = new(tuya.Tuya)
+			integs[i] = new(tuya.Tuya)
 		default:
 			log.Printf("WARNING: Integration '%s' is not yet handled\n", i)
 			continue
 		}
 
-		log.Println("DEBUG: Integration ", i, integ.ProvidesDeviceTypes())
-		if err := integ.LoadConfig(conf.ConfigDir); err != nil {
-			log.Printf("ERROR: %s Integration could not load its configuration", i)
-			// log.Fatalln("ABORT: Time Integration must run")
+		log.Printf("INFO: Integration %s provides %v\n", i, integs[i].ProvidesDeviceTypes())
+		if err := integs[i].LoadConfig(conf.ConfigDir); err != nil {
+			log.Fatalf("ERROR: %s Integration could not load its configuration", i)
 		}
-		go integ.Start(evChan, mqtt)
+		go integs[i].Start(evChan, mqtt)
 	}
+
+	// catch HUP signal to reload Integrations...
+	// Only handling Automations for now
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGHUP)
+		for {
+			<-sigChan
+			log.Println("INFO: Got HUP signal to reload Automations")
+			i := "automation"
+			integs[i].Stop()
+			delete(integs, i)
+			integs[i] = new(automation.Automation)
+			if err := integs[i].LoadConfig(conf.ConfigDir); err != nil {
+				log.Fatalf("ERROR: %s Integration could not load its configuration", i)
+			}
+			go integs[i].Start(evChan, mqtt)
+		}
+	}()
 }

@@ -46,7 +46,7 @@ type Automation struct {
 	automations []automationT
 	evChan      chan events.EventT
 	mq          mqtt.MQTT
-	stopChans   []chan bool // this could be a map[string]chan bool to stop by name
+	stopChans   map[string]chan bool
 }
 
 type eventTypeT int
@@ -135,39 +135,11 @@ func (a *Automation) ProvidesDeviceTypes() []string {
 	return []string{"Automation"}
 }
 
-// // StartAutomations launches a Goroutine for each Automation
-// func StartAutomations(confDir string, evChan chan events.EventT, mq mqtt.MQTT) {
-
-// 	var autos Automation
-
-// 	autos.evChan = evChan
-// 	autos.mq = mq
-
-// 	if err := autos.LoadConfig(confDir); err != nil {
-// 		log.Fatal("ERROR: Cannot proceed with invalid Automations config")
-// 	}
-
-// 	// for each automation, subscribe to its event
-// 	sid := events.GetSubscriberID(subscribeName)
-// 	for _, a := range autos.automations {
-// 		if a.enabled {
-// 			sc := make(chan bool)
-// 			switch a.eventType {
-// 			case integrationEvent:
-// 				go autos.waitForIntegrationEvent(sc, sid, a)
-// 			case mqttEvent:
-// 				go autos.waitForMqttEvent(sc, a)
-// 			}
-// 			autos.stopChans = append(autos.stopChans, sc)
-// 		}
-// 	}
-
-// }
-
 // Start launches a Goroutine for each Automation, LoadConfig() should have been called beforehand.
 func (a *Automation) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	a.evChan = evChan
 	a.mq = mq
+	a.stopChans = make(map[string]chan bool)
 
 	// for each automation, subscribe to its event
 	sid := events.GetSubscriberID(subscribeName)
@@ -180,11 +152,22 @@ func (a *Automation) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 			case mqttEvent:
 				go a.waitForMqttEvent(sc, auto)
 			}
-			a.stopChans = append(a.stopChans, sc)
+			a.stopChans[auto.name] = sc
+		} else {
+			log.Printf("INFO: Automation %s is not enabled, will not run\n", auto.name)
 		}
 	}
-
 }
+
+// Stop terminates the Integration and all Goroutines it contains
+func (a *Automation) Stop() {
+	for _, ch := range a.stopChans {
+		ch <- true
+		// log.Printf("DEBUG: Asking Automation %s to stop\n", name)
+	}
+	log.Println("DEBUG: All Automations should have stopped")
+}
+
 func (a *Automation) waitForIntegrationEvent(stopChan chan bool, sid int, auto automationT) {
 	ch, err := events.Subscribe(sid, auto.event.Integration, auto.event.DeviceType, auto.event.DeviceName, auto.event.EventName)
 	if err != nil {
@@ -194,7 +177,7 @@ func (a *Automation) waitForIntegrationEvent(stopChan chan bool, sid int, auto a
 		log.Printf("DEBUG: Automation Manager waiting for event %s\n", auto.event.EventName)
 		select {
 		case <-stopChan:
-			log.Printf("DEBUG: Automation %s wait stopping", auto.name)
+			log.Printf("INFO: Automation %s stopping", auto.name)
 			return
 		case <-ch:
 			log.Printf("DEBUG: Automation Manager received event %s\n", auto.event.EventName)
@@ -222,7 +205,7 @@ func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
 	for {
 		select {
 		case <-stopChan:
-			log.Printf("DEBUG: Automation %s wait stopping", auto.name)
+			log.Printf("INFO: Automation %s stopping", auto.name)
 			return
 		case <-mqChan:
 			log.Printf("DEBUG: Automation Manager received event %s\n", auto.event.EventName)

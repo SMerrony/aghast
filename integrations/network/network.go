@@ -90,3 +90,8 @@ func (n *Network) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	}
 	n.hostCheckersMu.RUnlock()
 }
+
+// Stop terminates the Integration and all Goroutines it contains
+func (n *Network) Stop() { // TODO
+
+}

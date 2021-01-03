@@ -14,7 +14,7 @@ logEvents = false             # A LOT of stuff will be logged if this is true!
 integrations = [
   "time",         # the Time integration MUST be enabled
   "automation",
-  "network",
+#  "network",
 #  "datalogger",
 #  "daikin",
 #  "influx",

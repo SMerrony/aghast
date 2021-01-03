@@ -92,6 +92,11 @@ func (d *DataLogger) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	}
 }
 
+// Stop terminates the Integration and all Goroutines it contains
+func (d *DataLogger) Stop() { // TODO
+
+}
+
 func (d *DataLogger) logger(l loggerT) {
 	file, err := os.OpenFile(d.logDir+"/"+l.logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {

@@ -153,6 +153,11 @@ func (s *Scraper) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	log.Printf("DEBUG: Scraper has started %d scraper(s)\n", len(s.scrapers))
 }
 
+// Stop terminates the Integration and all Goroutines it contains
+func (s *Scraper) Stop() { // TODO
+
+}
+
 func (s *Scraper) scraper(name string) {
 	scr := s.scrapers[name]
 	c := colly.NewCollector()

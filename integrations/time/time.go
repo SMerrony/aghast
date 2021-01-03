@@ -112,6 +112,11 @@ func (t *Time) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	go t.timeEvents()
 }
 
+// Stop terminates the Integration and all Goroutines it contains
+func (t *Time) Stop() { // TODO
+
+}
+
 func (t *Time) timeEvents() {
 	secs := time.NewTicker(time.Second)
 	for {
