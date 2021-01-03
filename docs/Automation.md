@@ -1,13 +1,13 @@
-# Automations
+# Automation
 
 Automations are used to manipulate the Controls that various Integrations may provide.
 
-Currently (Dec 2020) all Automations are loaded when AGHAST is started - this will change in a later version.  It is expected that Automation facilities will be signficantly expanded, so this page will be updated accordingly.
+Currently (Dec 2020) all Automations are loaded once when AGHAST is started - this will change in a later version.  It is expected that Automation facilities will be signficantly expanded, so this page will be updated accordingly.
 
 ## Configuration
 
 Like everything else in AGHAST, Automations are defined in TOML files.
-They must be located in an `automations` directory inside your main configuration directory.
+They must be located in an `automation` directory inside your main configuration directory.
 
 Here is an example Automation that turns on a couple of HVAC units every morning...
 ```

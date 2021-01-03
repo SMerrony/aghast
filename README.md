@@ -18,6 +18,7 @@ We believe that end-users of HA systems are generally not interested in the nuts
 | Integration | Description                  | Documentation |
 | ----------- | :--------------------------  | ------------- |
 | Time        | Includes: Tickers            | [Time](docs/Time.md) |
+| Automation  | Event-based Automation       | [Automation](docs/Automation.md) |
 | Network     | Includes: HostChecker        | [Network](docs/Network.md) |
 | DataLogger  | Log Data to CSV files        | [](docs/) |
 | Daikin      | HVAC Control and Monitoring  | [Daikin](docs/Daikin.md) |
