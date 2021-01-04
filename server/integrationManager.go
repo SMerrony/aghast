@@ -20,10 +20,11 @@
 package server
 
 import (
+	"html/template"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
+	"net/http"
+	"runtime"
+	"strconv"
 
 	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
@@ -55,32 +56,40 @@ type Integration interface {
 }
 
 var integs = make(map[string]Integration)
+var mainConfig config.MainConfigT
+var evCh chan events.EventT
+var mq mqtt.MQTT
+
+func newIntegration(iName string) {
+	switch iName {
+	case "automation":
+		integs[iName] = new(automation.Automation)
+	case "daikin":
+		integs[iName] = new(daikin.Daikin)
+	case "datalogger":
+		integs[iName] = new(datalogger.DataLogger)
+	case "influx":
+		integs[iName] = new(influx.Influx)
+	case "network":
+		integs[iName] = new(network.Network)
+	case "scraper":
+		integs[iName] = new(scraper.Scraper)
+	case "time":
+		integs[iName] = new(time.Time)
+	case "tuya":
+		integs[iName] = new(tuya.Tuya)
+	default:
+		log.Fatalf("ERROR: Integration '%s' is not known\n", iName)
+	}
+}
 
 // StartIntegrations asks each enabled Integration to configure itself, then starts them.
 func StartIntegrations(conf config.MainConfigT, evChan chan events.EventT, mqtt mqtt.MQTT) {
+	mainConfig = conf
+	evCh = evChan
+	mq = mqtt
 	for _, i := range conf.Integrations {
-		switch i {
-		case "automation":
-			integs[i] = new(automation.Automation)
-		case "daikin":
-			integs[i] = new(daikin.Daikin)
-		case "datalogger":
-			integs[i] = new(datalogger.DataLogger)
-		case "influx":
-			integs[i] = new(influx.Influx)
-		case "network":
-			integs[i] = new(network.Network)
-		case "scraper":
-			integs[i] = new(scraper.Scraper)
-		case "time":
-			integs[i] = new(time.Time)
-		case "tuya":
-			integs[i] = new(tuya.Tuya)
-		default:
-			log.Printf("WARNING: Integration '%s' is not yet handled\n", i)
-			continue
-		}
-
+		newIntegration(i)
 		log.Printf("INFO: Integration %s provides %v\n", i, integs[i].ProvidesDeviceTypes())
 		if err := integs[i].LoadConfig(conf.ConfigDir); err != nil {
 			log.Fatalf("ERROR: %s Integration could not load its configuration", i)
@@ -88,22 +97,90 @@ func StartIntegrations(conf config.MainConfigT, evChan chan events.EventT, mqtt 
 		go integs[i].Start(evChan, mqtt)
 	}
 
-	// catch HUP signal to reload Integrations...
-	// Only handling Automations for now
-	go func() {
-		sigChan := make(chan os.Signal, 1)
-		signal.Notify(sigChan, syscall.SIGHUP)
-		for {
-			<-sigChan
-			log.Println("INFO: Got HUP signal to reload Automations")
-			i := "automation"
-			integs[i].Stop()
-			delete(integs, i)
-			integs[i] = new(automation.Automation)
-			if err := integs[i].LoadConfig(conf.ConfigDir); err != nil {
-				log.Fatalf("ERROR: %s Integration could not load its configuration", i)
+	// start a HTTP server for back-end control
+	http.HandleFunc("/", rootHandler)
+	if err := http.ListenAndServe(":"+strconv.Itoa(conf.ControlPort), nil); err != nil {
+		log.Println("WARNING: Could not start HTTP admin control back-end")
+	}
+}
+
+var homeTemplateMain = `<!DOCTYPE html>
+<html>
+ <head>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
+  <title>AGHAST - {{.SystemName}}</title>
+ </head>
+ <body>
+  <h1>AGHAST - {{.SystemName}}</h1>
+  <p>Configuration directory: {{.ConfigDir}}</p>
+  <p>MQTT Broker: {{.MqttBroker}}</p>
+  <h2>Configured Integrations</h2>
+   <p>You can reload an Integration's configuration here (it will be stopped, reloaded, and restarted).
+	  You can also completetly stop an Integration that is causing problems; there is no way to restart it other than
+	  stopping the AGHAST server and restarting it.</p>
+   <form method="POST">
+	<table>
+		<tr><th>Integration</th><th></th><th></th></tr>
+		{{range .Integrations}}
+		<tr>
+		 <td>{{.}}</td>
+		 <td><button name="reload" value="{{.}}">Reload</button></td>
+		 <td><button name="stop" value="{{.}}">Stop</button></td>
+		</tr>
+		{{end}}
+	</table>
+   </form>
+`
+
+var homeTemplateStats = `
+  <h2>Statistics</h2>
+   <table style="text-align: center">
+	<tr><th>Memory Allocated (MB)</th><th>No. Goroutines</th></tr>
+	<tr><td>{{.TotalMemoryMB}}</td><td>{{.NumGoroutines}}</td></tr>
+   </table>
+ </body>
+</html>`
+
+type sysStatsT struct {
+	TotalMemoryMB uint64
+	NumGoroutines int
+}
+
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("DEBUG: HTTP rootHandler got stop for: %s\n", r.FormValue("stop"))
+	if r.FormValue("stop") != "" {
+		i := r.FormValue("stop")
+		integs[i].Stop()
+		delete(integs, i)
+		for ix, in := range mainConfig.Integrations {
+			if in == i {
+				copy(mainConfig.Integrations[ix:], mainConfig.Integrations[ix+1:])
+				mainConfig.Integrations[len(mainConfig.Integrations)-1] = ""
+				mainConfig.Integrations = mainConfig.Integrations[:len(mainConfig.Integrations)-1]
 			}
-			go integs[i].Start(evChan, mqtt)
 		}
-	}()
+	}
+	log.Printf("DEBUG: HTTP rootHandler got reload for : %s\n", r.FormValue("reload"))
+	if r.FormValue("reload") != "" {
+		i := r.FormValue("reload")
+		integs[i].Stop()
+		newIntegration(i)
+		if err := integs[i].LoadConfig(mainConfig.ConfigDir); err != nil {
+			log.Fatalf("ERROR: %s Integration could not load its configuration", i)
+		}
+		go integs[i].Start(evCh, mq)
+	}
+	t, err := template.New("root").Parse(homeTemplateMain)
+	if err != nil {
+		log.Fatalf("ERROR: Could not parse root admin template - this should not happen!")
+	}
+	err = t.Execute(w, mainConfig)
+
+	var sysStats sysStatsT
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
+	sysStats.TotalMemoryMB = memStats.Sys >> 20
+	sysStats.NumGoroutines = runtime.NumGoroutine()
+	t2, err := template.New("root2").Parse(homeTemplateStats)
+	err = t2.Execute(w, sysStats)
 }

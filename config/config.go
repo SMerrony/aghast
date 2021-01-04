@@ -49,6 +49,7 @@ type MainConfigT struct {
 	MqttPort            int
 	MqttClientID        string
 	Integrations        []string
+	ControlPort         int
 	ConfigDir           string
 }
 
@@ -64,6 +65,10 @@ func CheckMainConfig(configDir string) error {
 		return errors.New("No 'systemName' specified in main configuration")
 	}
 	log.Printf("INFO: Checking main configuration for '%s'\n", systemName)
+
+	if mainConfig.Get("controlPort") == nil {
+		return errors.New("controlPort must be specified in main configuration, cannot run")
+	}
 
 	if mainConfig.GetArray("integrations") == nil {
 		return errors.New("No Integrations section in config, cannot run")
@@ -107,6 +112,7 @@ func LoadMainConfig(configDir string) (MainConfigT, error) {
 	conf.MqttPort = int(mainConfig.Get("mqttPort").(int64))
 	conf.MqttClientID = mainConfig.Get("mqttClientID").(string)
 	conf.LogEvents = mainConfig.Get("logEvents").(bool)
+	conf.ControlPort = int(mainConfig.Get("controlPort").(int64))
 
 	log.Printf("DEBUG: Main config for %s loaded, MQTT Broker is %s\n", conf.SystemName, conf.MqttBroker)
 	log.Printf("DEBUG: Latitude %f, Longitude %f\n", conf.Latitude, conf.Longitude)
