@@ -1,26 +1,29 @@
-logDir = "/tmp"     # Don't use /tmp for real!
+LogDir = "/tmp"     # Don't use /tmp for real!
 
-[Logger.Latencies]
-  logFile = "wonkyPiLatency.csv"
-  integration = "Network"
-  deviceType = "HostChecker"
-  deviceName = "+"
-  eventName = "Latency"
-  flushEvery = 2
+[[Logger]]
+  Name = "Latencies"
+  LogFile = "wonkyPiLatency.csv"
+  Integration = "Network"
+  DeviceType = "HostChecker"
+  DeviceName = "+"
+  EventName = "Latency"
+  FlushEvery = 2
 
-[Logger.StevesRoomTemp]
-  logFile = "stevesTemp.csv"
-  integration = "Daikin"
-  deviceType = "Inverter"
-  deviceName = "Steve's Office"
-  eventName = "Temperature"
-  flushEvery = 10
+[[Logger]]
+  Name = "StevesRoomTemp"
+  LogFile = "stevesTemp.csv"
+  Integration = "Daikin"
+  DeviceType = "Inverter"
+  DeviceName = "Steve's Office"
+  EventName = "Temperature"
+  FlushEvery = 10
   
-[Logger.AllTemps]
-  logFile = "allTemps.csv"
-  integration = "Daikin"
-  deviceType = "Inverter"
-  deviceName = "+"
-  eventName = "Temperature"
-  flushEvery = 50
+[[Logger]]
+  Name = "AllTemps"
+  LogFile = "allTemps.csv"
+  Integration = "Daikin"
+  DeviceType = "Inverter"
+  DeviceName = "+"
+  EventName = "Temperature"
+  FlushEvery = 50
   

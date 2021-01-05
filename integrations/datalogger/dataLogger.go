@@ -26,6 +26,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/pelletier/go-toml"
@@ -38,45 +39,31 @@ const (
 
 // The DataLogger type encapsulates the Data Logging Integration
 type DataLogger struct {
-	logDir  string
-	loggers map[string]loggerT
+	LogDir    string
+	Logger    []loggerT
+	stopChans []chan bool // used for stopping Goroutines
 }
 
 type loggerT struct {
-	logFile                 string
-	integration, deviceType string
-	deviceName, eventName   string
-	flushEvery              int
+	Name, LogFile           string
+	Integration, DeviceType string
+	DeviceName, EventName   string
+	FlushEvery              int
 }
 
 // LoadConfig loads and stores the configuration for this Integration
 func (d *DataLogger) LoadConfig(confdir string) error {
-	conf, err := toml.LoadFile(confdir + configFilename)
+	confBytes, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
-		log.Println("ERROR: Could not load configuration ", err.Error())
+		log.Println("ERROR: Could not load DataLogger configuration ", err.Error())
 		return err
 	}
-	d.loggers = make(map[string]loggerT)
-	confMap := conf.ToMap()
-	d.logDir = confMap["logDir"].(string)
-	loggersConf := confMap["Logger"].(map[string]interface{})
-	for name, i := range loggersConf {
-		var logger loggerT
-		details := i.(map[string]interface{})
-		logger.logFile = details["logFile"].(string)
-		logger.integration = details["integration"].(string)
-		logger.deviceType = details["deviceType"].(string)
-		// devs := details["devices"].([]interface{})
-		// for _, d := range devs {
-		// 	logger.devices = append(logger.devices, d.(string))
-		// }
-		logger.deviceName = details["deviceName"].(string)
-		logger.eventName = details["eventName"].(string)
-		logger.flushEvery = int(details["flushEvery"].(int64))
-		d.loggers[name] = logger
-		log.Printf("INFO: CSV logger %s configured as %v\n", name, logger)
+	err = toml.Unmarshal(confBytes, d)
+	if err != nil {
+		log.Fatalf("ERROR: Could not load DataLogger config due to %s\n", err.Error())
+		return err
 	}
-
+	log.Printf("INFO: DataLogger has %d loggers\n", len(d.Logger))
 	return nil
 }
 
@@ -87,45 +74,58 @@ func (d *DataLogger) ProvidesDeviceTypes() []string {
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
 func (d *DataLogger) Start(evChan chan events.EventT, mq mqtt.MQTT) {
-	for _, l := range d.loggers {
+	for _, l := range d.Logger {
 		go d.logger(l)
 	}
 }
 
 // Stop terminates the Integration and all Goroutines it contains
-func (d *DataLogger) Stop() { // TODO
+func (d *DataLogger) Stop() {
+	for _, ch := range d.stopChans {
+		ch <- true
+	}
+	log.Println("DEBUG: DataLogger - All Goroutines should have stopped")
+}
 
+func (d *DataLogger) addStopChan() int {
+	d.stopChans = append(d.stopChans, make(chan bool))
+	return len(d.stopChans) - 1
 }
 
 func (d *DataLogger) logger(l loggerT) {
-	file, err := os.OpenFile(d.logDir+"/"+l.logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(d.LogDir+"/"+l.LogFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Printf("WARNING: DataLogger failed to open/create CSV log - %v\n", err)
 		return
 	}
 	csvWriter := csv.NewWriter(file)
 	sid := events.GetSubscriberID(subscribeName)
-	ch, err := events.Subscribe(sid, l.integration, l.deviceType, l.deviceName, l.eventName)
+	ch, err := events.Subscribe(sid, l.Integration, l.DeviceType, l.DeviceName, l.EventName)
 	if err != nil {
 		log.Printf("WARNING: DataLogger Integration could not subscribe to event for %v\n", l)
 		return
 	}
-	idRoot := l.integration + "/" + l.deviceType
+	idRoot := l.Integration + "/" + l.DeviceType
 	unflushed := 0
+	sc := d.addStopChan()
 	for {
-		ev := <-ch
-		ts := time.Now().Format(time.RFC3339)
-		record := make([]string, 5)
-		record[0] = ts
-		record[1] = idRoot
-		record[2] = ev.DeviceName
-		record[3] = ev.EventName
-		record[4] = fmt.Sprintf("%v", ev.Value)
-		csvWriter.Write(record)
-		if unflushed++; unflushed == l.flushEvery {
+		select {
+		case <-d.stopChans[sc]:
 			csvWriter.Flush()
-			unflushed = 0
+			return
+		case ev := <-ch:
+			ts := time.Now().Format(time.RFC3339)
+			record := make([]string, 5)
+			record[0] = ts
+			record[1] = idRoot
+			record[2] = ev.DeviceName
+			record[3] = ev.EventName
+			record[4] = fmt.Sprintf("%v", ev.Value)
+			csvWriter.Write(record)
+			if unflushed++; unflushed == l.FlushEvery {
+				csvWriter.Flush()
+				unflushed = 0
+			}
 		}
-
 	}
 }
