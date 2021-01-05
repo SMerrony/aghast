@@ -1,24 +1,32 @@
-[Inverter.C0E434E69F27]          # The key is the unpunctuated MAC address of the unit
-  label = "Steve's Office"       # A user-friendly label for the unit - must be unique
+[[Inverter]]
+  MAC = "C0E434E69F27"      # The unpunctuated MAC address of the unit
+  Label = "Steve's Office"  # A user-friendly label for the unit - must be unique
   
-[Inverter.C0E434E6A3C6]
-  label = "Dining Room"
+[[Inverter]]
+  MAC = "C0E434E6A3C6"
+  Label = "Dining Room"
 
-[Inverter.C0E434E60BC6]
-  label = "Spare Bedroom"
+[[Inverter]]
+  MAC = "C0E434E60BC6"
+  Label = "Spare Bedroom"
 
-[Inverter.C0E434E615C3]
-  label = "Paul's Studio"
+[[Inverter]]
+  MAC = "C0E434E615C3"
+  Label = "Paul's Studio"
 
-[Inverter.C0E434E60BA0]
-  label = "Master Bedroom"
+[[Inverter]]
+  MAC = "C0E434E60BA0"
+  Label = "Master Bedroom"
 
-[Inverter.D8C0A664EDEE]
-  label = "Living Room"
+[[Inverter]]
+  MAC = "D8C0A664EDEE"
+  Label = "Living Room"
 
-[Inverter.706655B5CD75]
-  label = "Hall"
+[[Inverter]]
+  MAC = "706655B5CD75"
+  Label = "Hall"
 
-[Inverter.D8C0A664E830]
-  label = "Music Room"
+[[Inverter]]
+  MAC = "D8C0A664E830"
+  Label = "Music Room"
   

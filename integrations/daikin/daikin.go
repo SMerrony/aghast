@@ -1,4 +1,4 @@
-// Copyright ©2020 Steve Merrony
+// Copyright ©2020,2021 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,8 +41,14 @@ import (
 )
 
 const (
-	configFilename = "/daikin.toml"
-	subscriberName = "Daikin"
+	configFilename     = "/daikin.toml"
+	subscriberName     = "Daikin"
+	udpPort            = ":30050"
+	udpQuery           = "DAIKIN_UDP" + getBasicInfo
+	mqttPrefix         = "aghast/daikin/"
+	maxUnits           = 20
+	scanTimeout        = 10 * time.Second
+	inverterReqTimeout = 5 * time.Second
 )
 
 // The Daikin type encapsulates the 'Daikin' HVAC Integration.
@@ -68,6 +74,14 @@ type inverterT struct {
 	modelInfo, controlInfo,
 	sensorInfo infoMap
 	// clientChan chan mqtt.MessageT
+}
+
+// confT fields exported for unmarshalling
+type confT struct {
+	Inverter []struct {
+		MAC   string
+		Label string
+	}
 }
 
 // ControlInfoMsgT is the type of messaage sent out both as an Event and via MQTT
@@ -100,15 +114,6 @@ const (
 
 const setControlFmt = "?pow=%s&mode=%s&stemp=%s&f_rate=%s&f_dir=%s&shum=%s"
 
-const (
-	udpPort            = ":30050"
-	udpQuery           = "DAIKIN_UDP" + getBasicInfo
-	mqttPrefix         = "aghast/daikin/"
-	maxUnits           = 20
-	scanTimeout        = 10 * time.Second
-	inverterReqTimeout = 5 * time.Second
-)
-
 type infoT int
 
 const (
@@ -136,33 +141,27 @@ type infoMap map[string]infoElement
 
 // LoadConfig loads and stores the configuration for this Integration
 func (d *Daikin) LoadConfig(confdir string) error {
-	t, err := config.PreprocessTOML(confdir, configFilename)
+	confBytes, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
 		log.Println("ERROR: Could not load Daikin configuration ", err.Error())
 		return err
 	}
-	conf, err := toml.LoadBytes(t)
+	var tmpConf confT
+	err = toml.Unmarshal(confBytes, &tmpConf)
 	if err != nil {
-		log.Println("ERROR: Could not parse Daikin configuration ", err.Error())
+		log.Fatalf("ERROR: Could not load Daikin config due to %s\n", err.Error())
 		return err
 	}
 	d.invertersMu.Lock()
 	defer d.invertersMu.Unlock()
 	d.inverters = make(map[string]inverterT)
 	d.invertersByLabel = make(map[string]string)
-
-	confMap := conf.ToMap()
-	invsConf := confMap["Inverter"].(map[string]interface{})
-	for mac, i := range invsConf {
+	for _, i := range tmpConf.Inverter {
 		var inv inverterT
-		details := i.(map[string]interface{})
-		// inv.MACAddress = mac
-		inv.Label = details["label"].(string)
-		d.inverters[mac] = inv
-		d.invertersByLabel[inv.Label] = mac
-		// log.Printf("DEBUG: Configured Daikin Inverter at %s as %s\n", mac, inv.Label)
+		inv.Label = i.Label
+		d.inverters[i.MAC] = inv
+		d.invertersByLabel[inv.Label] = i.MAC
 	}
-
 	return nil
 }
 
@@ -173,7 +172,6 @@ func (d *Daikin) ProvidesDeviceTypes() []string {
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
 func (d *Daikin) Start(evChan chan events.EventT, mq mqtt.MQTT) {
-
 	d.evChan = evChan
 	d.mqttChan = mq.PublishChan
 	d.mq = mq
@@ -194,7 +192,6 @@ func (d *Daikin) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	go d.monitorClients()
 	go d.monitorActions()
 	go d.rerunDiscovery(maxUnits, scanTimeout)
-
 }
 
 // Stop terminates the Integration and all Goroutines it contains
@@ -349,88 +346,88 @@ func (d *Daikin) monitorUnits() {
 	sc := d.addStopChan()
 	everyMinute := time.NewTicker(time.Minute)
 	for {
+		for mac, unit := range d.inverters {
+			if unit.found {
+				si, err := d.requestSensorInfo(mac)
+				if err != nil {
+					log.Printf("INFO: Daikin Sensor probe of %s failed with %v\n", unit.Label, err)
+					// log.Printf("... Unit data is %v\n", unit)
+					unit.online = false
+
+				} else {
+					unit.online = true
+					// log.Printf("DEBUG: ... Unit - %s, Unit Temp - %f, Outside Temp - %f\n", unit.Label, unit.sensorInfo["htemp"].floatValue, unit.sensorInfo["otemp"].floatValue)
+					d.evChan <- events.EventT{
+						Integration: "Daikin",
+						DeviceType:  "Inverter",
+						DeviceName:  unit.Label,
+						EventName:   "Temperature",
+						Value:       fmt.Sprintf("%.1f", si["htemp"].floatValue),
+					}
+					d.evChan <- events.EventT{
+						Integration: "Daikin",
+						DeviceType:  "Inverter",
+						DeviceName:  unit.Label,
+						EventName:   "OutsideTemperature",
+						Value:       fmt.Sprintf("%.1f", si["otemp"].floatValue),
+					}
+					d.mqttChan <- mqtt.MessageT{
+						Topic:    mqttPrefix + unit.Label + "/temperature",
+						Qos:      0,
+						Retained: true,
+						Payload:  fmt.Sprintf("%.1f", si["htemp"].floatValue),
+					}
+					d.mqttChan <- mqtt.MessageT{
+						Topic:    mqttPrefix + unit.Label + "/outsidetemperature",
+						Qos:      0,
+						Retained: true,
+						Payload:  fmt.Sprintf("%.1f", si["otemp"].floatValue),
+					}
+					unit.sensorInfo = si
+				}
+				ci, err := d.requestControlInfo(mac)
+				if err != nil {
+					log.Printf("INFO: Daikin Control probe of %s failed with %v\n", unit.Label, err)
+					// log.Printf("... Unit data is %v\n", unit)
+					unit.online = false
+				} else {
+					unit.online = true
+					var pubCi ControlInfoMsgT
+					pubCi.Power = fmt.Sprintf("%v", ci["pow"].boolValue)
+					pubCi.Mode = int(ci["mode"].intValue)
+					pubCi.Stemp = ci["stemp"].floatValue
+					pubCi.Frate = ci["f_rate"].stringValue
+					pubCi.Fdir = int(ci["f_dir"].intValue)
+					pubCi.LastUpdate = time.Now().Format("15:04:05")
+					payload, err := json.Marshal(pubCi)
+					if err != nil {
+						panic(err)
+					}
+					d.mqttChan <- mqtt.MessageT{
+						Topic:    mqttPrefix + unit.Label + "/controlinfo",
+						Qos:      0,
+						Retained: true,
+						Payload:  payload,
+					}
+
+					d.evChan <- events.EventT{
+						Integration: "Daikin",
+						DeviceType:  "Inverter",
+						DeviceName:  unit.Label,
+						EventName:   "ControInfo",
+						Value:       pubCi,
+					}
+					unit.controlInfo = ci
+				}
+				// write the updated unit back into the map
+				d.inverters[mac] = unit
+			}
+		}
 		select {
 		case <-d.stopChans[sc]:
 			return
 		case <-everyMinute.C:
-
-			for mac, unit := range d.inverters {
-				if unit.found {
-					si, err := d.requestSensorInfo(mac)
-					if err != nil {
-						log.Printf("INFO: Daikin Sensor probe of %s failed with %v\n", unit.Label, err)
-						// log.Printf("... Unit data is %v\n", unit)
-						unit.online = false
-
-					} else {
-						unit.online = true
-						// log.Printf("DEBUG: ... Unit - %s, Unit Temp - %f, Outside Temp - %f\n", unit.Label, unit.sensorInfo["htemp"].floatValue, unit.sensorInfo["otemp"].floatValue)
-						d.evChan <- events.EventT{
-							Integration: "Daikin",
-							DeviceType:  "Inverter",
-							DeviceName:  unit.Label,
-							EventName:   "Temperature",
-							Value:       fmt.Sprintf("%.1f", si["htemp"].floatValue),
-						}
-						d.evChan <- events.EventT{
-							Integration: "Daikin",
-							DeviceType:  "Inverter",
-							DeviceName:  unit.Label,
-							EventName:   "OutsideTemperature",
-							Value:       fmt.Sprintf("%.1f", si["otemp"].floatValue),
-						}
-						d.mqttChan <- mqtt.MessageT{
-							Topic:    mqttPrefix + unit.Label + "/temperature",
-							Qos:      0,
-							Retained: true,
-							Payload:  fmt.Sprintf("%.1f", si["htemp"].floatValue),
-						}
-						d.mqttChan <- mqtt.MessageT{
-							Topic:    mqttPrefix + unit.Label + "/outsidetemperature",
-							Qos:      0,
-							Retained: true,
-							Payload:  fmt.Sprintf("%.1f", si["otemp"].floatValue),
-						}
-						unit.sensorInfo = si
-					}
-					ci, err := d.requestControlInfo(mac)
-					if err != nil {
-						log.Printf("INFO: Daikin Control probe of %s failed with %v\n", unit.Label, err)
-						// log.Printf("... Unit data is %v\n", unit)
-						unit.online = false
-					} else {
-						unit.online = true
-						var pubCi ControlInfoMsgT
-						pubCi.Power = fmt.Sprintf("%v", ci["pow"].boolValue)
-						pubCi.Mode = int(ci["mode"].intValue)
-						pubCi.Stemp = ci["stemp"].floatValue
-						pubCi.Frate = ci["f_rate"].stringValue
-						pubCi.Fdir = int(ci["f_dir"].intValue)
-						pubCi.LastUpdate = time.Now().Format("15:04:05")
-						payload, err := json.Marshal(pubCi)
-						if err != nil {
-							panic(err)
-						}
-						d.mqttChan <- mqtt.MessageT{
-							Topic:    mqttPrefix + unit.Label + "/controlinfo",
-							Qos:      0,
-							Retained: true,
-							Payload:  payload,
-						}
-
-						d.evChan <- events.EventT{
-							Integration: "Daikin",
-							DeviceType:  "Inverter",
-							DeviceName:  unit.Label,
-							EventName:   "ControInfo",
-							Value:       pubCi,
-						}
-						unit.controlInfo = ci
-					}
-					// write the updated unit back into the map
-					d.inverters[mac] = unit
-				}
-			}
+			continue
 		}
 	}
 }

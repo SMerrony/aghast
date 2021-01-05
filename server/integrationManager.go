@@ -104,20 +104,29 @@ func StartIntegrations(conf config.MainConfigT, evChan chan events.EventT, mqtt 
 	}
 }
 
-var homeTemplateMain = `<!DOCTYPE html>
+const homeTemplateMain = `<!DOCTYPE html>
 <html>
  <head>
   <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
   <title>AGHAST - {{.SystemName}}</title>
+  <style>
+  body {
+	background-color: AliceBlue;
+	font-family: Arial, Helvetica, sans-serif;
+  }
+  th, td {
+	padding: 5px;
+  }
+  </style>
  </head>
  <body>
   <h1>AGHAST - {{.SystemName}}</h1>
-  <p>Configuration directory: {{.ConfigDir}}</p>
-  <p>MQTT Broker: {{.MqttBroker}}</p>
+  <p>Configuration directory: <samp>{{.ConfigDir}}</samp></p>
+  <p>MQTT Broker: <samp>{{.MqttBroker}}</samp></p>
   <h2>Configured Integrations</h2>
-   <p>You can reload an Integration's configuration here (it will be stopped, reloaded, and restarted).
-	  You can also completetly stop an Integration that is causing problems; there is no way to restart it other than
-	  stopping the AGHAST server and restarting it.</p>
+   <p>You can reload an Integration's configuration here (it will be stopped, reloaded, and restarted).</p>
+   <p>You can also completely stop an Integration that is causing problems; there is no way to restart it other than
+	  stopping the AGHAST server and restarting it.  Take care!</p>
    <form method="POST">
 	<table>
 		<tr><th>Integration</th><th></th><th></th></tr>
@@ -132,12 +141,13 @@ var homeTemplateMain = `<!DOCTYPE html>
    </form>
 `
 
-var homeTemplateStats = `
+const homeTemplateStats = `
   <h2>Statistics</h2>
    <table style="text-align: center">
 	<tr><th>Memory Allocated (MB)</th><th>No. Goroutines</th></tr>
 	<tr><td>{{.TotalMemoryMB}}</td><td>{{.NumGoroutines}}</td></tr>
    </table>
+   <input type="button" value="Update Data" onClick="location.href=location.href">
  </body>
 </html>`
 
@@ -147,7 +157,7 @@ type sysStatsT struct {
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("DEBUG: HTTP rootHandler got stop for: %s\n", r.FormValue("stop"))
+	// log.Printf("DEBUG: HTTP rootHandler got stop for: %s\n", r.FormValue("stop"))
 	if r.FormValue("stop") != "" {
 		i := r.FormValue("stop")
 		integs[i].Stop()
@@ -160,7 +170,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	log.Printf("DEBUG: HTTP rootHandler got reload for : %s\n", r.FormValue("reload"))
+	// log.Printf("DEBUG: HTTP rootHandler got reload for : %s\n", r.FormValue("reload"))
 	if r.FormValue("reload") != "" {
 		i := r.FormValue("reload")
 		integs[i].Stop()
@@ -183,4 +193,5 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	sysStats.NumGoroutines = runtime.NumGoroutine()
 	t2, err := template.New("root2").Parse(homeTemplateStats)
 	err = t2.Execute(w, sysStats)
+	log.Println("DEBUG: HTTP Back-end generated a page")
 }

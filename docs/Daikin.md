@@ -28,11 +28,14 @@ A `daikin.toml` file must also exist in your configurations directory.
 
 Its format is...
 ```
-[Inverter.123456789ABC]     # The key is the unpunctuated MAC address of the unit
-  label = "Steve's Office"  # A user-friendly label for the unit - must be unique
+[[Inverter]]
+  MAC = "C0E434E69F27"      # The unpunctuated MAC address of the unit
+  Label = "Steve's Office"  # A user-friendly label for the unit - must be unique
+  
+[[Inverter]]
+  MAC = "C0E434E6A3C6"
+  Label = "Dining Room"
 
-[Inverter.123456789ABD]   
-  label = "Living Room"     
 ```
 We use the MAC address of the interface unit as the IP address or user-assigned unit name (via one of the Daikin apps) could change.
 
