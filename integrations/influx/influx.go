@@ -39,49 +39,33 @@ const (
 
 // The Influx type encapsulates the Data Logging Integration
 type Influx struct {
-	bucket, org, token, url string
+	Bucket, Org, Token, URL string
 	client                  influxdb2.Client
 	writeAPI                influxAPI.WriteAPI
-	loggers                 map[string]loggerT
+	Logger                  []loggerT
+	stopChans               []chan bool // used for stopping Goroutines
 }
 
 type loggerT struct {
-	integration, deviceType string
-	deviceName, eventName   string
-	dataType                string
+	Name                    string
+	Integration, DeviceType string
+	DeviceName, EventName   string
+	DataType                string
 }
 
 // LoadConfig loads and stores the configuration for this Integration
 func (i *Influx) LoadConfig(confdir string) error {
-	t, err := config.PreprocessTOML(confdir, configFilename)
+	confBytes, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
 		log.Println("ERROR: Could not load Influx configuration ", err.Error())
 		return err
 	}
-	conf, err := toml.LoadBytes(t)
+	err = toml.Unmarshal(confBytes, i)
 	if err != nil {
-		log.Println("ERROR: Could not parse Influx configuration ", err.Error())
+		log.Fatalf("ERROR: Could not load Influx config due to %s\n", err.Error())
 		return err
 	}
-	confMap := conf.ToMap()
-	i.bucket = conf.Get("bucket").(string)
-	i.org = conf.Get("org").(string)
-	i.token = conf.Get("token").(string)
-	i.url = conf.Get("url").(string)
-	i.loggers = make(map[string]loggerT)
-	loggersConf := confMap["Logger"].(map[string]interface{})
-	for name, l := range loggersConf {
-		var logger loggerT
-		details := l.(map[string]interface{})
-		logger.integration = details["integration"].(string)
-		logger.deviceType = details["deviceType"].(string)
-		logger.deviceName = details["deviceName"].(string)
-		logger.eventName = details["eventName"].(string)
-		logger.dataType = details["type"].(string)
-		i.loggers[name] = logger
-		log.Printf("INFO: InfluxDB logger %s configured as %v\n", name, logger)
-	}
-
+	log.Printf("INFO: Influx has %d loggers\n", len(i.Logger))
 	return nil
 }
 
@@ -92,77 +76,91 @@ func (i *Influx) ProvidesDeviceTypes() []string {
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
 func (i *Influx) Start(evChan chan events.EventT, mq mqtt.MQTT) {
-	i.client = influxdb2.NewClient(i.url, i.token)
-	i.writeAPI = i.client.WriteAPI(i.org, i.bucket)
-	for name, l := range i.loggers {
-		go i.logger(name, l)
+	i.client = influxdb2.NewClient(i.URL, i.Token)
+	i.writeAPI = i.client.WriteAPI(i.Org, i.Bucket)
+	for _, l := range i.Logger {
+		go i.logger(l)
 	}
 }
 
 // Stop terminates the Integration and all Goroutines it contains
-func (i *Influx) Stop() { // TODO
-
+func (i *Influx) Stop() {
+	for _, ch := range i.stopChans {
+		ch <- true
+	}
+	log.Println("DEBUG: Influx - All Goroutines should have stopped")
 }
 
-func (i *Influx) logger(name string, l loggerT) {
+func (i *Influx) addStopChan() int {
+	i.stopChans = append(i.stopChans, make(chan bool))
+	return len(i.stopChans) - 1
+}
+
+func (i *Influx) logger(l loggerT) {
 	sid := events.GetSubscriberID(subscribeName)
-	ch, err := events.Subscribe(sid, l.integration, l.deviceType, l.deviceName, l.eventName)
+	ch, err := events.Subscribe(sid, l.Integration, l.DeviceType, l.DeviceName, l.EventName)
 	if err != nil {
 		log.Printf("WARNING: Influx Integration (logger) could not subscribe to event for %v\n", l)
 		return
 	}
-	// log.Printf("DEBUG: Influx logger starting for %s, %s, subscriber #: %d\n", l.integration, l.eventName, sid)
+	sc := i.addStopChan()
+	// log.Printf("DEBUG: Influx logger starting for %s, %s, subscriber #: %d\n", l.Integration, l.EventName, sid)
 	for {
-		ev := <-ch
-		switch l.dataType {
-		case "float":
-			fl, err := strconv.ParseFloat(ev.Value.(string), 64)
-			if err != nil {
-				log.Printf("WARNING: Influx logger could not parse float from %v\n", ev.Value.(string))
-				continue
+		select {
+		case <-i.stopChans[sc]:
+			i.writeAPI.Flush()
+			return
+		case ev := <-ch:
+			switch l.DataType {
+			case "float":
+				fl, err := strconv.ParseFloat(ev.Value.(string), 64)
+				if err != nil {
+					log.Printf("WARNING: Influx logger could not parse float from %v\n", ev.Value.(string))
+					continue
+				}
+				p := influxdb2.NewPoint(l.Name,
+					map[string]string{
+						"Integration": l.Integration,
+						"DeviceType":  l.DeviceType,
+						"DeviceName":  l.DeviceName,
+					},
+					map[string]interface{}{
+						l.EventName: fl,
+					},
+					time.Now())
+				i.writeAPI.WritePoint(p)
+			case "integer":
+				num, err := strconv.Atoi(ev.Value.(string))
+				if err != nil {
+					log.Printf("WARNING: Influx logger could not parse integer from %v\n", ev.Value.(string))
+					continue
+				}
+				p := influxdb2.NewPoint(l.Name,
+					map[string]string{
+						"Integration": l.Integration,
+						"DeviceType":  l.DeviceType,
+						"DeviceName":  l.DeviceName,
+					},
+					map[string]interface{}{
+						l.EventName: num,
+					},
+					time.Now())
+				i.writeAPI.WritePoint(p)
+			default:
+				// everything else treated as a string
+				p := influxdb2.NewPoint(l.Name,
+					map[string]string{
+						"Integration": l.Integration,
+						"DeviceType":  l.DeviceType,
+						"DeviceName":  l.DeviceName,
+					},
+					map[string]interface{}{
+						l.EventName: ev.Value,
+					},
+					time.Now())
+				i.writeAPI.WritePoint(p)
 			}
-			p := influxdb2.NewPoint(name,
-				map[string]string{
-					"integration": l.integration,
-					"deviceType":  l.deviceType,
-					"deviceName":  l.deviceName,
-				},
-				map[string]interface{}{
-					l.eventName: fl,
-				},
-				time.Now())
-			i.writeAPI.WritePoint(p)
-		case "integer":
-			num, err := strconv.Atoi(ev.Value.(string))
-			if err != nil {
-				log.Printf("WARNING: Influx logger could not parse integer from %v\n", ev.Value.(string))
-				continue
-			}
-			p := influxdb2.NewPoint(name,
-				map[string]string{
-					"integration": l.integration,
-					"deviceType":  l.deviceType,
-					"deviceName":  l.deviceName,
-				},
-				map[string]interface{}{
-					l.eventName: num,
-				},
-				time.Now())
-			i.writeAPI.WritePoint(p)
-		default:
-			// everything else treated as a string
-			p := influxdb2.NewPoint(name,
-				map[string]string{
-					"integration": l.integration,
-					"deviceType":  l.deviceType,
-					"deviceName":  l.deviceName,
-				},
-				map[string]interface{}{
-					l.eventName: ev.Value,
-				},
-				time.Now())
-			i.writeAPI.WritePoint(p)
 		}
-		// log.Printf("DEBUG: Influx logger wrote for %s, %s\n", l.integration, l.eventName)
+		// log.Printf("DEBUG: Influx logger wrote for %s, %s\n", l.Integration, l.EventName)
 	}
 }

@@ -7,19 +7,27 @@ The Influx Integration currently provides facilities for logging AGHAST Event da
 
 ```
 # InfluxDB connection details
-bucket = "aghast"
-org = "aghast"
-token = "!!SECRET(influxToken)"
-url = "http://localhost:8086"
+Bucket = "aghast"
+Org = "aghast"
+Token = "!!SECRET(influxToken)"
+URL = "http://localhost:8086"
 
 # Data to log
-[Logger.OutsideTemp]
-  integration = "Daikin"
-  deviceType = "Inverter"
-  deviceName = "Hall"          
-  eventName = "OutsideTemperature"
-  type = "float"                    # Either 'float', 'integer', or 'string'
+[[Logger]]
+  Name = "OutsideTemp"
+  Integration = "Daikin"
+  DeviceDataType = "Inverter"
+  DeviceName = "Hall"         
+  EventName = "OutsideTemperature"
+  DataType = "float"                    # Either 'float', 'integer', or 'string'
   
+[[Logger]]
+  Name = "HallTemp"
+  Integration = "Daikin"
+  DeviceDataType = "Inverter"
+  DeviceName = "Hall"           
+  EventName = "Temperature"
+  DataType = "float"
 ```
 
 ## Usage

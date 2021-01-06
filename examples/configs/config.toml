@@ -17,9 +17,9 @@ integrations = [
   "time",         # the Time integration MUST be enabled
 #  "automation",
   "network",
-  "datalogger",
+#  "datalogger",
 #  "daikin",
-#  "influx",
+  "influx",
 #  "scraper",
   "tuya",
 ]

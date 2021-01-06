@@ -1,48 +1,54 @@
 # InfluxDB connection details
-bucket = "aghast"
-org = "aghast"
-token = "!!SECRET(influxToken)"
-url = "http://localhost:8086"
+Bucket = "aghast"
+Org = "aghast"
+Token = "!!SECRET(influxToken)"
+URL = "http://localhost:8086"
 
 # Data to log
-[Logger.OutsideTemp]
-  integration = "Daikin"
-  deviceType = "Inverter"
-  deviceName = "Hall"         
-  eventName = "OutsideTemperature"
-  type = "float"                    # Either 'float', 'integer', or 'string'
+[[Logger]]
+  Name = "OutsideTemp"
+  Integration = "Daikin"
+  DeviceDataType = "Inverter"
+  DeviceName = "Hall"         
+  EventName = "OutsideTemperature"
+  DataType = "float"                    # Either 'float', 'integer', or 'string'
   
-[Logger.HallTemp]
-  integration = "Daikin"
-  deviceType = "Inverter"
-  deviceName = "Hall"           
-  eventName = "Temperature"
-  type = "float"
+[[Logger]]
+  Name = "HallTemp"
+  Integration = "Daikin"
+  DeviceDataType = "Inverter"
+  DeviceName = "Hall"           
+  EventName = "Temperature"
+  DataType = "float"
 
-[Logger.MusicTemp]
-  integration = "Daikin"
-  deviceType = "Inverter"
-  deviceName = "Music Room"           
-  eventName = "Temperature"
-  type = "float"
+[[Logger]]
+  Name = "MusicTemp"
+  Integration = "Daikin"
+  DeviceDataType = "Inverter"
+  DeviceName = "Music Room"           
+  EventName = "Temperature"
+  DataType = "float"
 
-[Logger.SalonTemp]
-  integration = "Daikin"
-  deviceType = "Inverter"
-  deviceName = "Living Room"           
-  eventName = "Temperature"
-  type = "float"
+[[Logger]]
+  Name = "SalonTemp"
+  Integration = "Daikin"
+  DeviceDataType = "Inverter"
+  DeviceName = "Living Room"           
+  EventName = "Temperature"
+  DataType = "float"
 
-[Logger.DiningTemp]
-  integration = "Daikin"
-  deviceType = "Inverter"
-  deviceName = "Dining Room"           
-  eventName = "Temperature"
-  type = "float"
+[[Logger]]
+  Name = "DiningTemp"
+  Integration = "Daikin"
+  DeviceDataType = "Inverter"
+  DeviceName = "Dining Room"           
+  EventName = "Temperature"
+  DataType = "float"
 
-[Logger.MasterBedTemp]
-  integration = "Daikin"
-  deviceType = "Inverter"
-  deviceName = "Master Bedroom"           
-  eventName = "Temperature"
-  type = "float"
+[[Logger]]
+  Name = "MasterBedTemp"
+  Integration = "Daikin"
+  DeviceDataType = "Inverter"
+  DeviceName = "Master Bedroom"           
+  EventName = "Temperature"
+  DataType = "float"
