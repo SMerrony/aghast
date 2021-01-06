@@ -1,72 +1,84 @@
-[HostChecker.MainRouter]
-  host = "192.168.1.1"
-  label = "4G Router"
-  period = 60
-  port = 80
+[[HostChecker]]
+  Name = "MainRouter"
+  Host = "192.168.1.1"
+  Label = "4G Router"
+  Period = 60
+  Port = 80
 
-[HostChecker.PiHole]
-  host = "192.168.1.90"
-  label = "Pi-Hole & DHCP"
-  period = 60
-  port = 80
+[[HostChecker]]
+  Name = "PiHole"
+  Host = "192.168.1.90"
+  Label = "Pi-Hole & DHCP"
+  Period = 60
+  Port = 80
 
-[HostChecker.VoipHub]
-  host = "192.168.1.2"
-  label = "VOIP Hub"
-  period = 120
-  port = 80
+[[HostChecker]]
+  Name = "VoipHub"
+  Host = "192.168.1.2"
+  Label = "VOIP Hub"
+  Period = 120
+  Port = 80
 
-[HostChecker.NAS]
-  host = "192.168.1.19"
-  label = "File Server"
-  period = 180
-  port = 445
+[[HostChecker]]
+  Name = "NAS"
+  Host = "192.168.1.19"
+  Label = "File Server"
+  Period = 180
+  Port = 445
 
-[HostChecker.tv1]
-  host = "lgwebostv"
-  label = "Living Room TV"
-  period = 1800
-  port = 80
+[[HostChecker]]
+  Name = "tv1"
+  Host = "lgwebostv"
+  Label = "Living Room TV"
+  Period = 1800
+  Port = 80
 
-[HostChecker.wonkyPi]
-  host = "192.168.1.92"
-  port = 8080
-  label = "Ancient Pi"
-  period = 60
+[[HostChecker]]
+  Name = "wonkyPi"
+  Host = "192.168.1.92"
+  Port = 8080
+  Pabel = "Ancient Pi"
+  Period = 60
 
 
-[HostChecker.BrotherA3]
-  host = "192.168.1.17"
-  port = 80
-  label = "Brother A3 Printer"
-  period = 120
+[[HostChecker]]
+  Name = "BrotherA3"
+  Host = "192.168.1.17"
+  Port = 80
+  Pabel = "Brother A3 Printer"
+  Period = 120
 
-[HostChecker.Epson]
-  host = "192.168.1.30"
-  port = 80
-  label = "Epson Printer"
-  period = 120
+[[HostChecker]]
+  Name = "Epson"
+  Host = "192.168.1.30"
+  Port = 80
+  Pabel = "Epson Printer"
+  Period = 120
   
-[HostChecker.Deco_Main]
-  host = "192.168.1.40"
-  port = 80
-  label = "Primary Deco M5"
-  period = 60
+[[HostChecker]]
+  Name = "Deco_Main"
+  Host = "192.168.1.40"
+  Port = 80
+  Pabel = "Primary Deco M5"
+  Period = 60
 
-[HostChecker.Deco_SpareRoom]
-  host = "192.168.1.42"
-  port = 80
-  label = "Deco M5 - Spare Room"
-  period = 60
+[[HostChecker]]
+  Name = "Deco_SpareRoom"
+  Host = "192.168.1.42"
+  Port = 80
+  Pabel = "Deco M5 - Spare Room"
+  Period = 60
 
-[HostChecker.Deco_Paul]
-  host = "192.168.1.44"
-  port = 80
-  label = "Deco M5 - Paul's Studio"
-  period = 60
+[[HostChecker]]
+  Name = "Deco_Paul"
+  Host = "192.168.1.44"
+  Port = 80
+  Pabel = "Deco M5 - Paul's Studio"
+  Period = 60
 
-[HostChecker.Deco_Steve]
-  host = "192.168.1.46"
-  port = 80
-  label = "Deco M5 - Steve's Office"
-  period = 60
+[[HostChecker]]
+  Name = "Deco_Steve"
+  Host = "192.168.1.46"
+  Port = 80
+  Pabel = "Deco M5 - Steve's Office"
+  Period = 60

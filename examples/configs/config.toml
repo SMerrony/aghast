@@ -19,7 +19,7 @@ integrations = [
   "network",
 #  "datalogger",
 #  "daikin",
-  "influx",
+#  "influx",
 #  "scraper",
   "tuya",
 ]

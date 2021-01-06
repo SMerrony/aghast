@@ -1,4 +1,4 @@
-// Copyright ©2020 Steve Merrony
+// Copyright ©2020,2021 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,9 +30,9 @@ import (
 )
 
 type hostCheckerT struct {
-	Host  string
-	Label string
-	// Name         string
+	Name         string
+	Host         string
+	Label        string
 	Period       int
 	Port         int
 	alive        bool
@@ -42,109 +42,98 @@ type hostCheckerT struct {
 
 const mqttPrefix = "aghast/hostchecker/"
 
-func (n *Network) loadHostCheckerConfig(mhc map[string]interface{}) {
-	for name, i := range mhc {
-		var hc hostCheckerT
-		// hc.Name = name
-		details := i.(map[string]interface{})
-		hc.Host = details["host"].(string)
-		hc.Label = details["label"].(string)
-		hc.Period = int(details["period"].(int64))
-		hc.Port = int(details["port"].(int64))
-		hc.firstCheck = true
-		n.hostCheckers[name] = hc
-		log.Printf("DEBUG: host: %s\t Label: %s\t Port: %d\n", hc.Host, hc.Label, hc.Port)
-	}
-}
-
-func (n *Network) hostChecker(dev string, evChan chan events.EventT) {
+func (n *Network) runHostChecker(hc hostCheckerT, evChan chan events.EventT) {
 	const (
 		netType = "tcp"
 		timeout = time.Second * 3
 	)
-	n.hostCheckersMu.RLock()
-	hcConf := n.hostCheckers[dev]
-	n.hostCheckersMu.RUnlock()
 
-	dest := fmt.Sprintf("%s:%d", hcConf.Host, hcConf.Port)
-	log.Printf("INFO: Network.HostChecker will monitor host %s\n", dest)
-
+	dest := fmt.Sprintf("%s:%d", hc.Host, hc.Port)
+	log.Printf("INFO: Network - HostChecker will monitor host %s - %s\n", dest, hc.Name)
+	hc.firstCheck = true
+	sc := n.addStopChan()
+	ticker := time.NewTicker(time.Duration(hc.Period) * time.Second)
 	for {
 		before := time.Now()
 		_, err := net.DialTimeout(netType, dest, timeout)
 		after := time.Now()
-		n.hostCheckersMu.Lock()
+		n.hostCheckerMu.Lock()
 		if err != nil {
-			if hcConf.alive || hcConf.firstCheck { // has state changed?
+			if hc.alive || hc.firstCheck { // has state changed?
 				evChan <- events.EventT{
 					Integration: "Network",
 					DeviceType:  "HostChecker",
-					DeviceName:  dev,
+					DeviceName:  hc.Name,
 					EventName:   "StateChanged",
 					Value:       "Unavailable"}
 				mqMsg := mqtt.MessageT{
-					Topic:    mqttPrefix + dev + "/state",
+					Topic:    mqttPrefix + hc.Name + "/state",
 					Qos:      0,
 					Retained: true,
 					Payload:  "false",
 				}
 				n.mqttChan <- mqMsg
 			}
-			hcConf.alive = false
+			hc.alive = false
 		} else {
-			if !hcConf.alive || hcConf.firstCheck {
+			if !hc.alive || hc.firstCheck {
 				evChan <- events.EventT{
 					Integration: "Network",
 					DeviceType:  "HostChecker",
-					DeviceName:  dev,
+					DeviceName:  hc.Name,
 					EventName:   "StateChanged",
 					Value:       "Available"}
 				mqMsg := mqtt.MessageT{
-					Topic:    mqttPrefix + dev + "/state",
+					Topic:    mqttPrefix + hc.Name + "/state",
 					Qos:      0,
 					Retained: true,
 					Payload:  "true",
 				}
 				n.mqttChan <- mqMsg
 			}
-			hcConf.alive = true
-			hcConf.responseTime = after.Sub(before)
+			hc.alive = true
+			hc.responseTime = after.Sub(before)
 			evChan <- events.EventT{
 				Integration: "Network",
 				DeviceType:  "HostChecker",
-				DeviceName:  dev,
+				DeviceName:  hc.Name,
 				EventName:   "Latency",
-				Value:       hcConf.responseTime}
+				Value:       hc.responseTime}
 			n.mqttChan <- mqtt.MessageT{
-				Topic:    mqttPrefix + dev + "/latency",
+				Topic:    mqttPrefix + hc.Name + "/latency",
 				Qos:      0,
 				Retained: true,
-				Payload:  fmt.Sprintf("%d", hcConf.responseTime/time.Millisecond),
+				Payload:  fmt.Sprintf("%d", hc.responseTime/time.Millisecond),
 			}
 		}
-		hcConf.firstCheck = false
-		n.hostCheckersMu.Unlock()
-		time.Sleep(time.Duration(hcConf.Period) * time.Second)
+		hc.firstCheck = false
+		n.hostCheckerMu.Unlock()
+		select {
+		case <-n.stopChans[sc]:
+			return
+		case <-ticker.C:
+			continue
+		}
 	}
 }
 
-func (n *Network) GetHostNames() (names []string) {
-	n.hostCheckersMu.RLock()
-	defer n.hostCheckersMu.RUnlock()
-	for n := range n.hostCheckers {
-		names = append(names, n)
-	}
-	return names
-}
+// func (n *Network) GetHostNames() (names []string) {
+// 	n.hostCheckerMu.RLock()
+// 	defer n.hostCheckerMu.RUnlock()
+// 	for n := range n.HostChecker {
+// 		names = append(names, n)
+// 	}
+// 	return names
+// }
 
-func (n *Network) IsHostAlive(dev string) bool {
-	n.hostCheckersMu.RLock()
-	defer n.hostCheckersMu.RUnlock()
-	return n.hostCheckers[dev].alive
-}
+// func (n *Network) IsHostAlive(dev string) bool {
+// 	n.hostCheckerMu.RLock()
+// 	defer n.hostCheckerMu.RUnlock()
+// 	return n.HostChecker[dev].alive
+// }
 
-func (n *Network) GetHostResponseTime(dev string) time.Duration {
-	n.hostCheckersMu.RLock()
-	defer n.hostCheckersMu.RUnlock()
-	return n.hostCheckers[dev].responseTime
-}
+// func (n *Network) GetHostResponseTime(dev string) time.Duration {
+// 	n.hostCheckerMu.RLock()
+// 	defer n.hostCheckerMu.RUnlock()
+// 	return n.HostChecker[dev].responseTime
+// }

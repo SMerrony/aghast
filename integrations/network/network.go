@@ -1,4 +1,4 @@
-// Copyright ©2020 Steve Merrony
+// Copyright ©2020,2021 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,41 +34,26 @@ const configFilename = "/network.toml"
 // The Network type encapsulates the 'Network' Integration.
 // It currently provides the 'HostChecker' deviceType.
 type Network struct {
-	mqttChan       chan mqtt.MessageT
-	hostCheckersMu sync.RWMutex
-	hostCheckers   map[string]hostCheckerT
+	mqttChan      chan mqtt.MessageT
+	hostCheckerMu sync.RWMutex
+	HostChecker   []hostCheckerT
+	stopChans     []chan bool // used for stopping Goroutines
 }
 
 // LoadConfig loads and stores the configuration for this Integration
 func (n *Network) LoadConfig(confdir string) error {
-
-	t, err := config.PreprocessTOML(confdir, configFilename)
+	confBytes, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
 		log.Println("ERROR: Could not load Network configuration ", err.Error())
 		return err
 	}
-	conf, err := toml.LoadBytes(t)
+	err = toml.Unmarshal(confBytes, n)
 	if err != nil {
-		log.Println("ERROR: Could not parse Network configuration ", err.Error())
+		log.Fatalf("ERROR: Could not load Network config due to %s\n", err.Error())
 		return err
 	}
-	n.hostCheckersMu.Lock()
-	defer n.hostCheckersMu.Unlock()
-	n.hostCheckers = make(map[string]hostCheckerT)
+	log.Printf("INFO: Network has %d HostCheckers configured\n", len(n.HostChecker))
 
-	deviceTypes := conf.Keys()
-	log.Printf("DEBUG: Network - Device Types Configured: %v\n", deviceTypes)
-	confMap := conf.ToMap()
-
-	for _, devType := range deviceTypes {
-		switch devType {
-		case "HostChecker":
-			mhc := confMap["HostChecker"].(map[string]interface{})
-			n.loadHostCheckerConfig(mhc)
-		default:
-			log.Printf("WARNING: Unknown device type '%s' in Network configuration\n", devType)
-		}
-	}
 	return nil
 }
 
@@ -84,14 +69,22 @@ func (n *Network) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	n.mqttChan = mq.PublishChan
 
 	// HostCheckers
-	n.hostCheckersMu.RLock()
-	for dev := range n.hostCheckers {
-		go n.hostChecker(dev, evChan)
+	n.hostCheckerMu.RLock()
+	for _, dev := range n.HostChecker {
+		go n.runHostChecker(dev, evChan)
 	}
-	n.hostCheckersMu.RUnlock()
+	n.hostCheckerMu.RUnlock()
+}
+
+func (n *Network) addStopChan() int {
+	n.stopChans = append(n.stopChans, make(chan bool))
+	return len(n.stopChans) - 1
 }
 
 // Stop terminates the Integration and all Goroutines it contains
-func (n *Network) Stop() { // TODO
-
+func (n *Network) Stop() {
+	for _, ch := range n.stopChans {
+		ch <- true
+	}
+	log.Println("DEBUG: Network - All Goroutines should have stopped")
 }
