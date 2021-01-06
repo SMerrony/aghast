@@ -16,10 +16,10 @@ controlPort = 46445           # HTTP port for back-end admin control
 integrations = [
   "time",         # the Time integration MUST be enabled
 #  "automation",
-  "network",
+#  "network",
 #  "datalogger",
 #  "daikin",
 #  "influx",
-#  "scraper",
+  "scraper",
   "tuya",
 ]

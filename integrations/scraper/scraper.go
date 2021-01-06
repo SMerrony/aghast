@@ -38,8 +38,9 @@ const (
 
 // The Scraper type encapsulates the web scraper Integration.
 type Scraper struct {
-	mq       mqtt.MQTT
-	scrapers map[string]scraperT
+	mq        mqtt.MQTT
+	scrapers  map[string]scraperT
+	stopChans []chan bool // used for stopping Goroutines
 }
 
 type scraperT struct {
@@ -79,7 +80,7 @@ func (s *Scraper) LoadConfig(confdir string) error {
 	scrapers := conf.Keys()
 
 	for _, name := range scrapers {
-		log.Printf("DEBUG: Scraper Loading config for %s\n", name)
+		log.Printf("INFO: Scraper Loading config for %s\n", name)
 		var scr scraperT
 		sconf := confMap[name].(map[string]interface{})
 		scr.URL = sconf["url"].(string)
@@ -125,17 +126,6 @@ func (s *Scraper) LoadConfig(confdir string) error {
 		s.scrapers[name] = scr
 	}
 
-	// c, err := ioutil.ReadFile(confdir + configFilename)
-	// if err != nil {
-	// 	log.Println("ERROR: Could not read Scraper configuration ", err.Error())
-	// 	return err
-	// }
-	// err = toml.Unmarshal(c, &s.scrapers)
-	// if err != nil {
-	// 	log.Printf("ERROR: Could not parse Scraper config due to %v\n", err)
-	// }
-
-	// log.Printf("DEBUG: Scraper config... %v\n", s.scrapers)
 	return nil
 }
 
@@ -150,12 +140,20 @@ func (s *Scraper) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	for sc := range s.scrapers {
 		go s.scraper(sc)
 	}
-	log.Printf("DEBUG: Scraper has started %d scraper(s)\n", len(s.scrapers))
+	// log.Printf("DEBUG: Scraper has started %d scraper(s)\n", len(s.scrapers))
+}
+
+func (s *Scraper) addStopChan() int {
+	s.stopChans = append(s.stopChans, make(chan bool))
+	return len(s.stopChans) - 1
 }
 
 // Stop terminates the Integration and all Goroutines it contains
-func (s *Scraper) Stop() { // TODO
-
+func (s *Scraper) Stop() {
+	for _, ch := range s.stopChans {
+		ch <- true
+	}
+	log.Println("DEBUG: Scraper - All Goroutines should have stopped")
 }
 
 func (s *Scraper) scraper(name string) {
@@ -186,9 +184,15 @@ func (s *Scraper) scraper(name string) {
 			})
 		})
 	}
+	sc := s.addStopChan()
+	ticker := time.NewTicker(time.Duration(scr.Interval) * time.Second)
 	for {
 		c.Visit(scr.URL)
-		// log.Printf("DEBUG: Scraper will sleep for %d seconds\n", scr.Interval)
-		time.Sleep(time.Second * time.Duration(scr.Interval))
+		select {
+		case <-s.stopChans[sc]:
+			return
+		case <-ticker.C:
+			continue
+		}
 	}
 }
