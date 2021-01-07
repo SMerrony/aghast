@@ -281,7 +281,10 @@ func (d *Daikin) monitorClients() {
 				log.Printf("WARNING: Could not retrieve Control info for unit: %s\n", topicSlice[3])
 				continue
 			}
+
+			d.invertersMu.RLock()
 			inv := d.inverters[unitMAC]
+			d.invertersMu.RUnlock()
 
 			control := topicSlice[4]
 			var power, setting, mode, fan, sweep string
@@ -326,9 +329,9 @@ func (d *Daikin) monitorClients() {
 
 			cmd := fmt.Sprintf(setControlFmt, power, mode, setting, fan, sweep, "0")
 			// send the command
-			addr := d.inverters[unitMAC].address
+			addr := inv.address
 			//debugging
-			log.Printf("DEBUG: Daikin Sending F/E-Client Control to: %s as: %s\n", d.inverters[unitMAC].Label, cmd)
+			log.Printf("DEBUG: Daikin Sending F/E-Client Control to: %s as: %s\n", inv.Label, cmd)
 			resp, err := http.Get(addr + setControlInfo + cmd)
 
 			if err != nil {
