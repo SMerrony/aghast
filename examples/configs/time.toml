@@ -1,26 +1,34 @@
 # Example Time configuration
 # Times must be double-quoted as "HH:MM:SS"
 
-[event.NightOffPeakStarts]
-  time = "00:50:05"            # Plus 5s to be sure!
+[[Event]]
+  Name = "NightOffPeakStarts"
+  Time = "00:50:05"            # Plus 5s to be sure!
 
-[event.NightOffPeakEnds]
-  time = "06:50:00"
+[[Event]]
+  Name = "NightOffPeakEnds"
+  Time = "06:50:00"
 
-[event.LunchtimeOffPeakStarts]
-  time = "12:20:05"
+[[Event]]
+  Name = "LunchtimeOffPeakStarts"
+  Time = "12:20:05"
 
-[event.LunchtimeOffPeakEnds]
-  time = "14:20:00"
+[[Event]]
+  Name = "LunchtimeOffPeakEnds"
+  Time = "14:20:00"
 
-[event.Test1]
-  time = "16:54:00"
+[[Event]]
+  Name = "Test1"
+  Time = "10:24:00"
 
-[event.Test2]
-  time = "16:54:00"
+[[Event]]
+  Name = "Test2"
+  Time = "16:54:00"
 
-# [event.TenBeforeWork]
-#  time = "16:39:00"
+# [[Event]]
+# Name = "TenBeforeWork"
+# Time = "16:39:00"
 
-[event.MorningHeatingOn]
-  time = "06:30:00"          # 20mins before off-peak ends
+[[Event]]
+  Name = "MorningHeatingOn"
+  Time = "06:30:00"          # 20mins before off-peak ends

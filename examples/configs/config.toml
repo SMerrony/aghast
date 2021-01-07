@@ -8,7 +8,7 @@ mqttBroker = "!!CONSTANT(mqttBroker)"  # Hostname or IP of MQTT Broker
 mqttPort = 1883               # MQTT Broker port
 mqttClientID = "aghast"       # MQTT Client ID
 
-logEvents = false             # A LOT of stuff will be logged if this is true!
+logEvents = true              # A LOT of stuff will be logged if this is true!
 
 controlPort = 46445           # HTTP port for back-end admin control
 
@@ -20,6 +20,6 @@ integrations = [
 #  "datalogger",
 #  "daikin",
 #  "influx",
-  "scraper",
+#  "scraper",
   "tuya",
 ]
