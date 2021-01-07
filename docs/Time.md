@@ -28,15 +28,17 @@ Configuration of User-defined Events is simple...
 # Example Time configuration
 # Times must be double-quoted as "HH:MM:SS"
 
-[event.NightOffPeakStarts]
-  time = "00:50:05"            # Plus 5s to be sure!
+[[Event]]
+  Name = "NightOffPeakStarts"
+  Time = "00:50:05"            # Plus 5s to be sure!
 
-[event.NightOffPeakEnds]
-  time = "06:50:00"
+[[Event]]
+  Name = "NightOffPeakEnds"
+  Time = "06:50:00"
+
 ```
 
-The Event name which follows `[event.` must be unique and contain no white space.
-The name is used as the final part of the AGHAST Event address (the 'eventName'), the first three parts are fixed as follows:
+The Name must be unique and contain no white space.  It is used as the final part of the AGHAST Event address (the 'eventName'), the first three parts are fixed as follows:
  * integration: "Time"
  * deviceType: "Events"
  * deviceName: "TimedEvent"
@@ -51,6 +53,6 @@ Eg.
 [event]
   integration = "Time"
   deviceType  = "Events"
-  deviceName  = "TimedEvents"
+  deviceName  = "TimedEvent"
   eventName   = "NightOffPeakStarts"
 ```

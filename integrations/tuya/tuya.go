@@ -1,4 +1,4 @@
-// Copyright ©2020 Steve Merrony
+// Copyright ©2020,2021 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,7 @@ type Tuya struct {
 	conf         confT
 	evChan       chan events.EventT
 	mqttChan     chan mqtt.MessageT
+	stopChans    []chan bool // used for stopping Goroutines
 	mq           mqtt.MQTT
 	lampsByLabel map[string]int
 }
@@ -114,11 +115,20 @@ func (t *Tuya) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	//config.SetEnv(server, "", "")
 
 	go t.monitorClients()
+	// TODO - monitorDevices()
+}
+
+func (t *Tuya) addStopChan() int {
+	t.stopChans = append(t.stopChans, make(chan bool))
+	return len(t.stopChans) - 1
 }
 
 // Stop terminates the Integration and all Goroutines it contains
-func (t *Tuya) Stop() { // TODO
-
+func (t *Tuya) Stop() {
+	for _, ch := range t.stopChans {
+		ch <- true
+	}
+	log.Println("DEBUG: Tuya - All Goroutines should have stopped")
 }
 
 // monitorClients waits for client (front-end user) events coming via MQTT and handles them
@@ -133,69 +143,74 @@ func (t *Tuya) monitorClients() {
 
 	// config.SetEnv(server, t.conf.ApiID, t.conf.ApiKey)
 	clientChan := t.mq.SubscribeToTopic(mqttPrefix + "client/#")
+	sc := t.addStopChan()
 	// topic format is aghast/tuya/client/<Label>/<Control>
 	for {
-		msg := <-clientChan
-		payload := string(msg.Payload.([]uint8))
-		topicSlice := strings.Split(msg.Topic, "/")
-		ix, found := t.lampsByLabel[topicSlice[3]]
-		if !found {
-			log.Printf("WARNING: Tuya front-end monitor got command for unknown unit <%s>\n", topicSlice[3])
-			continue
-		}
-		control := topicSlice[4]
-
-		log.Printf("DEBUG: Tuya got control %s for %s with payload %s\n", control, t.conf.Lamp[ix].Label, payload)
-		var code, code2 string
-		var value, value2 interface{}
-		switch control {
-		case "switch":
-			switch payload {
-			case "Off":
-				code = "switch_led"
-				value = false
-			case "White":
-				code = "switch_led"
-				value = true
-				code2 = "work_mode"
-				value2 = "white"
-			case "Colour":
-				code = "switch_led"
-				value = true
-				code2 = "work_mode"
-				value2 = "colour"
-			}
-		case "switch_led":
-			code = "switch_led"
-			value = payload == "true" // bool
-		case "colour_data_v2":
-			code = "colour_data_v2"
-			var cd clientHSV
-			err := json.Unmarshal([]byte(payload), &cd)
-			if err != nil {
-				log.Printf("WARNING: Tuya could not unmarshal HSV from client - %s\n", err.Error())
+		select {
+		case <-t.stopChans[sc]:
+			return
+		case msg := <-clientChan:
+			payload := string(msg.Payload.([]uint8))
+			topicSlice := strings.Split(msg.Topic, "/")
+			ix, found := t.lampsByLabel[topicSlice[3]]
+			if !found {
+				log.Printf("WARNING: Tuya front-end monitor got command for unknown unit <%s>\n", topicSlice[3])
 				continue
 			}
-			log.Printf("DEBUG: Tuya - H: %f, S: %f, V: %f\n", cd.H, cd.S, cd.V)
-			value = fmt.Sprintf("{\"h\":%d,\"s\":%d,\"v\":%d}", int(cd.H), int(cd.S*1000.0), int(cd.V*1000.0))
-			log.Printf("DEBUG: ... encoding to %s\n", value)
-		case "bright_value_v2":
-			code = "bright_value_v2"
-			value, _ = strconv.Atoi(payload)
-		case "temp_value_v2":
-			code = "temp_value_v2"
-			value, _ = strconv.Atoi(payload)
-		}
-		log.Printf("DEBUG: Tuya sending Code: %s, Value: %v\n", code, value)
-		var err error
-		if code2 == "" {
-			_, err = device.PostDeviceCommand(t.conf.Lamp[ix].DeviceID, []device.Command{{Code: code, Value: value}})
-		} else {
-			_, err = device.PostDeviceCommand(t.conf.Lamp[ix].DeviceID, []device.Command{{Code: code, Value: value}, {Code: code2, Value: value2}})
-		}
-		if err != nil {
-			log.Printf("WARNING: Tuya Integration got error sending command - %s\n", err.Error())
-			continue
+			control := topicSlice[4]
+
+			log.Printf("DEBUG: Tuya got control %s for %s with payload %s\n", control, t.conf.Lamp[ix].Label, payload)
+			var code, code2 string
+			var value, value2 interface{}
+			switch control {
+			case "switch":
+				switch payload {
+				case "Off":
+					code = "switch_led"
+					value = false
+				case "White":
+					code = "switch_led"
+					value = true
+					code2 = "work_mode"
+					value2 = "white"
+				case "Colour":
+					code = "switch_led"
+					value = true
+					code2 = "work_mode"
+					value2 = "colour"
+				}
+			case "switch_led":
+				code = "switch_led"
+				value = payload == "true" // bool
+			case "colour_data_v2":
+				code = "colour_data_v2"
+				var cd clientHSV
+				err := json.Unmarshal([]byte(payload), &cd)
+				if err != nil {
+					log.Printf("WARNING: Tuya could not unmarshal HSV from client - %s\n", err.Error())
+					continue
+				}
+				log.Printf("DEBUG: Tuya - H: %f, S: %f, V: %f\n", cd.H, cd.S, cd.V)
+				value = fmt.Sprintf("{\"h\":%d,\"s\":%d,\"v\":%d}", int(cd.H), int(cd.S*1000.0), int(cd.V*1000.0))
+				log.Printf("DEBUG: ... encoding to %s\n", value)
+			case "bright_value_v2":
+				code = "bright_value_v2"
+				value, _ = strconv.Atoi(payload)
+			case "temp_value_v2":
+				code = "temp_value_v2"
+				value, _ = strconv.Atoi(payload)
+			}
+			log.Printf("DEBUG: Tuya sending Code: %s, Value: %v\n", code, value)
+			var err error
+			if code2 == "" {
+				_, err = device.PostDeviceCommand(t.conf.Lamp[ix].DeviceID, []device.Command{{Code: code, Value: value}})
+			} else {
+				_, err = device.PostDeviceCommand(t.conf.Lamp[ix].DeviceID, []device.Command{{Code: code, Value: value}, {Code: code2, Value: value2}})
+			}
+			if err != nil {
+				log.Printf("WARNING: Tuya Integration got error sending command - %s\n", err.Error())
+				continue
+			}
 		}
 	}
 }
