@@ -23,6 +23,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/SMerrony/aghast/config"
@@ -45,6 +46,7 @@ const (
 
 // The Time Integration produces time-based events for other Integrations to use.
 type Time struct {
+	timeMu       sync.RWMutex
 	evChan       chan events.EventT
 	Alert        []timeEventT            `toml:"Event"`
 	alertsByTime map[string][]timeEventT // indexed by "hh:mm:ss"
@@ -58,6 +60,9 @@ type timeEventT struct {
 
 // LoadConfig is required to satisfy the Integration interface.
 func (t *Time) LoadConfig(confdir string) error {
+	t.timeMu.Lock()
+	defer t.timeMu.Unlock()
+
 	confBytes, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
 		log.Println("ERROR: Could not load Time configuration ", err.Error())
@@ -116,9 +121,12 @@ func (t *Time) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	go t.timeEvents()
 }
 
-func (t *Time) addStopChan() int {
+func (t *Time) addStopChan() (ix int) {
+	t.timeMu.Lock()
 	t.stopChans = append(t.stopChans, make(chan bool))
-	return len(t.stopChans) - 1
+	ix = len(t.stopChans) - 1
+	t.timeMu.Unlock()
+	return ix
 }
 
 // Stop terminates the Integration and all Goroutines it contains
@@ -131,10 +139,13 @@ func (t *Time) Stop() {
 
 func (t *Time) timeEvents() {
 	sc := t.addStopChan()
+	t.timeMu.RLock()
+	stopChan := t.stopChans[sc]
+	t.timeMu.RUnlock()
 	secs := time.NewTicker(time.Second)
 	for {
 		select {
-		case <-t.stopChans[sc]:
+		case <-stopChan:
 			return
 		case tick := <-secs.C:
 			HhmmssNow := tick.Format("15:04:05")
@@ -159,24 +170,27 @@ func (t *Time) tickers() {
 	lastHour := time.Now().Hour()
 	lastDay := time.Now().Day()
 	sc := t.addStopChan()
+	t.timeMu.RLock()
+	stopChan := t.stopChans[sc]
+	t.timeMu.RUnlock()
 	secs := time.NewTicker(time.Second)
 	for {
 		select {
-		case <-t.stopChans[sc]:
+		case <-stopChan:
 			return
 		case tick := <-secs.C:
-			t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Second", Value: t}
+			t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Second", Value: tick.Second()}
 			// new minute?
 			if tick.Minute() != lastMinute {
-				t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Minute", Value: t}
+				t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Minute", Value: tick.Minute()}
 				lastMinute = tick.Minute()
 				// new hour?
 				if tick.Hour() != lastHour {
-					t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Hour", Value: t}
+					t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Hour", Value: tick.Hour()}
 					lastHour = tick.Hour()
 					// new day?
 					if tick.Day() != lastDay {
-						t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Day", Value: t}
+						t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Day", Value: tick.Day()}
 						lastDay = tick.Day()
 					}
 				}

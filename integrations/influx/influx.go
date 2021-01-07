@@ -22,6 +22,7 @@ package influx
 import (
 	"log"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/SMerrony/aghast/config"
@@ -43,6 +44,7 @@ type Influx struct {
 	client                  influxdb2.Client
 	writeAPI                influxAPI.WriteAPI
 	Logger                  []loggerT
+	influxMu                sync.RWMutex
 	stopChans               []chan bool // used for stopping Goroutines
 }
 
@@ -55,6 +57,8 @@ type loggerT struct {
 
 // LoadConfig loads and stores the configuration for this Integration
 func (i *Influx) LoadConfig(confdir string) error {
+	i.influxMu.Lock()
+	defer i.influxMu.Unlock()
 	confBytes, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
 		log.Println("ERROR: Could not load Influx configuration ", err.Error())
@@ -76,8 +80,10 @@ func (i *Influx) ProvidesDeviceTypes() []string {
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
 func (i *Influx) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+	i.influxMu.Lock()
 	i.client = influxdb2.NewClient(i.URL, i.Token)
 	i.writeAPI = i.client.WriteAPI(i.Org, i.Bucket)
+	i.influxMu.Unlock()
 	for _, l := range i.Logger {
 		go i.logger(l)
 	}
@@ -91,9 +97,12 @@ func (i *Influx) Stop() {
 	log.Println("DEBUG: Influx - All Goroutines should have stopped")
 }
 
-func (i *Influx) addStopChan() int {
+func (i *Influx) addStopChan() (ix int) {
+	i.influxMu.Lock()
 	i.stopChans = append(i.stopChans, make(chan bool))
-	return len(i.stopChans) - 1
+	ix = len(i.stopChans) - 1
+	i.influxMu.Unlock()
+	return ix
 }
 
 func (i *Influx) logger(l loggerT) {
@@ -104,10 +113,13 @@ func (i *Influx) logger(l loggerT) {
 		return
 	}
 	sc := i.addStopChan()
+	i.influxMu.RLock()
+	stopChan := i.stopChans[sc]
+	i.influxMu.RUnlock()
 	// log.Printf("DEBUG: Influx logger starting for %s, %s, subscriber #: %d\n", l.Integration, l.EventName, sid)
 	for {
 		select {
-		case <-i.stopChans[sc]:
+		case <-stopChan:
 			i.writeAPI.Flush()
 			return
 		case ev := <-ch:

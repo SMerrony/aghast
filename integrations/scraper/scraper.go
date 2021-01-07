@@ -22,6 +22,7 @@ package scraper
 import (
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/SMerrony/aghast/config"
@@ -39,6 +40,7 @@ const (
 // The Scraper type encapsulates the web scraper Integration.
 type Scraper struct {
 	mq        mqtt.MQTT
+	scraperMu sync.RWMutex
 	scrapers  map[string]scraperT
 	stopChans []chan bool // used for stopping Goroutines
 }
@@ -64,6 +66,8 @@ type detailsT struct {
 
 // LoadConfig loads and stores the configuration for this Integration
 func (s *Scraper) LoadConfig(confdir string) error {
+	s.scraperMu.Lock()
+	defer s.scraperMu.Unlock()
 
 	t, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
@@ -143,9 +147,12 @@ func (s *Scraper) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	// log.Printf("DEBUG: Scraper has started %d scraper(s)\n", len(s.scrapers))
 }
 
-func (s *Scraper) addStopChan() int {
+func (s *Scraper) addStopChan() (ix int) {
+	s.scraperMu.Lock()
 	s.stopChans = append(s.stopChans, make(chan bool))
-	return len(s.stopChans) - 1
+	ix = len(s.stopChans) - 1
+	s.scraperMu.Unlock()
+	return ix
 }
 
 // Stop terminates the Integration and all Goroutines it contains
@@ -185,11 +192,14 @@ func (s *Scraper) scraper(name string) {
 		})
 	}
 	sc := s.addStopChan()
+	s.scraperMu.RLock()
+	stopChan := s.stopChans[sc]
+	s.scraperMu.RUnlock()
 	ticker := time.NewTicker(time.Duration(scr.Interval) * time.Second)
 	for {
 		c.Visit(scr.URL)
 		select {
-		case <-s.stopChans[sc]:
+		case <-stopChan:
 			return
 		case <-ticker.C:
 			continue

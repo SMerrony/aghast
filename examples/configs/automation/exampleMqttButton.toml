@@ -7,7 +7,7 @@ enabled = true
 
 [action.1]
   integration = "Daikin"
-  deviceLabel = "Hall"
+  deviceLabel = "Steve's Office"
   execute = [ { control = "temperature", setting = 21.0 },
               { control = "mode",        setting = "Heat" },
               { control = "power",       setting = "on" } ]

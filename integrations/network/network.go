@@ -34,10 +34,10 @@ const configFilename = "/network.toml"
 // The Network type encapsulates the 'Network' Integration.
 // It currently provides the 'HostChecker' deviceType.
 type Network struct {
-	mqttChan      chan mqtt.MessageT
-	hostCheckerMu sync.RWMutex
-	HostChecker   []hostCheckerT
-	stopChans     []chan bool // used for stopping Goroutines
+	mqttChan    chan mqtt.MessageT
+	networkMu   sync.RWMutex
+	HostChecker []hostCheckerT
+	stopChans   []chan bool // used for stopping Goroutines
 }
 
 // LoadConfig loads and stores the configuration for this Integration
@@ -69,16 +69,19 @@ func (n *Network) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	n.mqttChan = mq.PublishChan
 
 	// HostCheckers
-	n.hostCheckerMu.RLock()
+	n.networkMu.RLock()
 	for _, dev := range n.HostChecker {
 		go n.runHostChecker(dev, evChan)
 	}
-	n.hostCheckerMu.RUnlock()
+	n.networkMu.RUnlock()
 }
 
-func (n *Network) addStopChan() int {
+func (n *Network) addStopChan() (ix int) {
+	n.networkMu.Lock()
 	n.stopChans = append(n.stopChans, make(chan bool))
-	return len(n.stopChans) - 1
+	ix = len(n.stopChans) - 1
+	n.networkMu.Unlock()
+	return ix
 }
 
 // Stop terminates the Integration and all Goroutines it contains

@@ -52,12 +52,15 @@ func (n *Network) runHostChecker(hc hostCheckerT, evChan chan events.EventT) {
 	log.Printf("INFO: Network - HostChecker will monitor host %s - %s\n", dest, hc.Name)
 	hc.firstCheck = true
 	sc := n.addStopChan()
+	n.networkMu.RLock()
+	stopChan := n.stopChans[sc]
+	n.networkMu.RUnlock()
 	ticker := time.NewTicker(time.Duration(hc.Period) * time.Second)
 	for {
 		before := time.Now()
 		_, err := net.DialTimeout(netType, dest, timeout)
 		after := time.Now()
-		n.hostCheckerMu.Lock()
+		n.networkMu.Lock()
 		if err != nil {
 			if hc.alive || hc.firstCheck { // has state changed?
 				evChan <- events.EventT{
@@ -107,9 +110,9 @@ func (n *Network) runHostChecker(hc hostCheckerT, evChan chan events.EventT) {
 			}
 		}
 		hc.firstCheck = false
-		n.hostCheckerMu.Unlock()
+		n.networkMu.Unlock()
 		select {
-		case <-n.stopChans[sc]:
+		case <-stopChan:
 			return
 		case <-ticker.C:
 			continue
@@ -118,8 +121,8 @@ func (n *Network) runHostChecker(hc hostCheckerT, evChan chan events.EventT) {
 }
 
 // func (n *Network) GetHostNames() (names []string) {
-// 	n.hostCheckerMu.RLock()
-// 	defer n.hostCheckerMu.RUnlock()
+// 	n.networkMu.RLock()
+// 	defer n.networkMu.RUnlock()
 // 	for n := range n.HostChecker {
 // 		names = append(names, n)
 // 	}
@@ -127,13 +130,13 @@ func (n *Network) runHostChecker(hc hostCheckerT, evChan chan events.EventT) {
 // }
 
 // func (n *Network) IsHostAlive(dev string) bool {
-// 	n.hostCheckerMu.RLock()
-// 	defer n.hostCheckerMu.RUnlock()
+// 	n.networkMu.RLock()
+// 	defer n.networkMu.RUnlock()
 // 	return n.HostChecker[dev].alive
 // }
 
 // func (n *Network) GetHostResponseTime(dev string) time.Duration {
-// 	n.hostCheckerMu.RLock()
-// 	defer n.hostCheckerMu.RUnlock()
+// 	n.networkMu.RLock()
+// 	defer n.networkMu.RUnlock()
 // 	return n.HostChecker[dev].responseTime
 // }

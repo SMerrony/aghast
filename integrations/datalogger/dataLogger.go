@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/SMerrony/aghast/config"
@@ -39,6 +40,7 @@ const (
 
 // The DataLogger type encapsulates the Data Logging Integration
 type DataLogger struct {
+	loggerMu  sync.RWMutex
 	LogDir    string
 	Logger    []loggerT
 	stopChans []chan bool // used for stopping Goroutines
@@ -53,6 +55,8 @@ type loggerT struct {
 
 // LoadConfig loads and stores the configuration for this Integration
 func (d *DataLogger) LoadConfig(confdir string) error {
+	d.loggerMu.Lock()
+	defer d.loggerMu.Unlock()
 	confBytes, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
 		log.Println("ERROR: Could not load DataLogger configuration ", err.Error())
@@ -87,12 +91,16 @@ func (d *DataLogger) Stop() {
 	log.Println("DEBUG: DataLogger - All Goroutines should have stopped")
 }
 
-func (d *DataLogger) addStopChan() int {
+func (d *DataLogger) addStopChan() (ix int) {
+	d.loggerMu.Lock()
 	d.stopChans = append(d.stopChans, make(chan bool))
-	return len(d.stopChans) - 1
+	ix = len(d.stopChans) - 1
+	d.loggerMu.Unlock()
+	return ix
 }
 
 func (d *DataLogger) logger(l loggerT) {
+	d.loggerMu.RLock()
 	file, err := os.OpenFile(d.LogDir+"/"+l.LogFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Printf("WARNING: DataLogger failed to open/create CSV log - %v\n", err)
@@ -108,9 +116,12 @@ func (d *DataLogger) logger(l loggerT) {
 	idRoot := l.Integration + "/" + l.DeviceType
 	unflushed := 0
 	sc := d.addStopChan()
+	stopChan := d.stopChans[sc]
+	d.loggerMu.Unlock()
+
 	for {
 		select {
-		case <-d.stopChans[sc]:
+		case <-stopChan:
 			csvWriter.Flush()
 			return
 		case ev := <-ch:

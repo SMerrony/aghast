@@ -25,6 +25,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 
 	agconfig "github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
@@ -47,6 +48,7 @@ type Tuya struct {
 	mqttChan     chan mqtt.MessageT
 	stopChans    []chan bool // used for stopping Goroutines
 	mq           mqtt.MQTT
+	tuyaMu       sync.RWMutex
 	lampsByLabel map[string]int
 }
 
@@ -68,6 +70,8 @@ type lamp struct {
 
 // LoadConfig loads and stores the configuration for this Integration
 func (t *Tuya) LoadConfig(confdir string) error {
+	t.tuyaMu.Lock()
+	defer t.tuyaMu.Unlock()
 	confBytes, err := agconfig.PreprocessTOML(confdir, configFilename)
 	t.lampsByLabel = make(map[string]int)
 	if err != nil {
@@ -118,9 +122,12 @@ func (t *Tuya) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	// TODO - monitorDevices()
 }
 
-func (t *Tuya) addStopChan() int {
+func (t *Tuya) addStopChan() (ix int) {
+	t.tuyaMu.Lock()
 	t.stopChans = append(t.stopChans, make(chan bool))
-	return len(t.stopChans) - 1
+	ix = len(t.stopChans) - 1
+	t.tuyaMu.Unlock()
+	return ix
 }
 
 // Stop terminates the Integration and all Goroutines it contains
@@ -144,17 +151,22 @@ func (t *Tuya) monitorClients() {
 	// config.SetEnv(server, t.conf.ApiID, t.conf.ApiKey)
 	clientChan := t.mq.SubscribeToTopic(mqttPrefix + "client/#")
 	sc := t.addStopChan()
+	t.tuyaMu.RLock()
+	stopChan := t.stopChans[sc]
+	t.tuyaMu.RUnlock()
 	// topic format is aghast/tuya/client/<Label>/<Control>
 	for {
 		select {
-		case <-t.stopChans[sc]:
+		case <-stopChan:
 			return
 		case msg := <-clientChan:
 			payload := string(msg.Payload.([]uint8))
 			topicSlice := strings.Split(msg.Topic, "/")
+			t.tuyaMu.RLock()
 			ix, found := t.lampsByLabel[topicSlice[3]]
 			if !found {
 				log.Printf("WARNING: Tuya front-end monitor got command for unknown unit <%s>\n", topicSlice[3])
+				t.tuyaMu.RUnlock()
 				continue
 			}
 			control := topicSlice[4]
@@ -188,6 +200,7 @@ func (t *Tuya) monitorClients() {
 				err := json.Unmarshal([]byte(payload), &cd)
 				if err != nil {
 					log.Printf("WARNING: Tuya could not unmarshal HSV from client - %s\n", err.Error())
+					t.tuyaMu.RUnlock()
 					continue
 				}
 				log.Printf("DEBUG: Tuya - H: %f, S: %f, V: %f\n", cd.H, cd.S, cd.V)
@@ -209,8 +222,10 @@ func (t *Tuya) monitorClients() {
 			}
 			if err != nil {
 				log.Printf("WARNING: Tuya Integration got error sending command - %s\n", err.Error())
+				t.tuyaMu.RUnlock()
 				continue
 			}
+			t.tuyaMu.RUnlock()
 		}
 	}
 }

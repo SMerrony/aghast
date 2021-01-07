@@ -231,9 +231,12 @@ func (d *Daikin) runDiscovery(maxUnits int, scanTimeout time.Duration) {
 	}
 }
 
-func (d *Daikin) addStopChan() int {
+func (d *Daikin) addStopChan() (ix int) {
+	d.invertersMu.Lock()
 	d.stopChans = append(d.stopChans, make(chan bool))
-	return len(d.stopChans) - 1
+	ix = len(d.stopChans) - 1
+	d.invertersMu.Unlock()
+	return ix
 }
 
 func (d *Daikin) rerunDiscovery(maxUnits int, scanTimeout time.Duration) {
@@ -251,11 +254,15 @@ func (d *Daikin) rerunDiscovery(maxUnits int, scanTimeout time.Duration) {
 
 // monitorClients waits for client (front-end user) events coming via MQTT and handles them
 func (d *Daikin) monitorClients() {
+
 	sc := d.addStopChan()
+	d.invertersMu.RLock()
+	stopChan := d.stopChans[sc]
+	d.invertersMu.RUnlock()
 	clientChan := d.mq.SubscribeToTopic(mqttPrefix + "client/#")
 	for {
 		select {
-		case <-d.stopChans[sc]:
+		case <-stopChan:
 			return
 		case msg := <-clientChan:
 			payload := string(msg.Payload.([]uint8))
@@ -344,6 +351,9 @@ func (d *Daikin) monitorClients() {
 
 func (d *Daikin) monitorUnits() {
 	sc := d.addStopChan()
+	d.invertersMu.RLock()
+	stopChan := d.stopChans[sc]
+	d.invertersMu.RUnlock()
 	everyMinute := time.NewTicker(time.Minute)
 	for {
 		for mac, unit := range d.inverters {
@@ -420,11 +430,13 @@ func (d *Daikin) monitorUnits() {
 					unit.controlInfo = ci
 				}
 				// write the updated unit back into the map
+				d.invertersMu.Lock()
 				d.inverters[mac] = unit
+				d.invertersMu.Unlock()
 			}
 		}
 		select {
-		case <-d.stopChans[sc]:
+		case <-stopChan:
 			return
 		case <-everyMinute.C:
 			continue
@@ -435,6 +447,9 @@ func (d *Daikin) monitorUnits() {
 // monitorActions listens for Control Actions from Automations and performs them
 func (d *Daikin) monitorActions() {
 	sc := d.addStopChan()
+	d.invertersMu.RLock()
+	stopChan := d.stopChans[sc]
+	d.invertersMu.RUnlock()
 	sid := events.GetSubscriberID(subscriberName)
 	ch, err := events.Subscribe(sid, "Daikin", events.ActionControlDeviceType, "+", "+")
 	if err != nil {
@@ -443,7 +458,7 @@ func (d *Daikin) monitorActions() {
 	}
 	for {
 		select {
-		case <-d.stopChans[sc]:
+		case <-stopChan:
 			return
 		case ev := <-ch:
 			log.Printf("DEBUG: Daikin Action Monitor got %v\n", ev)
@@ -507,7 +522,7 @@ func (d *Daikin) monitorActions() {
 			// send the command
 			addr := d.inverters[unitMAC].address
 			//debugging
-			log.Printf("DEBUG: Daikin Sending F/E-Client Control to: %s as: %s\n", d.inverters[unitMAC].Label, cmd)
+			log.Printf("DEBUG: Daikin Sending Action Control to: %s as: %s\n", d.inverters[unitMAC].Label, cmd)
 			resp, err := http.Get(addr + setControlInfo + cmd)
 
 			if err != nil {
@@ -613,8 +628,10 @@ func (d *Daikin) requestControlInfo(mac string) (ci infoMap, e error) {
 // requestInfo sends an HTTP Get request to the unit provided and attempts
 // to parse the response.  It is internal to this package.
 func (d *Daikin) requestInfo(mac string, req string, dest infoMap) (e error) {
+	d.invertersMu.RLock()
 	du := d.inverters[mac]
 	resp, err := d.httpReqClient.Get(du.address + req)
+	d.invertersMu.RUnlock()
 	if err != nil {
 		return err
 	}
