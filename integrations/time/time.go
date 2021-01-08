@@ -102,9 +102,9 @@ func (t *Time) LoadConfig(confdir string) error {
 				// log.Printf("DEBUG: Time - Sunrise: %s, Sunset: %s\n", sunrise.Format("15:04:05"), sunset.Format("15:04:05"))
 				switch ev.Daily {
 				case "Sunrise":
-					nextTime = sunrise.Add(offset)
+					nextTime = sunrise.Add(offset).Local()
 				case "Sunset":
-					nextTime = sunset.Add(offset)
+					nextTime = sunset.Add(offset).Local()
 				default:
 					log.Fatalf("ERROR: Time Integration configuration for %s\n", ev.Name)
 				}

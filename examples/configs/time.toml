@@ -37,9 +37,9 @@ Latitude = "!!SECRET(latitude)"   # Get latitude value from secrets.toml
   Time = "06:30:00"          # 20mins before off-peak ends
 
 [[Event]]
-  Name = "HourAfterSunrise"
+  Name = "Sunrise"
   Daily = "Sunrise"
-  OffsetMins = 60
+  OffsetMins = 0
 
 [[Event]]
   Name = "FifteenBeforeSunset"
