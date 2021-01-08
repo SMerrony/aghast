@@ -37,7 +37,7 @@ Example Integrations might include...
 Where practical, anything in AGHAST is part of an Integration.  Maybe having 'Time', 'Network' etc. as explicit
 integrations (albeit pre-installed) will facilitate easier maintenance of them in the future.
 
-Integrations are compiled into the server, no plug-in technique is used.  An interface in the `integrationManager.go`  describes the
+Integrations are compiled into the server, no plug-in technique is used.  An interface in `integrationManager.go`  describes the
 minimum that any Integration must provide...
 
 ```
@@ -47,6 +47,9 @@ type Integration interface {
 
 	// The Start func begins running the Integration GoRoutines and should return quickly
 	Start(chan events.EventT, mqtt.MQTT)
+
+	// Stop terminates the Integration and all Goroutines it contains
+	Stop()
 
 	// ProvidesDeviceType returns a list of Device Type supported by this Integration
 	ProvidesDeviceTypes() []string

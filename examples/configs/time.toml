@@ -1,9 +1,12 @@
 # Example Time configuration
-# Times must be double-quoted as "HH:MM:SS"
+# N.B. Times must be double-quoted as "HH:MM:SS"
+
+Longitude = "!!SECRET(longitude)" # Required for Sunset/Sunrise calcs
+Latitude = "!!SECRET(latitude)"   # Get latitude value from secrets.toml
 
 [[Event]]
   Name = "NightOffPeakStarts"
-  Time = "00:50:05"            # Plus 5s to be sure!
+  Time = "00:50:05"               # Plus 5s to be sure!
 
 [[Event]]
   Name = "NightOffPeakEnds"
@@ -32,3 +35,13 @@
 [[Event]]
   Name = "MorningHeatingOn"
   Time = "06:30:00"          # 20mins before off-peak ends
+
+[[Event]]
+  Name = "HourAfterSunrise"
+  Daily = "Sunrise"
+  OffsetMins = 60
+
+[[Event]]
+  Name = "FifteenBeforeSunset"
+  Daily = "Sunset"
+  OffsetMins = -15

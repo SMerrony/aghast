@@ -26,24 +26,36 @@ Configuration of User-defined Events is simple...
 
 ```
 # Example Time configuration
-# Times must be double-quoted as "HH:MM:SS"
+# N.B. Times must be double-quoted as "HH:MM:SS"
+
+Longitude = "!!SECRET(longitude)" # Required for Sunset/Sunrise calcs
+Latitude = "!!SECRET(latitude)"   # Get latitude value from secrets.toml
 
 [[Event]]
   Name = "NightOffPeakStarts"
-  Time = "00:50:05"            # Plus 5s to be sure!
+  Time = "00:50:05"               # Plus 5s to be sure!
 
 [[Event]]
   Name = "NightOffPeakEnds"
   Time = "06:50:00"
 
+[[Event]]
+  Name = "HourAfterSunrise"
+  Daily = "Sunrise"
+  OffsetMins = 60
 ```
 
 The Name must be unique and contain no white space.  It is used as the final part of the AGHAST Event address (the 'eventName'), the first three parts are fixed as follows:
  * integration: "Time"
  * deviceType: "Events"
  * deviceName: "TimedEvent"
-  
+
+Then follows either a Time or Daily configuration...
+#### Time  
 The time must be specified exactly as `"HH:MM:SS"` including the double-quotes (we do not use the TOML time syntax).
+#### Daily
+There are currently two 'daily' times that AGHAST can use: `"Sunrise"` and `"Sunset"`. 
+These must be followed by an integral offset expressed in minutes. (See example above.)
 
 ## Usage
 User-defined Events will normally be used in Automations and possibly also in other Integrations.

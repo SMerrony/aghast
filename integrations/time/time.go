@@ -29,8 +29,8 @@ import (
 	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
+	"github.com/nathan-osman/go-sunrise"
 	"github.com/pelletier/go-toml"
-	// "github.com/nathan-osman/go-sunrise"
 )
 
 const (
@@ -46,16 +46,19 @@ const (
 
 // The Time Integration produces time-based events for other Integrations to use.
 type Time struct {
-	timeMu       sync.RWMutex
-	evChan       chan events.EventT
-	Alert        []timeEventT            `toml:"Event"`
-	alertsByTime map[string][]timeEventT // indexed by "hh:mm:ss"
-	stopChans    []chan bool             // used for stopping Goroutines
+	timeMu              sync.RWMutex
+	evChan              chan events.EventT
+	Latitude, Longitude float64
+	Alert               []timeEventT            `toml:"Event"`
+	alertsByTime        map[string][]timeEventT // indexed by "hh:mm:ss"
+	stopChans           []chan bool             // used for stopping Goroutines
 }
 
 type timeEventT struct {
-	Name   string
-	Hhmmss string `toml:"Time"`
+	Name       string
+	Hhmmss     string `toml:"Time"`
+	Daily      string // "Sunrise" or "Sunset"
+	OffsetMins int64
 }
 
 // LoadConfig is required to satisfy the Integration interface.
@@ -73,25 +76,51 @@ func (t *Time) LoadConfig(confdir string) error {
 		log.Fatalf("ERROR: Could not load Time config due to %s\n", err.Error())
 		return err
 	}
-	log.Printf("INFO: Time has %d Event alerts configured\n", len(t.Alert))
+	log.Printf("INFO: Time has %d Event alerts configured %f\n", len(t.Alert), t.Longitude)
 
 	t.alertsByTime = make(map[string][]timeEventT)
 	for _, ev := range t.Alert {
 		var te timeEventT
 		te.Name = ev.Name
-		Hhmmss := ev.Hhmmss
-		_, _, _, err := hhmmssFromString(Hhmmss)
-		if err != nil {
-			log.Fatalf("ERROR: Time Integration could not parse time for event %v\n", err)
+		var hhmmss string
+		if len(ev.Hhmmss) > 0 {
+			hhmmss = ev.Hhmmss
+			_, _, _, err := getHhmmssFromString(hhmmss)
+			if err != nil {
+				log.Fatalf("ERROR: Time Integration could not parse time for event %s  - %v\n", ev.Name, err)
+			}
+		} else {
+			if len(ev.Daily) > 0 {
+				// For sunrise/sunset we get the next time and use that for the event
+				// Time Integration is reloaded every day to update offsets
+				var nextTime time.Time
+				offset := time.Minute * time.Duration(ev.OffsetMins)
+				sunrise, sunset := sunrise.SunriseSunset(t.Latitude, t.Longitude,
+					time.Now().Year(), time.Now().Month(), time.Now().Day())
+				// log.Printf("DEBUG: Time - %f, %f, %d / %d / %d\n", t.Latitude, t.Longitude,
+				// 	time.Now().Year(), time.Now().Month(), time.Now().Day())
+				// log.Printf("DEBUG: Time - Sunrise: %s, Sunset: %s\n", sunrise.Format("15:04:05"), sunset.Format("15:04:05"))
+				switch ev.Daily {
+				case "Sunrise":
+					nextTime = sunrise.Add(offset)
+				case "Sunset":
+					nextTime = sunset.Add(offset)
+				default:
+					log.Fatalf("ERROR: Time Integration configuration for %s\n", ev.Name)
+				}
+				hhmmss = nextTime.Format("15:04:05")
+			} else {
+				log.Fatalf("ERROR: Time Integration configuration for %s\n", ev.Name)
+			}
 		}
-		te.Hhmmss = Hhmmss
-		t.alertsByTime[Hhmmss] = append(t.alertsByTime[Hhmmss], te)
+		te.Hhmmss = hhmmss
+		t.alertsByTime[hhmmss] = append(t.alertsByTime[hhmmss], te)
 		log.Printf("INFO: Timer Event %s set for %s\n", te.Name, te.Hhmmss)
 	}
 	return nil
 }
 
-func hhmmssFromString(Hhmmss string) (hh, mm, ss int, e error) {
+func getHhmmssFromString(Hhmmss string) (hh, mm, ss int, e error) {
 	t := strings.Split(Hhmmss, ":")
 	hh, e = strconv.Atoi(t[0])
 	if e != nil || hh > 23 {

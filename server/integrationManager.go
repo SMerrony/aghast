@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
+	gotime "time"
 
 	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
@@ -96,6 +97,8 @@ func StartIntegrations(conf config.MainConfigT, evChan chan events.EventT, mqtt 
 		}
 		go integs[i].Start(evChan, mqtt)
 	}
+
+	go dailyTimeRestart()
 
 	// start a HTTP server for back-end control
 	http.HandleFunc("/", rootHandler)
@@ -176,7 +179,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		integs[i].Stop()
 		newIntegration(i)
 		if err := integs[i].LoadConfig(mainConfig.ConfigDir); err != nil {
-			log.Fatalf("ERROR: %s Integration could not load its configuration", i)
+			log.Fatalf("ERROR: %s Integration could not reload its configuration", i)
 		}
 		go integs[i].Start(evCh, mq)
 	}
@@ -194,4 +197,27 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	t2, err := template.New("root2").Parse(homeTemplateStats)
 	err = t2.Execute(w, sysStats)
 	log.Println("DEBUG: HTTP Back-end generated a page")
+}
+
+func dailyTimeRestart() {
+	// wait until 1st restart time (01:05hrs)
+	now := gotime.Now()
+	yyyy, mm, dd := now.Date()
+	reloadTime := gotime.Date(yyyy, mm, dd+1, 1, 5, 0, 0, now.Location())
+	untilRealoadTime := reloadTime.Sub(now)
+	timer := gotime.NewTimer(untilRealoadTime)
+	<-timer.C
+	// restart every 24 hours
+	daily := gotime.NewTicker(gotime.Hour * 24)
+	for {
+		log.Println("INFO: Daily Time Integration reload")
+		integs["time"].Stop()
+		newIntegration("time")
+		if err := integs["time"].LoadConfig(mainConfig.ConfigDir); err != nil {
+			log.Fatalln("ERROR: Time Integration could not reload its configuration")
+		}
+		go integs["time"].Start(evCh, mq)
+		<-daily.C
+	}
+
 }
