@@ -60,20 +60,20 @@ func CheckMainConfig(configDir string) error {
 		log.Println("ERROR: Could not load main configuration ", err.Error())
 		return err
 	}
-	systemName := mainConfig.Get("systemName")
+	systemName := mainConfig.Get("SystemName")
 	if systemName == nil {
-		return errors.New("No 'systemName' specified in main configuration")
+		return errors.New("No 'SystemName' specified in main configuration")
 	}
 	log.Printf("INFO: Checking main configuration for '%s'\n", systemName)
 
-	if mainConfig.Get("controlPort") == nil {
-		return errors.New("controlPort must be specified in main configuration, cannot run")
+	if mainConfig.Get("ControlPort") == nil {
+		return errors.New("ControlPort must be specified in main configuration, cannot run")
 	}
 
-	if mainConfig.GetArray("integrations") == nil {
+	if mainConfig.GetArray("Integrations") == nil {
 		return errors.New("No Integrations section in config, cannot run")
 	}
-	integrations := mainConfig.GetArray("integrations").([]string)
+	integrations := mainConfig.GetArray("Integrations").([]string)
 	if len(integrations) == 0 {
 		return errors.New("No Integrations enabled, cannot run")
 	}
@@ -100,27 +100,12 @@ func CheckMainConfig(configDir string) error {
 func LoadMainConfig(configDir string) (MainConfigT, error) {
 	var conf MainConfigT
 	t, err := PreprocessTOML(configDir, mainConfigFilename)
-	mainConfig, err := toml.LoadBytes(t)
+	err = toml.Unmarshal(t, &conf)
 	if err != nil {
-		log.Println("ERROR: Could not load main configuration ", err.Error())
+		log.Fatalf("ERROR: Could not load Main config due to %s\n", err.Error())
 		return conf, err
 	}
-	conf.SystemName = mainConfig.Get("systemName").(string)
-	conf.Longitude = mainConfig.Get("longitude").(float64)
-	conf.Latitude = mainConfig.Get("latitude").(float64)
-	conf.MqttBroker = mainConfig.Get("mqttBroker").(string)
-	conf.MqttPort = int(mainConfig.Get("mqttPort").(int64))
-	conf.MqttClientID = mainConfig.Get("mqttClientID").(string)
-	conf.LogEvents = mainConfig.Get("logEvents").(bool)
-	conf.ControlPort = int(mainConfig.Get("controlPort").(int64))
-
 	log.Printf("DEBUG: Main config for %s loaded, MQTT Broker is %s\n", conf.SystemName, conf.MqttBroker)
-	log.Printf("DEBUG: Latitude %f, Longitude %f\n", conf.Latitude, conf.Longitude)
-
-	if mainConfig.GetArray("integrations") == nil {
-		return conf, errors.New("No Integrations section in config, cannot run")
-	}
-	conf.Integrations = mainConfig.GetArray("integrations").([]string)
 	conf.ConfigDir = configDir
 	return conf, nil
 }
