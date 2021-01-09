@@ -16,7 +16,16 @@ LogDir = "/tmp"     # Don't use /tmp for real!
   DeviceType = "Inverter"
   DeviceName = "Steve's Office"
   EventName = "Temperature"
-  FlushEvery = 10
+  FlushEvery = 2
+
+[[Logger]]
+  Name = "LivingRoomTemp"
+  LogFile = "salonTemp.csv"
+  Integration = "Daikin"
+  DeviceType = "Inverter"
+  DeviceName = "Living Room"
+  EventName = "Temperature"
+  FlushEvery = 2
   
 [[Logger]]
   Name = "AllTemps"
@@ -25,5 +34,5 @@ LogDir = "/tmp"     # Don't use /tmp for real!
   DeviceType = "Inverter"
   DeviceName = "+"
   EventName = "Temperature"
-  FlushEvery = 50
+  FlushEvery = 2
   

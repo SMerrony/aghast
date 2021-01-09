@@ -211,6 +211,7 @@ func (t *Time) tickers() {
 			t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Second", Value: tick.Second()}
 			// new minute?
 			if tick.Minute() != lastMinute {
+				events.DumpSubs()
 				t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Minute", Value: tick.Minute()}
 				lastMinute = tick.Minute()
 				// new hour?

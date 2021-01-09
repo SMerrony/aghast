@@ -60,6 +60,23 @@ var (
 	logEvents     bool
 )
 
+// DumpSubs is a debugging function...
+func DumpSubs() {
+	if logEvents {
+		log.Println("DEBUG: EventManager Dumping Subscriptions...")
+		subsMu.RLock()
+		idMu.Lock()
+		for e, s := range subscriptions {
+			log.Printf("DEBUG: ... Event: %s\n", e)
+			for _, sub := range s {
+				log.Printf("DEBUG: ... ... %s\n", subIDs[sub.subscriber])
+			}
+		}
+		idMu.Unlock()
+		subsMu.RUnlock()
+	}
+}
+
 // GetSubscriberID returns a subscriber ID which must be used when calling Subscribe or Unsubscribe
 func GetSubscriberID(name string) int {
 	idMu.Lock()
@@ -87,6 +104,17 @@ func StartEventManager(logevents bool) chan EventT {
 	return eventMgrChan
 }
 
+func sendOrCrash(ev EventT, dest subscriptionT) {
+	if logEvents {
+		log.Printf("DEBUG: ... forwarding event to subscriber %d (%s)\n", dest.subscriber, subIDs[dest.subscriber])
+	}
+	select {
+	case dest.channel <- ev:
+	default:
+		log.Fatalf("ERROR: EventManager could not write to subscriber %s channel\n", subIDs[dest.subscriber])
+	}
+}
+
 func eventManager() {
 	for {
 		ev := <-eventMgrChan
@@ -99,40 +127,28 @@ func eventManager() {
 		subs, any := subscriptions[getSubKey(ev.Integration, ev.DeviceType, ev.DeviceName, ev.EventName)]
 		if any {
 			for _, dest := range subs {
-				if logEvents {
-					log.Printf("DEBUG: ... forwarding event to subscriber %d (%s)\n", dest.subscriber, subIDs[dest.subscriber])
-				}
-				dest.channel <- ev
+				sendOrCrash(ev, dest)
 			}
 		}
 		// DeviceName is "+"
 		subs, any = subscriptions[getSubKey(ev.Integration, ev.DeviceType, "+", ev.EventName)]
 		if any {
 			for _, dest := range subs {
-				if logEvents {
-					log.Printf("DEBUG: ... forwarding event to subscriber %d (%s)\n", dest.subscriber, subIDs[dest.subscriber])
-				}
-				dest.channel <- ev
+				sendOrCrash(ev, dest)
 			}
 		}
 		// EventMName is "+"
 		subs, any = subscriptions[getSubKey(ev.Integration, ev.DeviceType, ev.DeviceName, "+")]
 		if any {
 			for _, dest := range subs {
-				if logEvents {
-					log.Printf("DEBUG: ... forwarding event to subscriber %d (%s)\n", dest.subscriber, subIDs[dest.subscriber])
-				}
-				dest.channel <- ev
+				sendOrCrash(ev, dest)
 			}
 		}
 		// DviceName AND EventMName is "+"
 		subs, any = subscriptions[getSubKey(ev.Integration, ev.DeviceType, "+", "+")]
 		if any {
 			for _, dest := range subs {
-				if logEvents {
-					log.Printf("DEBUG: ... forwarding event to subscriber %d (%s)\n", dest.subscriber, subIDs[dest.subscriber])
-				}
-				dest.channel <- ev
+				sendOrCrash(ev, dest)
 			}
 		}
 		subsMu.RUnlock()
@@ -156,6 +172,7 @@ func Subscribe(subscriberID int, integ, devtyp, devname, evName string) (chan Ev
 		subscriptions[k] = ss
 	} else {
 		subs = append(subs, newSub)
+		subscriptions[k] = subs
 	}
 	return newChan, nil
 }

@@ -64,6 +64,26 @@ func TestSubscription(t *testing.T) {
 		t.Error("re-subscription to already-subscribed event did not return an error")
 	}
 
+	// 2nd sub to same event
+	sid2 := GetSubscriberID("test")
+	if isSubscribed(sid2, "integ", "devtype", "devname", "eventName") {
+		t.Error("2nd isSubscribed gave false positive")
+	}
+	ch, err = Subscribe(sid2, "integ", "devtype", "devname", "eventName")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	if ch == nil {
+		t.Error("Got nil channel from 2nd test subscription")
+	}
+	if !isSubscribed(sid2, "integ", "devtype", "devname", "eventName") {
+		t.Error("isSubscribed negative for 2nd newly-subscribed event")
+	}
+	ch, err = Subscribe(sid2, "integ", "devtype", "devname", "eventName")
+	if err == nil {
+		t.Error("2nd re-subscription to already-subscribed event did not return an error")
+	}
+
 	// AND unsubscription...
 	ch, err = Subscribe(sid, "integ", "devtype", "devname", "anotherEventName")
 	if err != nil {
