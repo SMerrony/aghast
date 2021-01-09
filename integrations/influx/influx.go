@@ -116,7 +116,7 @@ func (i *Influx) logger(l loggerT) {
 	i.influxMu.RLock()
 	stopChan := i.stopChans[sc]
 	i.influxMu.RUnlock()
-	// log.Printf("DEBUG: Influx logger starting for %s, %s, subscriber #: %d\n", l.Integration, l.EventName, sid)
+	log.Printf("DEBUG: Influx logger starting for %s, %s, %s, subscriber #: %d\n", l.Integration, l.DeviceName, l.EventName, sid)
 	for {
 		select {
 		case <-stopChan:

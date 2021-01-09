@@ -55,19 +55,20 @@ type loggerT struct {
 
 // LoadConfig loads and stores the configuration for this Integration
 func (d *DataLogger) LoadConfig(confdir string) error {
-	d.loggerMu.Lock()
-	defer d.loggerMu.Unlock()
 	confBytes, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
 		log.Println("ERROR: Could not load DataLogger configuration ", err.Error())
 		return err
 	}
+	d.loggerMu.Lock()
 	err = toml.Unmarshal(confBytes, d)
 	if err != nil {
 		log.Fatalf("ERROR: Could not load DataLogger config due to %s\n", err.Error())
+		d.loggerMu.Unlock()
 		return err
 	}
-	log.Printf("INFO: DataLogger has %d loggers\n", len(d.Logger))
+	log.Printf("INFO: DataLogger has %d loggers %v\n", len(d.Logger), d.Logger)
+	d.loggerMu.Unlock()
 	return nil
 }
 
@@ -101,9 +102,11 @@ func (d *DataLogger) addStopChan() (ix int) {
 
 func (d *DataLogger) logger(l loggerT) {
 	d.loggerMu.RLock()
+	log.Printf("INFO: DataLogger starting to log for %s\n", l.Name)
 	file, err := os.OpenFile(d.LogDir+"/"+l.LogFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Printf("WARNING: DataLogger failed to open/create CSV log - %v\n", err)
+		d.loggerMu.RUnlock()
 		return
 	}
 	csvWriter := csv.NewWriter(file)
@@ -111,14 +114,19 @@ func (d *DataLogger) logger(l loggerT) {
 	ch, err := events.Subscribe(sid, l.Integration, l.DeviceType, l.DeviceName, l.EventName)
 	if err != nil {
 		log.Printf("WARNING: DataLogger Integration could not subscribe to event for %v\n", l)
+		d.loggerMu.RUnlock()
 		return
 	}
+	defer events.Unsubscribe(sid, l.Integration, l.DeviceType, l.DeviceName, l.EventName)
+
 	idRoot := l.Integration + "/" + l.DeviceType
+	d.loggerMu.RUnlock()
 	unflushed := 0
 	sc := d.addStopChan()
+	d.loggerMu.RLock()
 	stopChan := d.stopChans[sc]
-	d.loggerMu.Unlock()
-
+	log.Printf("DEBUG: DataLogger entering loop for %s\n", l.Name)
+	d.loggerMu.RUnlock()
 	for {
 		select {
 		case <-stopChan:
@@ -133,10 +141,12 @@ func (d *DataLogger) logger(l loggerT) {
 			record[3] = ev.EventName
 			record[4] = fmt.Sprintf("%v", ev.Value)
 			csvWriter.Write(record)
+			d.loggerMu.RLock()
 			if unflushed++; unflushed == l.FlushEvery {
 				csvWriter.Flush()
 				unflushed = 0
 			}
+			d.loggerMu.RUnlock()
 		}
 	}
 }
