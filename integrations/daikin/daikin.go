@@ -241,12 +241,15 @@ func (d *Daikin) addStopChan() (ix int) {
 
 func (d *Daikin) rerunDiscovery(maxUnits int, scanTimeout time.Duration) {
 	sc := d.addStopChan()
+	d.invertersMu.RLock()
+	stopChan := d.stopChans[sc]
+	d.invertersMu.RUnlock()
 	every15mins := time.NewTicker(15 * time.Minute)
 	for {
 		select {
 		case <-every15mins.C:
 			d.runDiscovery(maxUnits, scanTimeout)
-		case <-d.stopChans[sc]:
+		case <-stopChan:
 			return
 		}
 	}

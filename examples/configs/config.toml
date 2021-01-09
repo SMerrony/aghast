@@ -15,7 +15,7 @@ Integrations = [
   "automation",
   "network",
   "datalogger",
-#  "daikin",
+  "daikin",
   "influx",
   "scraper",
   "tuya",
