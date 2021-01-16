@@ -459,8 +459,7 @@ func (d *Daikin) monitorActions() {
 	sid := events.GetSubscriberID(subscriberName)
 	ch, err := events.Subscribe(sid, "Daikin", events.ActionControlDeviceType, "+", "+")
 	if err != nil {
-		log.Printf("WARNING: Daikin Integration could not subscribe to event - %v\n", err)
-		return
+		log.Fatalf("ERROR: Daikin Integration could not subscribe to event - %v\n", err)
 	}
 	for {
 		select {
