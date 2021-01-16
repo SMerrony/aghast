@@ -22,7 +22,7 @@ Latitude = "!!SECRET(latitude)"   # Get latitude value from secrets.toml
 
 [[Event]]
   Name = "Test1"
-  Time = "11:58:00"
+  Time = "12:27:00"
 
 [[Event]]
   Name = "Test2"

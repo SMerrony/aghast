@@ -76,3 +76,7 @@ The AGHAST server may be started from the command line like this...
 `./aghastServer -configdir <path/to/config/dir>`
 
 The `-configdir` argument is compulsory and must refer to a directory containing the configuration files described above.
+
+## MQTT
+From time-to-time you may wish to purge any retained MQTT messages...
+`mqtt-forget -t '+/#' -f`

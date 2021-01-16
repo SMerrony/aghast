@@ -106,6 +106,11 @@ Automations subscribe to Events using the "event" configuration which specifies 
   deviceName = "TimedEvent"
   eventName = "TenBeforeWork"
 ```
+We also support external events via MQTT...
+```
+[event]
+  topic = "aghast/client/DemoButton"
+```
 
 ### Values
 
@@ -161,9 +166,11 @@ If any conditions are specified, they must all be satisfied for the Automation t
 Conditions examine the state of Values.
 ```
 [[conditions]]
-device = "<deviceName>"
-value = "<valueName>"
-test = ["<comparison>", <valueLiteral>]
+  integration = "Time"
+  deviceType = "Events"
+  deviceName = "TimedEvent"
+  value = "<valueName>"
+  test = ["<comparison>", <valueLiteral>]
 ```
 Where `<comparison>` is one of: `"="`, `"!="`, `"<"`, `">"`, `"<="`, `">="`.
 

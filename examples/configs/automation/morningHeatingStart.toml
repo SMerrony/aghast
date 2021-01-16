@@ -11,20 +11,28 @@ enabled = true
 [action.1]
   integration = "Daikin"
   deviceLabel = "Hall"
-  execute = [ { control = "temperature", setting = 21.0 },
+  execute = [ { control = "temperature", setting = 18.0 },
               { control = "mode",        setting = "Heat" },
               { control = "power",       setting = "on" } ]
 
 [action.2]
   integration = "Daikin"
   deviceLabel = "Living Room"
-  execute = [ { control = "temperature", setting = 19.0 },
+  execute = [ { control = "temperature", setting = 18.0 },
               { control = "mode",        setting = "Heat" },
               { control = "power",       setting = "on" } ]  
 
 [action.3]
   integration = "Daikin"
   deviceLabel = "Music Room"
-  execute = [ { control = "temperature", setting = 18.0 },
+  execute = [ { control = "temperature", setting = 17.0 },
               { control = "mode",        setting = "Heat" },
               { control = "power",       setting = "on" } ]  
+
+[action.4]
+  integration = "Daikin"
+  deviceLabel = "Dining Room"
+  execute = [ { control = "temperature", setting = 16.0 },
+              { control = "mode",        setting = "Heat" },
+              { control = "power",       setting = "on" } ]  
+

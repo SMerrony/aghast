@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	agconfig "github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
@@ -38,6 +39,7 @@ import (
 
 const (
 	configFilename = "/tuya.toml"
+	subscriberName = "Tuya"
 	mqttPrefix     = "aghast/tuya/"
 )
 
@@ -66,6 +68,19 @@ type lamp struct {
 	Dimmable    bool
 	Colour      bool
 	Temperature bool
+	status      lampStatusT
+}
+
+type lampStatusT struct {
+	SwitchLED     bool
+	WorkMode      string
+	BrightValueV2 int
+	TempValueV2   int
+	ColourDataV2  hsvT
+}
+
+type hsvT struct {
+	H, S, V int
 }
 
 // LoadConfig loads and stores the configuration for this Integration
@@ -100,7 +115,7 @@ func (t *Tuya) ProvidesDeviceTypes() []string {
 // Start launches the Integration, LoadConfig() should have been called beforehand.
 func (t *Tuya) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	t.evChan = evChan
-	// d.mqttChan = mq.PublishChan
+	t.mqttChan = mq.PublishChan
 	t.mq = mq
 	var server string
 	switch t.conf.TuyaRegion {
@@ -119,7 +134,8 @@ func (t *Tuya) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	//config.SetEnv(server, "", "")
 
 	go t.monitorClients()
-	// TODO - monitorDevices()
+	go t.monitorActions()
+	go t.monitorLamps()
 }
 
 func (t *Tuya) addStopChan() (ix int) {
@@ -226,6 +242,94 @@ func (t *Tuya) monitorClients() {
 				continue
 			}
 			t.tuyaMu.RUnlock()
+		}
+	}
+}
+
+// monitorLamps
+func (t *Tuya) monitorLamps() {
+	sc := t.addStopChan()
+	t.tuyaMu.RLock()
+	stopChan := t.stopChans[sc]
+	t.tuyaMu.RUnlock()
+	everyMinute := time.NewTicker(time.Minute)
+	for {
+		for _, lamp := range t.conf.Lamp {
+			status, err := device.GetDeviceStatus(lamp.DeviceID)
+			if err != nil {
+				log.Printf("WARNING: Tuya GetDeviceStatus failed with %s\n", err.Error())
+			} else {
+				log.Printf("DEBUG: Tuya device status response Code: %d, Message: %s, Success: %v\n", status.Code, status.Msg, status.Success)
+				if status.Success {
+					var currentStatus lampStatusT
+					for _, r := range status.Result {
+						// log.Printf("DEBUG: ... Code: %s, Value: %v\n", r.Code, r.Value)
+						switch r.Code {
+						case "switch_led":
+							currentStatus.SwitchLED = r.Value.(bool)
+						case "work_mode":
+							currentStatus.WorkMode = r.Value.(string)
+						case "bright_value_v2":
+							currentStatus.BrightValueV2 = int(r.Value.(float64))
+						case "temp_value_v2":
+							currentStatus.TempValueV2 = int(r.Value.(float64))
+						case "colour_data_v2":
+							err := json.Unmarshal([]byte(r.Value.(string)), &currentStatus.ColourDataV2)
+							if err != nil {
+								log.Printf("WARNING: Tuya could not unmarshal HSV data from map, %s\n", err.Error())
+							}
+						}
+					}
+					t.tuyaMu.Lock()
+					lamp.status = currentStatus
+					t.tuyaMu.Unlock()
+					// log.Printf("DEBUG: ... current Status: %v\n", currentStatus)
+					payload, err := json.Marshal(currentStatus)
+					if err != nil {
+						log.Fatalf("ERROR: Tuya could not marshal status info - %s\n", err.Error())
+					}
+					// log.Println("DEBUG: Tuya - sending MQTT update...")
+					t.mqttChan <- mqtt.MessageT{
+						Topic:    mqttPrefix + lamp.Label + "/status",
+						Qos:      0,
+						Retained: false,
+						Payload:  payload,
+					}
+				}
+			}
+		}
+		select {
+		case <-stopChan:
+			return
+		case <-everyMinute.C:
+			continue
+		}
+	}
+}
+
+// monitorActions listens for Control Actions from Automations and performs them
+func (t *Tuya) monitorActions() {
+	sc := t.addStopChan()
+	t.tuyaMu.RLock()
+	stopChan := t.stopChans[sc]
+	t.tuyaMu.RUnlock()
+	sid := events.GetSubscriberID(subscriberName)
+	ch, err := events.Subscribe(sid, "Daikin", events.ActionControlDeviceType, "+", "+")
+	if err != nil {
+		log.Fatalf("ERROR: Tuya Integration could not subscribe to event - %v\n", err)
+	}
+	for {
+		select {
+		case <-stopChan:
+			return
+		case ev := <-ch:
+			log.Printf("DEBUG: Tuya Action Monitor got %v\n", ev)
+			// lampIx, found := t.lampsByLabel[ev.DeviceName]
+			// if !found {
+			// 	log.Printf("WARNING: Tuya automation got Action for unknown unit <%s>\n", ev.DeviceName)
+			// 	continue
+			// }
+
 		}
 	}
 }
