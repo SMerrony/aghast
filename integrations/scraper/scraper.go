@@ -1,4 +1,4 @@
-// Copyright ©2020 Steve Merrony
+// Copyright ©2020,2021 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,22 +41,17 @@ const (
 type Scraper struct {
 	mq        mqtt.MQTT
 	scraperMu sync.RWMutex
-	scrapers  map[string]scraperT
+	Scrape    []scraperT
 	stopChans []chan bool // used for stopping Goroutines
 }
 
 type scraperT struct {
-	URL      string
-	Interval int
-	Details  []detailsT
-}
-
-type detailsT struct {
+	Name      string
+	URL       string
+	Interval  int
 	Selector  string
 	Attribute string
-	Index     int
-	Indices   map[int]int
-	Subtopic  string
+	Indices   []int
 	Subtopics []string
 	// Factor    float64
 	Suffix    string
@@ -69,67 +64,18 @@ func (s *Scraper) LoadConfig(confdir string) error {
 	s.scraperMu.Lock()
 	defer s.scraperMu.Unlock()
 
-	t, err := config.PreprocessTOML(confdir, configFilename)
+	confBytes, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
-		log.Println("ERROR: Could not load Scraper configuration ", err.Error())
+		log.Println("ERROR: Could not preprocess Scraper configuration ", err.Error())
 		return err
 	}
-	conf, err := toml.LoadBytes(t)
+	err = toml.Unmarshal(confBytes, s)
 	if err != nil {
-		log.Println("ERROR: Could not parse Scraper configuration ", err.Error())
+		log.Fatalf("ERROR: Could not load Scraper config due to %s\n", err.Error())
+		s.scraperMu.Unlock()
 		return err
 	}
-	s.scrapers = make(map[string]scraperT)
-	confMap := conf.ToMap()
-	scrapers := conf.Keys()
-
-	for _, name := range scrapers {
-		log.Printf("INFO: Scraper Loading config for %s\n", name)
-		var scr scraperT
-		sconf := confMap[name].(map[string]interface{})
-		scr.URL = sconf["url"].(string)
-		scr.Interval = int(sconf["interval"].(int64))
-		dets := sconf["details"].([]interface{})
-		for _, d := range dets {
-			var det detailsT
-			ixNum := 0
-			dmap := d.(map[string]interface{})
-			det.Selector = dmap["selector"].(string)
-			det.Attribute = dmap["attribute"].(string)
-			if _, ix := dmap["index"]; ix {
-				det.Index = int(dmap["index"].(int64))
-			}
-			if _, ixs := dmap["indices"]; ixs {
-				tmpIxs := dmap["indices"].([]interface{})
-				det.Indices = make(map[int]int)
-				for _, i := range tmpIxs {
-					det.Indices[int(i.(int64))] = ixNum
-					ixNum++
-				}
-			}
-			// _, det.hasFactor = dmap["factor"]
-			// if det.hasFactor {
-			// 	det.Factor = dmap["factor"].(float64)
-			// }
-			if _, st := dmap["subtopic"]; st {
-				det.Subtopic = dmap["subtopic"].(string)
-			}
-			if _, sts := dmap["subtopics"]; sts {
-				tmpSts := dmap["subtopics"].([]interface{})
-				for _, st := range tmpSts {
-					det.Subtopics = append(det.Subtopics, st.(string))
-				}
-			}
-			_, det.hasSuffix = dmap["suffix"]
-			if det.hasSuffix {
-				det.Suffix = dmap["suffix"].(string)
-			}
-
-			scr.Details = append(scr.Details, det)
-		}
-		s.scrapers[name] = scr
-	}
-
+	log.Printf("INFO: Scraper has %d scrapers configured\n", len(s.Scrape))
 	return nil
 }
 
@@ -141,8 +87,8 @@ func (s *Scraper) ProvidesDeviceTypes() []string {
 // Start launches the Integration, LoadConfig() should have been called beforehand.
 func (s *Scraper) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	s.mq = mq
-	for sc := range s.scrapers {
-		go s.scraper(sc)
+	for _, sc := range s.Scrape {
+		go s.runScraper(sc)
 	}
 	// log.Printf("DEBUG: Scraper has started %d scraper(s)\n", len(s.scrapers))
 }
@@ -163,41 +109,50 @@ func (s *Scraper) Stop() {
 	log.Println("DEBUG: Scraper - All Goroutines should have stopped")
 }
 
-func (s *Scraper) scraper(name string) {
-	scr := s.scrapers[name]
+func (s *Scraper) runScraper(scr scraperT) {
+	log.Printf("DEBUG: Scraper - starting %v\n", scr)
 	c := colly.NewCollector()
-	for _, d := range scr.Details {
-		c.OnHTML("body", func(e *colly.HTMLElement) {
-			e.ForEach(d.Selector, func(ix int, el *colly.HTMLElement) {
-				a := el.Attr(d.Attribute)
-				if _, wanted := d.Indices[ix]; wanted {
-					// log.Printf("DEBUG: Scraper found Selector %s, index %d, attribute %s\n",
-					// d.Selector, ix, a)
-					if d.hasSuffix {
-						a = strings.TrimSuffix(a, d.Suffix)
-					}
-					// if d.hasFactor {
-
-					// }
-					t := mqttPrefix + name + "/" + d.Subtopics[d.Indices[ix]]
-					// log.Printf("DEBUG: ... would publish %s to topic %s\n", a, t)
-					s.mq.PublishChan <- mqtt.MessageT{
-						Topic:    t,
-						Qos:      0,
-						Retained: true,
-						Payload:  a,
-					}
+	// for _, d := range scr.Details {
+	c.OnHTML("body", func(e *colly.HTMLElement) {
+		e.ForEach(scr.Selector, func(ix int, el *colly.HTMLElement) {
+			a := el.Attr(scr.Attribute)
+			// if _, wanted := scr.Indices[ix]; wanted {
+			wanted := false
+			for ind := range scr.Indices {
+				if ind == ix {
+					wanted = true
 				}
-			})
+			}
+			if wanted {
+				// log.Printf("DEBUG: Scraper found Selector %s, index %d, attribute %s\n", scr.Selector, ix, a)
+				if len(scr.Suffix) > 0 {
+					a = strings.TrimSuffix(a, scr.Suffix)
+				}
+				// if scr.hasFactor {
+
+				// }
+				t := mqttPrefix + scr.Name + "/" + scr.Subtopics[scr.Indices[ix]]
+				// log.Printf("DEBUG: ... would publish %s to topic %s\n", a, t)
+				s.mq.PublishChan <- mqtt.MessageT{
+					Topic:    t,
+					Qos:      0,
+					Retained: true,
+					Payload:  a,
+				}
+			}
 		})
-	}
+	})
+	// }
 	sc := s.addStopChan()
 	s.scraperMu.RLock()
 	stopChan := s.stopChans[sc]
+	interval := scr.Interval
 	s.scraperMu.RUnlock()
-	ticker := time.NewTicker(time.Duration(scr.Interval) * time.Second)
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+
 	for {
 		c.Visit(scr.URL)
+		// log.Println("DEBUG: Scraped finished Visit()")
 		select {
 		case <-stopChan:
 			return
