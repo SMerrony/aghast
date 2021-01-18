@@ -20,9 +20,11 @@
 package automation
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/SMerrony/aghast/events"
@@ -33,6 +35,7 @@ import (
 const (
 	automationsSubDir = "/automation"
 	subscribeName     = "AutomationManager"
+	mqttPrefix        = "aghast/automation/"
 )
 
 const (
@@ -137,6 +140,7 @@ func (a *Automation) ProvidesDeviceTypes() []string {
 
 // Start launches a Goroutine for each Automation, LoadConfig() should have been called beforehand.
 func (a *Automation) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+
 	a.evChan = evChan
 	a.mq = mq
 	a.stopChans = make(map[string]chan bool)
@@ -157,6 +161,8 @@ func (a *Automation) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 			log.Printf("INFO: Automation %s is not enabled, will not run\n", auto.name)
 		}
 	}
+	a.stopChans["mqttMonitor"] = make(chan bool)
+	go a.monitorMqtt(a.stopChans["mqttMonitor"])
 }
 
 // Stop terminates the Integration and all Goroutines it contains
@@ -222,6 +228,47 @@ func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
 					}
 					log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
 					time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
+				}
+			}
+		}
+	}
+}
+
+func (a *Automation) monitorMqtt(stopChan chan bool) {
+	reqChan := a.mq.SubscribeToTopic(mqttPrefix + "client/#")
+	// topic format is aghast/automation/client/<action>
+	for {
+		select {
+		case <-stopChan:
+			return
+		case msg := <-reqChan:
+			payload := string(msg.Payload.([]uint8))
+			topicSlice := strings.Split(msg.Topic, "/")
+			if len(topicSlice) < 4 {
+				log.Printf("WARNING: Automation manager got invalid MQTT request on topic: %s\n", payload)
+				continue
+			}
+			action := topicSlice[3]
+			switch action {
+			case "list":
+				type AutoListElementT struct {
+					Name, Description string
+					Enabled           bool
+				}
+				var autoList []AutoListElementT
+				for _, au := range a.automations {
+					le := AutoListElementT{Name: au.name, Description: au.description, Enabled: au.enabled}
+					autoList = append(autoList, le)
+				}
+				resp, err := json.Marshal(autoList)
+				if err != nil {
+					log.Fatalln("ERROR: Automation manager fatal error marshalling data to JSON")
+				}
+				a.mq.PublishChan <- mqtt.MessageT{
+					Topic:    mqttPrefix + "list",
+					Qos:      0,
+					Retained: false,
+					Payload:  resp,
 				}
 			}
 		}
