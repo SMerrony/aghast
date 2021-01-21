@@ -452,6 +452,18 @@ func (d *Daikin) monitorUnits() {
 
 // monitorActions listens for Control Actions from Automations and performs them
 func (d *Daikin) monitorActions() {
+	defer func() {
+		if r := recover(); r != nil {
+			msg := fmt.Sprintf("ERROR: Daikin Automation Action panicked.\n%v\nFix the Automation and restart AGHAST!", r)
+			log.Print(msg)
+			d.mqttChan <- mqtt.MessageT{
+				Topic:    mqtt.StatusTopic,
+				Qos:      0,
+				Retained: true,
+				Payload:  msg,
+			}
+		}
+	}()
 	sc := d.addStopChan()
 	d.invertersMu.RLock()
 	stopChan := d.stopChans[sc]
