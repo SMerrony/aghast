@@ -34,6 +34,7 @@ import (
 	"github.com/SMerrony/aghast/integrations/datalogger"
 	"github.com/SMerrony/aghast/integrations/influx"
 	"github.com/SMerrony/aghast/integrations/network"
+	"github.com/SMerrony/aghast/integrations/pimqttgpio"
 	"github.com/SMerrony/aghast/integrations/scraper"
 	"github.com/SMerrony/aghast/integrations/time"
 	"github.com/SMerrony/aghast/integrations/tuya"
@@ -43,16 +44,16 @@ import (
 // The Integration interface defines the minimal set of methods that an
 // Integration must provide
 type Integration interface {
-	// The LoadConfig func should simply load any config (TOML) files for this Integration
+	// LoadConfig func should simply load any config (TOML) files for this Integration
 	LoadConfig(string) error
 
-	// The Start func begins running the Integration GoRoutines and should return quickly
+	// Start func begins running the Integration GoRoutines and should return quickly
 	Start(chan events.EventT, mqtt.MQTT)
 
 	// Stop terminates the Integration and all Goroutines it contains
 	Stop()
 
-	// ProvidesDeviceType returns a list of Device Type supported by this Integration
+	// ProvidesDeviceTypes returns a list of Device Type supported by this Integration
 	ProvidesDeviceTypes() []string
 }
 
@@ -73,6 +74,8 @@ func newIntegration(iName string) {
 		integs[iName] = new(influx.Influx)
 	case "network":
 		integs[iName] = new(network.Network)
+	case "pimqttgpio":
+		integs[iName] = new(pimqttgpio.PiMqttGpio)
 	case "scraper":
 		integs[iName] = new(scraper.Scraper)
 	case "time":

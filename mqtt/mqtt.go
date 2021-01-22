@@ -1,4 +1,4 @@
-// Copyright ©2020 Steve Merrony
+// Copyright ©2020,2021 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,14 +31,13 @@ import (
 const (
 	mqttOutboundQueueLen = 100
 	mqttInboundQueueLen  = 100
+	// StatusTopic is used for sending important system-wide messages
+	StatusTopic = "aghast/status"
 )
 
 // MQTT encapsulates a connection to an MQTT Broker
 type MQTT struct {
-	PublishChan chan MessageT
-	// Broker         string
-	// Port           int
-	// ClientID       string
+	PublishChan    chan MessageT
 	client         mqtt.Client
 	options        *mqtt.ClientOptions
 	connectHandler mqtt.OnConnectHandler
@@ -83,15 +82,12 @@ func (m *MQTT) Start(broker string, port int, clientID string) chan MessageT {
 	go m.publishViaMQTT()
 
 	msg := MessageT{
-		Topic:    "aghast/status",
+		Topic:    StatusTopic,
 		Qos:      0,
 		Retained: false,
 		Payload:  "Starting",
 	}
 	m.PublishChan <- msg
-	// testing...
-	// sub(m.client)
-	// go publish(m.client)
 
 	return m.PublishChan
 
@@ -124,6 +120,11 @@ func (m *MQTT) SubscribeToTopic(topic string) (c chan MessageT) {
 		// log.Printf("DEBUG: MQTT subscription got topic: %s,  msg: %v\n", msg.Topic(), msg.Payload())
 	})
 	return c
+}
+
+// UnsubscribeFromTopic does what you'd expect
+func (m *MQTT) UnsubscribeFromTopic(topic string) {
+	m.client.Unsubscribe(topic)
 }
 
 // testing...
