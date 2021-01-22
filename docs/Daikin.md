@@ -52,3 +52,48 @@ Three things can happen...
 3. One or more units may fail to respond to the scan.  This has been observed to occur from time to time even on well-configured WiFi networks. See below.
 
 Discovery is re-run every 15 minutes - this will pick up any changes, and normally resolves case 3 above.
+
+### Automation
+Example Automation...
+```
+name = "MorningeWarmup"
+description = "Warm upstairs"
+enabled = true
+
+[event]
+  integration = "Time"
+  deviceType  = "Events"
+  deviceName  = "TimedEvent"
+  eventName   = "MorningPrewarming"
+
+[action.1]
+  integration = "Daikin"
+  deviceLabel = "Steve's Office"
+  execute = [ { control = "temperature", setting = 18.0 },
+              { control = "mode",        setting = "Heat" },
+              { control = "power",       setting = "on" } ]
+[action.2]
+  integration = "Daikin"
+  deviceLabel = "Paul's Studio"
+  execute = [ { control = "temperature", setting = 18.0 },
+              { control = "mode",        setting = "Heat" },
+              { control = "power",       setting = "on" } ]
+
+[action.3]
+  integration = "Daikin"
+  deviceLabel = "Master Bedroom"
+  execute = [ { control = "temperature", setting = 18.0 },
+              { control = "mode",        setting = "Heat" },
+              { control = "fan",         setting = "3" },
+              { control = "power",       setting = "on" } ]
+```
+Due to the oddness of the Daikin interface there are a couple of things to watch out for in the Actions.
+* temperature - must be a float, do not specify an integer
+* mode - must be capitalised, one of: "Auto", "Dehumidify", "Cool", "Heat", "Fan"
+* fan - this is fan speed, must be quoted as follows...
+  * "A" - automatic
+  * "B" - silent
+  * "3" - level 1
+  * ...
+  * "7" = level 5
+* power - the value must either "on" or "off", YAML booleans will not work
