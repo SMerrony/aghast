@@ -20,6 +20,7 @@
 package pimqttgpio
 
 import (
+	"fmt"
 	"log"
 	"math"
 	"strconv"
@@ -149,7 +150,7 @@ func (p *PiMqttGpio) monitorSensor(ix int) {
 				if p.Sensor[ix].RoundToInteger {
 					evValue = int(math.Round(floatVal))
 					p.Sensor[ix].savedInteger = evValue.(int)
-					mqttValue = string(evValue.(int))
+					mqttValue = fmt.Sprintf("%d", evValue.(int))
 				} else {
 					evValue = floatVal
 					p.Sensor[ix].savedFloat = floatVal

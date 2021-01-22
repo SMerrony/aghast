@@ -14,17 +14,22 @@ We believe that end-users of HA systems are generally not interested in the nuts
 * An MQTT-Connected dashboard - Node-Red works well and example flows are included
 
 ## Integrations
-
+Currently available Integrations...
 | Integration | Description                  | Documentation |
 | ----------- | :--------------------------  | ------------- |
 | Time        | Includes: Tickers            | [Time](docs/Time.md) |
+|             |                              |                      |
 | Automation  | Event-based Automation       | [Automation](docs/Automation.md) |
-| Network     | Includes: HostChecker        | [Network](docs/Network.md) |
 | DataLogger  | Log Data to CSV files        | [](docs/) |
 | Daikin      | HVAC Control and Monitoring  | [Daikin](docs/Daikin.md) |
 | Influx      | Log Data to InfluxDB         | [Influx](docs/Influx.md) |
+| Network     | Includes: HostChecker        | [Network](docs/Network.md) |
+| PiMqttGpio  | Capture data from pi-mqtt-gpio | [PiMqttGpio](docs/PiMqttGpio.md) |
 | Scraper     | Web Scraping                 | [Scraper](docs/Scraper.md) |
 | Tuya        | Tuya WiFi lights             | [](docs/) |
+
+The Time Integration must be enabled for AGHAST to start, you will also probably need to
+enable Automation and at least one other Integration in order to do anything useful.
 
 ## Configuration
 
@@ -50,6 +55,7 @@ integrations = [
 #  "datalogger",  # commented-out, so will not be enabled
   "daikin",
   "influx",
+  "pimqttgpio",
   "scraper",
   "tuya",
 ]
