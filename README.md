@@ -35,24 +35,23 @@ enable Automation and at least one other Integration in order to do anything use
 
 The main configuration file `config.toml` is quite simple, containing only some general information about the system itself, and a list of enabled Integrations, eg.
 ```
-systemName = "Our House"      # Label for the system
+SystemName = "Our House"      # Label for the system
+Postcode = "!!SECRET(postcode)"
 
-longitude = 43.6
-latitude = "!!SECRET(latitude)"       # Get latitude value from secrets.toml
-postcode = "!!SECRET(postcode)"
+MqttBroker = "!!CONSTANT(mqttBroker)"  # Hostname or IP of MQTT Broker
+MqttPort = 1883               # MQTT Broker port
+MqttClientID = "aghast"       # MQTT Client ID
 
-mqttBroker = "!!CONSTANT(mqttBroker)"  # Hostname or IP of MQTT Broker
-mqttPort = 1883               # MQTT Broker port
-mqttClientID = "aghast"       # MQTT Client ID
+LogEvents = false             # A LOT of stuff will be logged if this is true!
 
-logEvents = false             # A LOT of stuff will be logged if this is true!
+ControlPort = 46445           # HTTP port for back-end admin control
 
 # List of Integrations we want enabled
-integrations = [
+Integrations = [
   "time",         # the Time integration MUST be enabled
   "automation",
   "network",
-#  "datalogger",  # commented-out, so will not be enabled
+#  "datalogger",
   "daikin",
   "influx",
   "pimqttgpio",

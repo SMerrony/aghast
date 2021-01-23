@@ -2,7 +2,7 @@
 # See https://github.com/flyte/pi-mqtt-gpio for the server
 
 [[Sensor]]
-  Name           = "MusicRoomTemp"  # A unique name
+  Name           = "MusicRoomTemp"  # A unique name, will be subtopic if forwarding MQTT
   TopicPrefix    = "pizero01/gpio"  # This must match the topic_prefix setting on the Pi
   SensorType     = "dht22_temperature"
   ValueType      = "float" # One of "string", "integer", or "float"

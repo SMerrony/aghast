@@ -199,7 +199,6 @@ func (d *Daikin) Stop() {
 	for _, ch := range d.stopChans {
 		ch <- true
 	}
-	log.Println("DEBUG: Daikin - All Goroutines should have stopped")
 }
 
 func (d *Daikin) runDiscovery(maxUnits int, scanTimeout time.Duration) {

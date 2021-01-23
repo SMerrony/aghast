@@ -92,7 +92,9 @@ func (p *PiMqttGpio) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 
 // Stop terminates the Integration and all Goroutines it contains
 func (p *PiMqttGpio) Stop() {
-	panic("not implemented") // TODO: Implement
+	for _, ch := range p.stopChans {
+		ch <- true
+	}
 }
 
 // ProvidesDeviceTypes returns a list of Device Type supported by this Integration
@@ -170,7 +172,7 @@ func (p *PiMqttGpio) monitorSensor(ix int) {
 			if p.Sensor[ix].ForwardMQTT {
 				// log.Println("DEBUG: ... will forward to MQTT")
 				p.mq.PublishChan <- mqtt.MessageT{
-					Topic:    mqttPrefix + p.Sensor[ix].TopicPrefix + "/" + p.Sensor[ix].SensorType,
+					Topic:    mqttPrefix + p.Sensor[ix].Name,
 					Qos:      0,
 					Retained: false,
 					Payload:  mqttValue,

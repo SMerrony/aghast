@@ -14,7 +14,7 @@ Example...
 # See https://github.com/flyte/pi-mqtt-gpio for the server
 
 [[Sensor]]
-  Name           = "MusicRoomTemp"  # A unique name
+  Name           = "MusicRoomTemp"  # A unique name, will be subtopic if forwarding MQTT
   TopicPrefix    = "pizero01/gpio"  # This must match the topic_prefix setting on the Pi
   SensorType     = "dht22_temperature"
   ValueType      = "float" # One of "string", "integer", or "float"
@@ -32,7 +32,7 @@ Example...
   ForwardMQTT    = true   # Create an AGHAST-sourced MQTT message for each value
 ```
 
-The corresponding example Pi-MQTT-GPIO YAML configuration for a remote Pi is...
+For information, the corresponding example Pi-MQTT-GPIO YAML configuration for a remote Pi is...
 ```
 mqtt:
   host: mediaserver01
