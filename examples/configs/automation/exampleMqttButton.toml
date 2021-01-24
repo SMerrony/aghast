@@ -5,6 +5,12 @@ enabled = true
 [event]
   topic = "aghast/client/DemoButton"
 
+[condition]
+  integration = "PiMqttGpio"
+  name = "MusicRoomTemp"
+  is = "<"                # one of: "=", "!=", "<", ">", 
+  value = 17.0
+
 [action.1]
   integration = "Daikin"
   deviceLabel = "Steve's Office"

@@ -61,8 +61,16 @@ type automationT struct {
 	eventType        eventTypeT
 	event            events.EventT
 	mqttTopic        string
+	condition        conditionT
 	actions          map[string]actionT
 	sortedActionKeys []string
+}
+
+type conditionT struct {
+	integration string
+	name        string
+	is          string // comparison operator, one of: "=", "!=", "<", ">", "<=", ">="
+	value       interface{}
 }
 
 type actionT struct { // TODO should this be defined elsewhere?
@@ -106,6 +114,12 @@ func (a *Automation) LoadConfig(confDir string) error {
 		if newAuto.eventType == noEvent {
 			log.Printf("WARNING: Automations - no event specified for %s, ignoring it\n", newAuto.name)
 			continue
+		}
+		if conf.Get("condition") != nil {
+			newAuto.condition.integration = conf.Get("condition.integration").(string)
+			newAuto.condition.name = conf.Get("condition.name").(string)
+			newAuto.condition.is = conf.Get("condition.is").(string)
+			newAuto.condition.value = conf.Get("condition.value")
 		}
 		confMap := conf.ToMap()
 		actsConf := confMap["action"].(map[string]interface{})
@@ -206,6 +220,57 @@ func (a *Automation) waitForIntegrationEvent(stopChan chan bool, sid int, auto a
 	}
 }
 
+func (a *Automation) testCondition(cond conditionT) bool {
+	respChan := make(chan interface{})
+	a.evChan <- events.EventT{
+		Integration: cond.integration,
+		DeviceType:  events.QueryDeviceType,
+		DeviceName:  cond.name,
+		EventName:   events.FetchLast,
+		Value:       respChan,
+	}
+	resp := <-respChan
+	log.Printf("DEBUG: Automation manager testCondition got %v\n", resp)
+	switch resp.(type) {
+	case float64:
+		switch cond.is {
+		case "<":
+			return resp.(float64) < cond.value.(float64)
+		case ">":
+			return resp.(float64) > cond.value.(float64)
+		case "=":
+			return resp.(float64) == cond.value.(float64)
+		case "!=":
+			return resp.(float64) != cond.value.(float64)
+		}
+	case int:
+		switch cond.is {
+		case "<":
+			return resp.(int) < cond.value.(int)
+		case ">":
+			return resp.(int) > cond.value.(int)
+		case "=":
+			return resp.(int) == cond.value.(int)
+		case "!=":
+			return resp.(int) != cond.value.(int)
+		}
+	case string:
+		switch cond.is {
+		case "<":
+			return resp.(string) < cond.value.(string)
+		case ">":
+			return resp.(string) > cond.value.(string)
+		case "=":
+			return resp.(string) == cond.value.(string)
+		case "!=":
+			return resp.(string) != cond.value.(string)
+		}
+	default:
+		log.Printf("WARNING: Automation Manager testCondition got unexpected data type for: %v\n", resp)
+	}
+	return false
+}
+
 func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
 	mqChan := a.mq.SubscribeToTopic(auto.mqttTopic)
 	for {
@@ -215,20 +280,24 @@ func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
 			return
 		case <-mqChan:
 			log.Printf("DEBUG: Automation Manager received event %s\n", auto.event.EventName)
-			log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
-			for _, k := range auto.sortedActionKeys {
-				ac := auto.actions[k]
-				for i := 0; i < len(ac.controls); i++ {
-					a.evChan <- events.EventT{
-						Integration: ac.integration,
-						DeviceType:  events.ActionControlDeviceType,
-						DeviceName:  ac.deviceLabel,
-						EventName:   ac.controls[i],
-						Value:       ac.settings[i],
+			if a.testCondition(auto.condition) {
+				log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
+				for _, k := range auto.sortedActionKeys {
+					ac := auto.actions[k]
+					for i := 0; i < len(ac.controls); i++ {
+						a.evChan <- events.EventT{
+							Integration: ac.integration,
+							DeviceType:  events.ActionControlDeviceType,
+							DeviceName:  ac.deviceLabel,
+							EventName:   ac.controls[i],
+							Value:       ac.settings[i],
+						}
+						log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
+						time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
 					}
-					log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
-					time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
 				}
+			} else {
+				log.Println("DEBUG: ... condition not met")
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-// Copyright ©2020 Steve Merrony
+// Copyright ©2020,2021 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,12 @@ const (
 
 	// ActionControlDeviceType must be subscribed to by Integrations providing Action Controls
 	ActionControlDeviceType = "Control"
+
+	// QueryDeviceType must be subscribed to by Integration providing data retrieval
+	QueryDeviceType = "Query"
+
+	// FetchLast request last value
+	FetchLast = "FetchLast"
 )
 
 // EventT - we keep events as simple as possible.

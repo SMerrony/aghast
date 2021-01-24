@@ -59,6 +59,16 @@ These Events come from MQTT and are simply identified by the MQTT topic:
  * topic - eg. "aghast/client/DemoButton"
 
 
+### Condtion
+You may optionally specify a Condition that must be satisfied for the Automation to proceed...
+```
+[condition]
+  integration = "PiMqttGpio"
+  name = "MusicRoomTemp"
+  is = "<"                # one of: "=", "!=", "<", ">", 
+  value = 17.0
+```
+
 ### Actions
 One or more Actions must be attached to an Event to form an Automation.
 

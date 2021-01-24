@@ -9,7 +9,7 @@
     - [Values](#values)
     - [Controls](#controls)
     - [Automations](#automations)
-      - [Conditions - NOT YET IMPLEMENTED](#conditions---not-yet-implemented)
+      - [Condition](#condition)
       - [Actions](#actions)
     - [Configuration](#configuration)
   - [Design Decisions](#design-decisions)
@@ -160,19 +160,18 @@ enabled = true
   execute = [ {control = "power", setting = "off"}]
 ```
 
-#### Conditions - NOT YET IMPLEMENTED
+#### Condition
 
-If any conditions are specified, they must all be satisfied for the Automation to proceed.
+If a Condition is specified, it must be satisfied for the Automation to proceed.
 Conditions examine the state of Values.
 ```
-[[conditions]]
+[condition]
   integration = "Time"
-  deviceType = "Events"
-  deviceName = "TimedEvent"
+  name = "TimedEvent"
+  is  = "<comparison>"
   value = "<valueName>"
-  test = ["<comparison>", <valueLiteral>]
 ```
-Where `<comparison>` is one of: `"="`, `"!="`, `"<"`, `">"`, `"<="`, `">="`.
+Where `<comparison>` is one of: `"="`, `"!="`, `"<"`, `">"`
 
 #### Actions
 

@@ -40,11 +40,12 @@ const (
 
 // PiMqttGpio encapsulates the type of this Integration
 type PiMqttGpio struct {
-	Sensor    []sensorT
-	mutex     sync.RWMutex
-	stopChans []chan bool
-	evChan    chan events.EventT
-	mq        mqtt.MQTT
+	Sensor        []sensorT
+	sensorsByName map[string]int
+	mutex         sync.RWMutex
+	stopChans     []chan bool
+	evChan        chan events.EventT
+	mq            mqtt.MQTT
 }
 
 type sensorT struct {
@@ -74,6 +75,10 @@ func (p *PiMqttGpio) LoadConfig(confdir string) error {
 	if err != nil {
 		log.Fatalf("ERROR: Could not load PiMqttGpio config due to %s\n", err.Error())
 	}
+	p.sensorsByName = make(map[string]int)
+	for i, s := range p.Sensor {
+		p.sensorsByName[s.Name] = i
+	}
 	log.Printf("DEBUG: PiMqttGpio config is... %v\n", p)
 	if len(p.Sensor) > 0 {
 		log.Printf("INFO: PiMqttGpio Integration has %d Sensors configured\n", len(p.Sensor))
@@ -88,6 +93,7 @@ func (p *PiMqttGpio) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	for ix := range p.Sensor {
 		go p.monitorSensor(ix)
 	}
+	go p.monitorQueries()
 }
 
 // Stop terminates the Integration and all Goroutines it contains
@@ -99,7 +105,7 @@ func (p *PiMqttGpio) Stop() {
 
 // ProvidesDeviceTypes returns a list of Device Type supported by this Integration
 func (p *PiMqttGpio) ProvidesDeviceTypes() []string {
-	return []string{"Sensor"}
+	return []string{"Sensor", "Query"}
 }
 
 func (p *PiMqttGpio) addStopChan() (ix int) {
@@ -108,6 +114,43 @@ func (p *PiMqttGpio) addStopChan() (ix int) {
 	ix = len(p.stopChans) - 1
 	p.mutex.Unlock()
 	return ix
+}
+
+func (p *PiMqttGpio) monitorQueries() {
+	sc := p.addStopChan()
+	p.mutex.RLock()
+	stopChan := p.stopChans[sc]
+	p.mutex.RUnlock()
+	sid := events.GetSubscriberID(subscriberName)
+	ch, err := events.Subscribe(sid, "PiMqttGpio", events.QueryDeviceType, "+", "+")
+	if err != nil {
+		log.Fatalf("ERROR: PiMqttGpio Integration could not subscribe to event - %v\n", err)
+	}
+	for {
+		select {
+		case <-stopChan:
+			return
+		case ev := <-ch:
+			log.Printf("DEBUG: PiMqttGpio Query Monitor got %v\n", ev)
+			switch ev.EventName {
+			case events.FetchLast:
+				var val interface{}
+				p.mutex.RLock()
+				switch p.Sensor[p.sensorsByName[ev.DeviceName]].ValueType {
+				case "string":
+					val = p.Sensor[p.sensorsByName[ev.DeviceName]].savedString
+				case "integer":
+					val = p.Sensor[p.sensorsByName[ev.DeviceName]].savedInteger
+				case "float":
+					val = p.Sensor[p.sensorsByName[ev.DeviceName]].savedFloat
+				}
+				p.mutex.RUnlock()
+				ev.Value.(chan interface{}) <- val
+			default:
+				log.Printf("WARNING: PiMqttGpio received unknown query type %s\n", ev.EventName)
+			}
+		}
+	}
 }
 
 func (p *PiMqttGpio) monitorSensor(ix int) {
