@@ -1,38 +1,38 @@
-name = "MorningHeatingStart"
-description = "Main Downstairs Heaters On"
-enabled = true
+Name = "MorningHeatingStart"
+Description = "Main Downstairs Heaters On"
+Enabled = true
 
-[event]
-  integration = "Time"
-  deviceType  = "Events"
-  deviceName  = "TimedEvent"
-  eventName   = "MorningHeatingOn"
+[Event]
+  Integration = "Time"
+  DeviceType  = "Events"
+  DeviceName  = "TimedEvent"
+  EventName   = "MorningHeatingOn"
 
 [action.1]
-  integration = "Daikin"
-  deviceLabel = "Hall"
-  execute = [ { control = "temperature", setting = 18.0 },
-              { control = "mode",        setting = "Heat" },
-              { control = "power",       setting = "on" } ]
+  Integration = "Daikin"
+  DeviceLabel = "Hall"
+  Execute = [ { Control = "temperature", Setting = 18.0 },
+              { Control = "mode",        Setting = "Heat" },
+              { Control = "power",       Setting = "on" } ]
 
 [action.2]
-  integration = "Daikin"
-  deviceLabel = "Living Room"
-  execute = [ { control = "temperature", setting = 18.0 },
-              { control = "mode",        setting = "Heat" },
-              { control = "power",       setting = "on" } ]  
+  Integration = "Daikin"
+  DeviceLabel = "Living Room"
+  Execute = [ { Control = "temperature", Setting = 18.0 },
+              { Control = "mode",        Setting = "Heat" },
+              { Control = "power",       Setting = "on" } ]  
 
 [action.3]
-  integration = "Daikin"
-  deviceLabel = "Music Room"
-  execute = [ { control = "temperature", setting = 17.0 },
-              { control = "mode",        setting = "Heat" },
-              { control = "power",       setting = "on" } ]  
+  Integration = "Daikin"
+  DeviceLabel = "Music Room"
+  Execute = [ { Control = "temperature", Setting = 17.0 },
+              { Control = "mode",        Setting = "Heat" },
+              { Control = "power",       Setting = "on" } ]  
 
 [action.4]
-  integration = "Daikin"
-  deviceLabel = "Dining Room"
-  execute = [ { control = "temperature", setting = 16.0 },
-              { control = "mode",        setting = "Heat" },
-              { control = "power",       setting = "on" } ]  
+  Integration = "Daikin"
+  DeviceLabel = "Dining Room"
+  Execute = [ { Control = "temperature", Setting = 16.0 },
+              { Control = "mode",        Setting = "Heat" },
+              { Control = "power",       Setting = "on" } ]  
 

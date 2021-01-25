@@ -55,11 +55,11 @@ type Automation struct {
 type eventTypeT int
 
 type automationT struct {
-	name             string
-	description      string
-	enabled          bool
+	Name             string
+	Description      string
+	Enabled          bool
 	eventType        eventTypeT
-	event            events.EventT
+	Event            events.EventT
 	mqttTopic        string
 	condition        conditionT
 	actions          map[string]actionT
@@ -67,14 +67,14 @@ type automationT struct {
 }
 
 type conditionT struct {
-	integration string
-	name        string
+	Integration string
+	Name        string
 	is          string // comparison operator, one of: "=", "!=", "<", ">", "<=", ">="
 	value       interface{}
 }
 
-type actionT struct { // TODO should this be defined elsewhere?
-	integration string
+type actionT struct {
+	Integration string
 	deviceLabel string
 	controls    []string
 	settings    []interface{}
@@ -96,43 +96,43 @@ func (a *Automation) LoadConfig(confDir string) error {
 			log.Println("ERROR: Could not load Automation configuration ", err.Error())
 			return err
 		}
-		newAuto.name = conf.Get("name").(string)
-		newAuto.description = conf.Get("description").(string)
-		newAuto.enabled = conf.Get("enabled").(bool)
-		log.Printf("DEBUG: ... %s, %s\n", newAuto.name, newAuto.description)
-		if conf.Get("event.integration") != nil {
+		newAuto.Name = conf.Get("Name").(string)
+		newAuto.Description = conf.Get("Description").(string)
+		newAuto.Enabled = conf.Get("Enabled").(bool)
+		log.Printf("DEBUG: ... %s, %s\n", newAuto.Name, newAuto.Description)
+		if conf.Get("Event.Integration") != nil {
 			newAuto.eventType = integrationEvent
-			newAuto.event.Integration = conf.Get("event.integration").(string)
-			newAuto.event.DeviceType = conf.Get("event.deviceType").(string)
-			newAuto.event.DeviceName = conf.Get("event.deviceName").(string)
-			newAuto.event.EventName = conf.Get("event.eventName").(string)
+			newAuto.Event.Integration = conf.Get("Event.Integration").(string)
+			newAuto.Event.DeviceType = conf.Get("Event.DeviceType").(string)
+			newAuto.Event.DeviceName = conf.Get("Event.DeviceName").(string)
+			newAuto.Event.EventName = conf.Get("Event.EventName").(string)
 		}
-		if conf.Get("event.topic") != nil {
+		if conf.Get("Event.Topic") != nil {
 			newAuto.eventType = mqttEvent
-			newAuto.mqttTopic = conf.Get("event.topic").(string)
+			newAuto.mqttTopic = conf.Get("Event.Topic").(string)
 		}
 		if newAuto.eventType == noEvent {
-			log.Printf("WARNING: Automations - no event specified for %s, ignoring it\n", newAuto.name)
+			log.Printf("WARNING: Automations - no Event specified for %s, ignoring it\n", newAuto.Name)
 			continue
 		}
-		if conf.Get("condition") != nil {
-			newAuto.condition.integration = conf.Get("condition.integration").(string)
-			newAuto.condition.name = conf.Get("condition.name").(string)
-			newAuto.condition.is = conf.Get("condition.is").(string)
-			newAuto.condition.value = conf.Get("condition.value")
+		if conf.Get("Condition") != nil {
+			newAuto.condition.Integration = conf.Get("Condition.Integration").(string)
+			newAuto.condition.Name = conf.Get("Condition.Name").(string)
+			newAuto.condition.is = conf.Get("Condition.Is").(string)
+			newAuto.condition.value = conf.Get("Condition.Value")
 		}
 		confMap := conf.ToMap()
 		actsConf := confMap["action"].(map[string]interface{})
 		for order, a := range actsConf {
 			var act actionT
 			details := a.(map[string]interface{})
-			act.integration = details["integration"].(string)
-			act.deviceLabel = details["deviceLabel"].(string)
-			executes := details["execute"].([]interface{})
+			act.Integration = details["Integration"].(string)
+			act.deviceLabel = details["DeviceLabel"].(string)
+			executes := details["Execute"].([]interface{})
 			for _, ac := range executes {
 				cs := ac.(map[string]interface{})
-				act.controls = append(act.controls, cs["control"].(string))
-				act.settings = append(act.settings, cs["setting"]) // not cast
+				act.controls = append(act.controls, cs["Control"].(string))
+				act.settings = append(act.settings, cs["Setting"]) // not cast
 			}
 			newAuto.actions[order] = act
 		}
@@ -159,10 +159,10 @@ func (a *Automation) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	a.mq = mq
 	a.stopChans = make(map[string]chan bool)
 
-	// for each automation, subscribe to its event
+	// for each automation, subscribe to its Event
 	sid := events.GetSubscriberID(subscribeName)
 	for _, auto := range a.automations {
-		if auto.enabled {
+		if auto.Enabled {
 			sc := make(chan bool)
 			switch auto.eventType {
 			case integrationEvent:
@@ -170,9 +170,9 @@ func (a *Automation) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 			case mqttEvent:
 				go a.waitForMqttEvent(sc, auto)
 			}
-			a.stopChans[auto.name] = sc
+			a.stopChans[auto.Name] = sc
 		} else {
-			log.Printf("INFO: Automation %s is not enabled, will not run\n", auto.name)
+			log.Printf("INFO: Automation %s is not Enabled, will not run\n", auto.Name)
 		}
 	}
 	a.stopChans["mqttMonitor"] = make(chan bool)
@@ -183,36 +183,36 @@ func (a *Automation) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 func (a *Automation) Stop() {
 	for _, ch := range a.stopChans {
 		ch <- true
-		// log.Printf("DEBUG: Asking Automation %s to stop\n", name)
+		// log.Printf("DEBUG: Asking Automation %s to stop\n", Name)
 	}
 	log.Println("DEBUG: All Automations should have stopped")
 }
 
 func (a *Automation) waitForIntegrationEvent(stopChan chan bool, sid int, auto automationT) {
-	ch, err := events.Subscribe(sid, auto.event.Integration, auto.event.DeviceType, auto.event.DeviceName, auto.event.EventName)
+	ch, err := events.Subscribe(sid, auto.Event.Integration, auto.Event.DeviceType, auto.Event.DeviceName, auto.Event.EventName)
 	if err != nil {
-		log.Fatalf("ERROR: Automation Manager could not subscribe to event, %v\n", err)
+		log.Fatalf("ERROR: Automation Manager could not subscribe to Event, %v\n", err)
 	}
 	for {
-		log.Printf("DEBUG: Automation Manager waiting for event %s\n", auto.event.EventName)
+		log.Printf("DEBUG: Automation Manager waiting for Event %s\n", auto.Event.EventName)
 		select {
 		case <-stopChan:
-			log.Printf("INFO: Automation %s stopping", auto.name)
+			log.Printf("INFO: Automation %s stopping", auto.Name)
 			return
 		case <-ch:
-			log.Printf("DEBUG: Automation Manager received event %s\n", auto.event.EventName)
+			log.Printf("DEBUG: Automation Manager received Event %s\n", auto.Event.EventName)
 			log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
 			for _, k := range auto.sortedActionKeys {
 				ac := auto.actions[k]
 				for i := 0; i < len(ac.controls); i++ {
 					a.evChan <- events.EventT{
-						Integration: ac.integration,
+						Integration: ac.Integration,
 						DeviceType:  events.ActionControlDeviceType,
 						DeviceName:  ac.deviceLabel,
 						EventName:   ac.controls[i],
 						Value:       ac.settings[i],
 					}
-					log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
+					log.Printf("DEBUG: Automation Manager sent Event to %s - %s\n", ac.Integration, ac.deviceLabel)
 					time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
 				}
 			}
@@ -223,9 +223,9 @@ func (a *Automation) waitForIntegrationEvent(stopChan chan bool, sid int, auto a
 func (a *Automation) testCondition(cond conditionT) bool {
 	respChan := make(chan interface{})
 	a.evChan <- events.EventT{
-		Integration: cond.integration,
+		Integration: cond.Integration,
 		DeviceType:  events.QueryDeviceType,
-		DeviceName:  cond.name,
+		DeviceName:  cond.Name,
 		EventName:   events.FetchLast,
 		Value:       respChan,
 	}
@@ -276,23 +276,23 @@ func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
 	for {
 		select {
 		case <-stopChan:
-			log.Printf("INFO: Automation %s stopping", auto.name)
+			log.Printf("INFO: Automation %s stopping", auto.Name)
 			return
 		case <-mqChan:
-			log.Printf("DEBUG: Automation Manager received event %s\n", auto.event.EventName)
+			log.Printf("DEBUG: Automation Manager received Event %s\n", auto.Event.EventName)
 			if a.testCondition(auto.condition) {
 				log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
 				for _, k := range auto.sortedActionKeys {
 					ac := auto.actions[k]
 					for i := 0; i < len(ac.controls); i++ {
 						a.evChan <- events.EventT{
-							Integration: ac.integration,
+							Integration: ac.Integration,
 							DeviceType:  events.ActionControlDeviceType,
 							DeviceName:  ac.deviceLabel,
 							EventName:   ac.controls[i],
 							Value:       ac.settings[i],
 						}
-						log.Printf("DEBUG: Automation Manager sent event to %s - %s\n", ac.integration, ac.deviceLabel)
+						log.Printf("DEBUG: Automation Manager sent Event to %s - %s\n", ac.Integration, ac.deviceLabel)
 						time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
 					}
 				}
@@ -326,7 +326,7 @@ func (a *Automation) monitorMqtt(stopChan chan bool) {
 				}
 				var autoList []AutoListElementT
 				for _, au := range a.automations {
-					le := AutoListElementT{Name: au.name, Description: au.description, Enabled: au.enabled}
+					le := AutoListElementT{Name: au.Name, Description: au.Description, Enabled: au.Enabled}
 					autoList = append(autoList, le)
 				}
 				resp, err := json.Marshal(autoList)

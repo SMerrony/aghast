@@ -1,20 +1,20 @@
-name = "ExampleMQTT"
-description = "Respond to an MQTT event"
-enabled = true
+Name = "ExampleMQTT"
+Description = "Respond to an MQTT event"
+Enabled = true
 
-[event]
-  topic = "aghast/client/DemoButton"
+[Event]
+  Topic = "aghast/client/DemoButton"
 
-[condition]
-  integration = "PiMqttGpio"
-  name = "MusicRoomTemp"
-  is = "<"                # one of: "=", "!=", "<", ">", 
-  value = 17.0
+[Condition]
+  Integration = "PiMqttGpio"
+  Name = "MusicRoomTemp"
+  Is = "<"                # one of: "=", "!=", "<", ">", 
+  Value = 17.0
 
 [action.1]
-  integration = "Daikin"
-  deviceLabel = "Steve's Office"
-  execute = [ { control = "temperature", setting = 21.0 },
-              { control = "mode",        setting = "Heat" },
-              { control = "power",       setting = "on" } ]
+  Integration = "Daikin"
+  DeviceLabel = "Steve's Office"
+  Execute = [ { Control = "temperature", Setting = 21.0 },
+              { Control = "mode",        Setting = "Heat" },
+              { Control = "power",       Setting = "on" } ]
 

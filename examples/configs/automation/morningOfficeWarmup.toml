@@ -1,20 +1,20 @@
-name = "MorningOfficeWarmup"
-description = "Warm up the office"
-enabled = false
+Name = "MorningOfficeWarmup"
+Description = "Warm up the office"
+Enabled = false
 
-[event]
-  integration = "Time"
+[Event]
+  Integration = "Time"
   # deviceType  = "Events"
   # deviceName  = "TimedEvent"
   # eventName   = "TenBeforeWork"
- deviceType = "Ticker"
- deviceName = "SystemTicker"
- eventName = "Minute"
+ DeviceType = "Ticker"
+ DeviceName = "SystemTicker"
+ EventName = "Minute"
 
 [action.1]
-  integration = "Daikin"
-  deviceLabel = "Steve's Office"
-  execute = [ { control = "temperature", setting = 20.0 },
-              { control = "mode",        setting = "Heat" },
-              { control = "power",       setting = "on" } ]
+  Integration = "Daikin"
+  DeviceLabel = "Steve's Office"
+  Execute = [ { Control = "temperature", Setting = 20.0 },
+              { Control = "mode",        Setting = "Heat" },
+              { Control = "power",       Setting = "on" } ]
  
