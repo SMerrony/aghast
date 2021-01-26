@@ -1,6 +1,6 @@
 Name = "MorningOfficeWarmup"
 Description = "Warm up the office"
-Enabled = false
+Enabled = true
 
 [Event]
   Integration = "Time"
@@ -11,7 +11,7 @@ Enabled = false
  DeviceName = "SystemTicker"
  EventName = "Minute"
 
-[action.1]
+[Action.1]
   Integration = "Daikin"
   DeviceLabel = "Steve's Office"
   Execute = [ { Control = "temperature", Setting = 20.0 },

@@ -21,14 +21,14 @@ Enabled = true
   DeviceName  = "TimedEvent"
   EventName   = "MorningHeatingOn"
 
-[action.1]
+[Action.1]
   Integration = "Daikin"
   DeviceLabel = "Hall"
   Execute = [ { Control = "temperature", Setting = 21.0 },
               { Control = "mode",        Setting = "Heat" },
               { Control = "power",       Setting = "on" } ]
 
-[action.2]
+[Action.2]
   Integration = "Daikin"
   DeviceLabel = "Living Room"
   Execute = [ { Control = "temperature", Setting = 19.0 },
@@ -72,7 +72,7 @@ You may optionally specify a Condition that must be satisfied for the Automation
 ### Actions
 One or more Actions must be attached to an Event to form an Automation.
 
-The label `[action.<label>]` in the Action header is used to sort the actions alphanumerically.
+The label `[Action.<label>]` in the Action header is used to sort the actions alphanumerically.
 
 To be usable by Automations, an Integration must provide an (AGHAST-internal) `Control` device type; this will receive Control settings and apply them to physical devices.
 

@@ -11,7 +11,7 @@ Enabled = true
   Is = "<"                # one of: "=", "!=", "<", ">", 
   Value = 17.0
 
-[action.1]
+[Action.1]
   Integration = "Daikin"
   DeviceLabel = "Steve's Office"
   Execute = [ { Control = "temperature", Setting = 21.0 },

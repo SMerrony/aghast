@@ -122,7 +122,7 @@ func (a *Automation) LoadConfig(confDir string) error {
 			newAuto.condition.value = conf.Get("Condition.Value")
 		}
 		confMap := conf.ToMap()
-		actsConf := confMap["action"].(map[string]interface{})
+		actsConf := confMap["Action"].(map[string]interface{})
 		for order, a := range actsConf {
 			var act actionT
 			details := a.(map[string]interface{})
