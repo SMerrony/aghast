@@ -120,6 +120,9 @@ func (a *Automation) LoadConfig(confDir string) error {
 			newAuto.condition.Name = conf.Get("Condition.Name").(string)
 			newAuto.condition.is = conf.Get("Condition.Is").(string)
 			newAuto.condition.value = conf.Get("Condition.Value")
+		} else {
+			// dummy value
+			newAuto.condition.Integration = "NONE"
 		}
 		confMap := conf.ToMap()
 		actsConf := confMap["Action"].(map[string]interface{})
@@ -201,20 +204,24 @@ func (a *Automation) waitForIntegrationEvent(stopChan chan bool, sid int, auto a
 			return
 		case <-ch:
 			log.Printf("DEBUG: Automation Manager received Event %s\n", auto.Event.EventName)
-			log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
-			for _, k := range auto.sortedActionKeys {
-				ac := auto.actions[k]
-				for i := 0; i < len(ac.controls); i++ {
-					a.evChan <- events.EventT{
-						Integration: ac.Integration,
-						DeviceType:  events.ActionControlDeviceType,
-						DeviceName:  ac.deviceLabel,
-						EventName:   ac.controls[i],
-						Value:       ac.settings[i],
+			if auto.condition.Integration == "NONE" || a.testCondition(auto.condition) {
+				log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
+				for _, k := range auto.sortedActionKeys {
+					ac := auto.actions[k]
+					for i := 0; i < len(ac.controls); i++ {
+						a.evChan <- events.EventT{
+							Integration: ac.Integration,
+							DeviceType:  events.ActionControlDeviceType,
+							DeviceName:  ac.deviceLabel,
+							EventName:   ac.controls[i],
+							Value:       ac.settings[i],
+						}
+						log.Printf("DEBUG: Automation Manager sent Event to %s - %s\n", ac.Integration, ac.deviceLabel)
+						time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
 					}
-					log.Printf("DEBUG: Automation Manager sent Event to %s - %s\n", ac.Integration, ac.deviceLabel)
-					time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
 				}
+			} else {
+				log.Println("DEBUG: ... condition not met")
 			}
 		}
 	}
@@ -280,7 +287,7 @@ func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
 			return
 		case <-mqChan:
 			log.Printf("DEBUG: Automation Manager received Event %s\n", auto.Event.EventName)
-			if a.testCondition(auto.condition) {
+			if auto.condition.Integration == "NONE" || a.testCondition(auto.condition) {
 				log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
 				for _, k := range auto.sortedActionKeys {
 					ac := auto.actions[k]

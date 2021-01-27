@@ -18,4 +18,21 @@
   RoundToInteger = true   # Round a float to nearest integer and then handle as integer
   ForwardAghast  = false  # Do not create an AGHAST Event for each value received   
   ForwardMQTT    = true   # Create an AGHAST-sourced MQTT message for each value
-  
+
+[[Sensor]]
+  Name           = "StevesOfficeTemp"  # A unique name, will be subtopic if forwarding MQTT
+  TopicPrefix    = "pizero02/gpio"  # This must match the topic_prefix setting on the Pi
+  SensorType     = "dht22_temperature"
+  ValueType      = "float" # One of "string", "integer", or "float"
+  RoundToInteger = false
+  ForwardEvent   = true    # Do not create an AGHAST Event for each value received   
+  ForwardMQTT    = true    # Create an AGHAST-sourced MQTT message for each value
+
+[[Sensor]]
+  Name           = "StevesOfficeHumidity"
+  TopicPrefix    = "pizero02/gpio"  
+  SensorType     = "dht22_humidity"
+  ValueType      = "float" 
+  RoundToInteger = true   # Round a float to nearest integer and then handle as integer
+  ForwardAghast  = false  # Do not create an AGHAST Event for each value received   
+  ForwardMQTT    = true   # Create an AGHAST-sourced MQTT message for each value
