@@ -1,0 +1,30 @@
+Name = "MorningeWarmup"
+Description = "Warm upstairs"
+Enabled = true
+
+[Event]
+  Integration = "Time"
+  DeviceType  = "Events"
+  DeviceName  = "TimedEvent"
+  EventName   = "MorningPrewarming"
+
+[Action.1]
+  Integration = "Daikin"
+  DeviceLabel = "Steve's Office"
+  Execute = [ { Control = "temperature", Setting = 18.0 },
+              { Control = "mode",        Setting = "Heat" },
+              { Control = "power",       Setting = "on" } ]
+[Action.2]
+  Integration = "Daikin"
+  DeviceLabel = "Paul's Studio"
+  Execute = [ { Control = "temperature", Setting = 18.0 },
+              { Control = "mode",        Setting = "Heat" },
+              { Control = "power",       Setting = "on" } ]
+
+[Action.3]
+  Integration = "Daikin"
+  DeviceLabel = "Master Bedroom"
+  Execute = [ { Control = "temperature", Setting = 18.0 },
+              { Control = "mode",        Setting = "Heat" },
+              { Control = "fan",         Setting = "3" },
+              { Control = "power",       Setting = "on" } ]

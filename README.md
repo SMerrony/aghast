@@ -14,22 +14,26 @@ We believe that end-users of HA systems are generally not interested in the nuts
 * An MQTT-Connected dashboard - Node-Red works well and example flows are included
 
 ## Integrations
+Integrations provide support for interacting with real-world or virtual resources, eg. Wifi lights, web scrapers, HVAC systems.
+
 Currently available Integrations...
-| Integration | Description                  | Documentation |
-| ----------- | :--------------------------  | ------------- |
-| Time        | Includes: Tickers            | [Time](docs/Time.md) |
-|             |                              |                      |
-| Automation  | Event-based Automation       | [Automation](docs/Automation.md) |
-| DataLogger  | Log Data to CSV files        | [](docs/) |
-| Daikin      | HVAC Control and Monitoring  | [Daikin](docs/Daikin.md) |
-| Influx      | Log Data to InfluxDB         | [Influx](docs/Influx.md) |
-| Network     | Includes: HostChecker        | [Network](docs/Network.md) |
-| PiMqttGpio  | Capture data from pi-mqtt-gpio | [PiMqttGpio](docs/PiMqttGpio.md) |
-| Scraper     | Web Scraping                 | [Scraper](docs/Scraper.md) |
-| Tuya        | Tuya WiFi lights             | [](docs/) |
+| Integration | Description                  | Query | Documentation |
+| ----------- | :--------------------------  | :---: | ------------- |
+| Time        | Includes: Tickers            |       | [Time](docs/Time.md) |
+|             |                              |       |                     |
+| Automation  | Event-based Automation       |       | [Automation](docs/Automation.md) |
+| DataLogger  | Log Data to CSV files        |       | [](docs/) |
+| Daikin      | HVAC Control and Monitoring  |       | [Daikin](docs/Daikin.md) |
+| Influx      | Log Data to InfluxDB         |       | [Influx](docs/Influx.md) |
+| Network     | Includes: HostChecker        |       | [Network](docs/Network.md) |
+| PiMqttGpio  | Capture pi-mqtt-gpio data    |   Y   | [PiMqttGpio](docs/PiMqttGpio.md) |
+| Scraper     | Web Scraping                 |       | [Scraper](docs/Scraper.md) |
+| Tuya        | Tuya WiFi lights             |       | [](docs/) |
 
 The Time Integration must be enabled for AGHAST to start, you will also probably need to
 enable Automation and at least one other Integration in order to do anything useful.
+
+If an Integration supports Query, then values from it may be used in Automation Conditions.
 
 ## Configuration
 
