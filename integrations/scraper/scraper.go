@@ -20,7 +20,9 @@
 package scraper
 
 import (
+	"errors"
 	"log"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -35,14 +37,16 @@ import (
 const (
 	configFilename = "/scraper.toml"
 	mqttPrefix     = "aghast/scraper/"
+	subscriberName = "Scraper"
 )
 
 // The Scraper type encapsulates the web scraper Integration.
 type Scraper struct {
-	mq        mqtt.MQTT
-	scraperMu sync.RWMutex
-	Scrape    []scraperT
-	stopChans []chan bool // used for stopping Goroutines
+	mq             mqtt.MQTT
+	mutex          sync.RWMutex
+	Scrape         []scraperT
+	scrapersByName map[string]int
+	stopChans      []chan bool // used for stopping Goroutines
 }
 
 type scraperT struct {
@@ -54,15 +58,19 @@ type scraperT struct {
 	Indices   []int
 	Subtopics []string
 	// Factor    float64
-	Suffix    string
-	hasSuffix bool
+	Suffix       string
+	ValueType    string // One of "string", "integer", or "float"
+	hasSuffix    bool
+	savedString  map[int]string
+	savedInteger map[int]int
+	savedFloat   map[int]float64
 	// hasFactor bool
 }
 
 // LoadConfig loads and stores the configuration for this Integration
 func (s *Scraper) LoadConfig(confdir string) error {
-	s.scraperMu.Lock()
-	defer s.scraperMu.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	confBytes, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
@@ -72,8 +80,24 @@ func (s *Scraper) LoadConfig(confdir string) error {
 	err = toml.Unmarshal(confBytes, s)
 	if err != nil {
 		log.Fatalf("ERROR: Could not load Scraper config due to %s\n", err.Error())
-		s.scraperMu.Unlock()
+		s.mutex.Unlock()
 		return err
+	}
+	for i, sc := range s.Scrape {
+		numIx := len(sc.Indices)
+		numSubs := len(sc.Subtopics)
+		if numIx != numSubs {
+			log.Printf("WARNING: Scraper - # Indices <> # Subtopics in %s\n", sc.Name)
+			return errors.New("Scraper configuration error")
+		}
+		sc.savedFloat = make(map[int]float64, numIx)
+		sc.savedInteger = make(map[int]int, numIx)
+		sc.savedString = make(map[int]string, numIx)
+		s.Scrape[i] = sc
+	}
+	s.scrapersByName = make(map[string]int)
+	for i, sc := range s.Scrape {
+		s.scrapersByName[sc.Name] = i
 	}
 	log.Printf("INFO: Scraper has %d scrapers configured\n", len(s.Scrape))
 	return nil
@@ -81,7 +105,7 @@ func (s *Scraper) LoadConfig(confdir string) error {
 
 // ProvidesDeviceTypes returns a slice of device types that this Integration supplies.
 func (s *Scraper) ProvidesDeviceTypes() []string {
-	return []string{"Scraper"}
+	return []string{"Scraper", "Query"}
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
@@ -91,13 +115,14 @@ func (s *Scraper) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 		go s.runScraper(sc)
 	}
 	// log.Printf("DEBUG: Scraper has started %d scraper(s)\n", len(s.scrapers))
+	go s.monitorQueries()
 }
 
 func (s *Scraper) addStopChan() (ix int) {
-	s.scraperMu.Lock()
+	s.mutex.Lock()
 	s.stopChans = append(s.stopChans, make(chan bool))
 	ix = len(s.stopChans) - 1
-	s.scraperMu.Unlock()
+	s.mutex.Unlock()
 	return ix
 }
 
@@ -131,7 +156,28 @@ func (s *Scraper) runScraper(scr scraperT) {
 				// if scr.hasFactor {
 
 				// }
+				s.mutex.Lock()
+				switch scr.ValueType {
+				case "float":
+					floatVal, err := strconv.ParseFloat(a, 64)
+					if err != nil {
+						log.Printf("WARNING: Scraper could not convert value '%s' to float, ignoring\n", a)
+					} else {
+						scr.savedFloat[ix] = floatVal
+					}
+				case "integer":
+					intVal, err := strconv.ParseInt(a, 10, 0)
+					if err != nil {
+						log.Printf("WARNING: Scraper could not convert value '%s' to integer, ignoring\n", a)
+					} else {
+						// log.Printf("DEBUG: Scraper ix: %d in scraper %s\n", ix, scr.Name)
+						scr.savedInteger[ix] = int(intVal)
+					}
+				case "string":
+					scr.savedString[ix] = a
+				}
 				t := mqttPrefix + scr.Name + "/" + scr.Subtopics[scr.Indices[ix]]
+				s.mutex.Unlock()
 				// log.Printf("DEBUG: ... would publish %s to topic %s\n", a, t)
 				s.mq.PublishChan <- mqtt.MessageT{
 					Topic:    t,
@@ -144,10 +190,10 @@ func (s *Scraper) runScraper(scr scraperT) {
 	})
 	// }
 	sc := s.addStopChan()
-	s.scraperMu.RLock()
+	s.mutex.RLock()
 	stopChan := s.stopChans[sc]
 	interval := scr.Interval
-	s.scraperMu.RUnlock()
+	s.mutex.RUnlock()
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 
 	for {
@@ -158,6 +204,43 @@ func (s *Scraper) runScraper(scr scraperT) {
 			return
 		case <-ticker.C:
 			continue
+		}
+	}
+}
+
+func (s *Scraper) monitorQueries() {
+	sc := s.addStopChan()
+	s.mutex.RLock()
+	stopChan := s.stopChans[sc]
+	s.mutex.RUnlock()
+	sid := events.GetSubscriberID(subscriberName)
+	ch, err := events.Subscribe(sid, subscriberName, events.QueryDeviceType, "+", "+")
+	if err != nil {
+		log.Fatalf("ERROR: Scraper Integration could not subscribe to event - %v\n", err)
+	}
+	for {
+		select {
+		case <-stopChan:
+			return
+		case ev := <-ch:
+			log.Printf("DEBUG: Scraper Query Monitor got %v\n", ev)
+			switch ev.EventName {
+			case events.FetchLast:
+				var val interface{}
+				s.mutex.RLock()
+				switch s.Scrape[s.scrapersByName[ev.DeviceName]].ValueType {
+				case "float":
+					val = s.Scrape[s.scrapersByName[ev.DeviceName]].savedFloat
+				case "integer":
+					val = s.Scrape[s.scrapersByName[ev.DeviceName]].savedInteger
+				case "string":
+					val = s.Scrape[s.scrapersByName[ev.DeviceName]].savedString
+				}
+				s.mutex.RUnlock()
+				ev.Value.(chan interface{}) <- val
+			default:
+				log.Printf("WARNING: Scraper received unknown query type %s\n", ev.EventName)
+			}
 		}
 	}
 }

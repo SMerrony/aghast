@@ -27,7 +27,7 @@ Currently available Integrations...
 | Influx      | Log Data to InfluxDB         |       | [Influx](docs/Influx.md) |
 | Network     | Includes: HostChecker        |       | [Network](docs/Network.md) |
 | PiMqttGpio  | Capture pi-mqtt-gpio data    |   Y   | [PiMqttGpio](docs/PiMqttGpio.md) |
-| Scraper     | Web Scraping                 |       | [Scraper](docs/Scraper.md) |
+| Scraper     | Web Scraping                 |   Y   | [Scraper](docs/Scraper.md) |
 | Tuya        | Tuya WiFi lights             |       | [](docs/) |
 
 The Time Integration must be enabled for AGHAST to start, you will also probably need to

@@ -69,6 +69,7 @@ type automationT struct {
 type conditionT struct {
 	Integration string
 	Name        string
+	Index       int
 	is          string // comparison operator, one of: "=", "!=", "<", ">", "<=", ">="
 	value       interface{}
 }
@@ -118,6 +119,9 @@ func (a *Automation) LoadConfig(confDir string) error {
 		if conf.Get("Condition") != nil {
 			newAuto.condition.Integration = conf.Get("Condition.Integration").(string)
 			newAuto.condition.Name = conf.Get("Condition.Name").(string)
+			if conf.Get("Condition.Index") != nil {
+				newAuto.condition.Index = int(conf.Get("Condition.Index").(int64))
+			}
 			newAuto.condition.is = conf.Get("Condition.Is").(string)
 			newAuto.condition.value = conf.Get("Condition.Value")
 		} else {
@@ -239,6 +243,10 @@ func (a *Automation) testCondition(cond conditionT) bool {
 	resp := <-respChan
 	log.Printf("DEBUG: Automation manager testCondition got %v\n", resp)
 	switch resp.(type) {
+	case map[int]int:
+		resp = resp.(map[int]int)[cond.Index]
+	}
+	switch resp.(type) {
 	case float64:
 		switch cond.is {
 		case "<":
@@ -253,13 +261,13 @@ func (a *Automation) testCondition(cond conditionT) bool {
 	case int:
 		switch cond.is {
 		case "<":
-			return resp.(int) < cond.value.(int)
+			return resp.(int) < int(cond.value.(int64))
 		case ">":
-			return resp.(int) > cond.value.(int)
+			return resp.(int) > int(cond.value.(int64))
 		case "=":
-			return resp.(int) == cond.value.(int)
+			return resp.(int) == int(cond.value.(int64))
 		case "!=":
-			return resp.(int) != cond.value.(int)
+			return resp.(int) != int(cond.value.(int64))
 		}
 	case string:
 		switch cond.is {

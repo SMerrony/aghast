@@ -8,6 +8,7 @@
   Selector = ".tonerremain"   # CSS Selector to find
   Attribute = "height"        # Attribute whose value we want
   Suffix = "px"               # this will be removed from published values
+  ValueType = "integer"       # One of "string", "integer", or "float"
   Indices = [0, 1, 2, 3]      # Which instances we want
   Subtopics = ["Black", "Yellow", "Cyan", "Magenta"] # correspond to the indices
 
@@ -18,5 +19,6 @@
   URL = "http://192.168.1.30/PRESENTATION/HTML/TOP/PRTINFO.HTML"
   Selector = ".tank img"
   Attribute = "height"
+  ValueType = "integer"  
   Indices = [0, 1, 2, 3, 4 ]
   Subtopics = ["Black", "Cyan", "Yellow", "Magenta", "Photo Black"]

@@ -18,6 +18,6 @@ Integrations = [
 #  "daikin",
 #  "influx",
   "pimqttgpio",
-#  "scraper",
+  "scraper",
 #  "tuya",
 ]

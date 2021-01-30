@@ -69,6 +69,8 @@ You may optionally specify a Condition that must be satisfied for the Automation
   Value = 17.0
 ```
 
+Some Integrations supply multiple results (eg. Scraper) and you will need to add an `Index = ` line to the Condition.
+
 ### Actions
 One or more Actions must be attached to an Event to form an Automation.
 
