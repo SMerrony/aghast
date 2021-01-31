@@ -17,17 +17,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package network
+package hostchecker
 
 import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 	"time"
 
+	"github.com/BurntSushi/toml"
+	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 )
+
+// The HostChecker type encapsulates the HostChecker Integration
+type HostChecker struct {
+	mqttChan  chan mqtt.MessageT
+	mutex     sync.RWMutex
+	Checker   []hostCheckerT
+	stopChans []chan bool // used for stopping Goroutines
+}
 
 type hostCheckerT struct {
 	Name         string
@@ -40,32 +51,83 @@ type hostCheckerT struct {
 	responseTime time.Duration
 }
 
-const mqttPrefix = "aghast/hostchecker/"
+const (
+	configFilename = "/hostchecker.toml"
+	subscriberName = "HostChecker"
+	mqttPrefix     = "aghast/hostchecker/"
+)
 
-func (n *Network) runHostChecker(hc hostCheckerT, evChan chan events.EventT) {
+// LoadConfig func should simply load any config (TOML) files for this Integration
+func (h *HostChecker) LoadConfig(confdir string) error {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+	confBytes, err := config.PreprocessTOML(confdir, configFilename)
+	if err != nil {
+		log.Fatalf("ERROR: Could not read HostChecker config due to %s\n", err.Error())
+	}
+	err = toml.Unmarshal(confBytes, &h)
+	if err != nil {
+		log.Fatalf("ERROR: Could not load HostChecker config due to %s\n", err.Error())
+	}
+	if len(h.Checker) > 0 {
+		log.Printf("INFO: HostChecker Integration has %d checkers configured\n", len(h.Checker))
+	}
+	return nil
+}
+
+// ProvidesDeviceTypes returns a slice of device types that this Integration could supply.
+// (This included unconfigured types.)
+func (h *HostChecker) ProvidesDeviceTypes() []string {
+	return []string{"HostChecker", "Query"}
+}
+
+// Start launches the Integration, LoadConfig() should have been called beforehand.
+func (h *HostChecker) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+	h.mqttChan = mq.PublishChan
+	for _, dev := range h.Checker {
+		go h.runChecker(dev, evChan)
+	}
+}
+
+func (h *HostChecker) addStopChan() (ix int) {
+	h.mutex.Lock()
+	h.stopChans = append(h.stopChans, make(chan bool))
+	ix = len(h.stopChans) - 1
+	h.mutex.Unlock()
+	return ix
+}
+
+// Stop terminates the Integration and all Goroutines it contains
+func (h *HostChecker) Stop() {
+	for _, ch := range h.stopChans {
+		ch <- true
+	}
+}
+
+func (h *HostChecker) runChecker(hc hostCheckerT, evChan chan events.EventT) {
 	const (
 		netType = "tcp"
 		timeout = time.Second * 3
 	)
 
 	dest := fmt.Sprintf("%s:%d", hc.Host, hc.Port)
-	log.Printf("INFO: Network - HostChecker will monitor host %s - %s\n", dest, hc.Name)
+	log.Printf("INFO: HostChecker will monitor host %s - %s\n", dest, hc.Name)
 	hc.firstCheck = true
-	sc := n.addStopChan()
-	n.networkMu.RLock()
-	stopChan := n.stopChans[sc]
-	n.networkMu.RUnlock()
+	sc := h.addStopChan()
+	h.mutex.RLock()
+	stopChan := h.stopChans[sc]
+	h.mutex.RUnlock()
 	ticker := time.NewTicker(time.Duration(hc.Period) * time.Second)
 	for {
 		before := time.Now()
 		_, err := net.DialTimeout(netType, dest, timeout)
 		after := time.Now()
-		n.networkMu.Lock()
+		h.mutex.Lock()
 		if err != nil {
 			if hc.alive || hc.firstCheck { // has state changed?
 				evChan <- events.EventT{
-					Integration: "Network",
-					DeviceType:  "HostChecker",
+					Integration: "HostChecker",
+					DeviceType:  "Checker",
 					DeviceName:  hc.Name,
 					EventName:   "StateChanged",
 					Value:       "Unavailable"}
@@ -75,14 +137,14 @@ func (n *Network) runHostChecker(hc hostCheckerT, evChan chan events.EventT) {
 					Retained: true,
 					Payload:  "false",
 				}
-				n.mqttChan <- mqMsg
+				h.mqttChan <- mqMsg
 			}
 			hc.alive = false
 		} else {
 			if !hc.alive || hc.firstCheck {
 				evChan <- events.EventT{
-					Integration: "Network",
-					DeviceType:  "HostChecker",
+					Integration: "HostChecker",
+					DeviceType:  "Checker",
 					DeviceName:  hc.Name,
 					EventName:   "StateChanged",
 					Value:       "Available"}
@@ -92,17 +154,17 @@ func (n *Network) runHostChecker(hc hostCheckerT, evChan chan events.EventT) {
 					Retained: true,
 					Payload:  "true",
 				}
-				n.mqttChan <- mqMsg
+				h.mqttChan <- mqMsg
 			}
 			hc.alive = true
 			hc.responseTime = after.Sub(before)
 			evChan <- events.EventT{
-				Integration: "Network",
-				DeviceType:  "HostChecker",
+				Integration: "HostChecker",
+				DeviceType:  "Checker",
 				DeviceName:  hc.Name,
 				EventName:   "Latency",
 				Value:       hc.responseTime}
-			n.mqttChan <- mqtt.MessageT{
+			h.mqttChan <- mqtt.MessageT{
 				Topic:    mqttPrefix + hc.Name + "/latency",
 				Qos:      0,
 				Retained: true,
@@ -110,7 +172,7 @@ func (n *Network) runHostChecker(hc hostCheckerT, evChan chan events.EventT) {
 			}
 		}
 		hc.firstCheck = false
-		n.networkMu.Unlock()
+		h.mutex.Unlock()
 		select {
 		case <-stopChan:
 			return
@@ -119,24 +181,3 @@ func (n *Network) runHostChecker(hc hostCheckerT, evChan chan events.EventT) {
 		}
 	}
 }
-
-// func (n *Network) GetHostNames() (names []string) {
-// 	n.networkMu.RLock()
-// 	defer n.networkMu.RUnlock()
-// 	for n := range n.HostChecker {
-// 		names = append(names, n)
-// 	}
-// 	return names
-// }
-
-// func (n *Network) IsHostAlive(dev string) bool {
-// 	n.networkMu.RLock()
-// 	defer n.networkMu.RUnlock()
-// 	return n.HostChecker[dev].alive
-// }
-
-// func (n *Network) GetHostResponseTime(dev string) time.Duration {
-// 	n.networkMu.RLock()
-// 	defer n.networkMu.RUnlock()
-// 	return n.HostChecker[dev].responseTime
-// }

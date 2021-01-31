@@ -32,8 +32,8 @@ import (
 	"github.com/SMerrony/aghast/integrations/automation"
 	"github.com/SMerrony/aghast/integrations/daikin"
 	"github.com/SMerrony/aghast/integrations/datalogger"
+	"github.com/SMerrony/aghast/integrations/hostchecker"
 	"github.com/SMerrony/aghast/integrations/influx"
-	"github.com/SMerrony/aghast/integrations/network"
 	"github.com/SMerrony/aghast/integrations/pimqttgpio"
 	"github.com/SMerrony/aghast/integrations/scraper"
 	"github.com/SMerrony/aghast/integrations/time"
@@ -70,10 +70,10 @@ func newIntegration(iName string) {
 		integs[iName] = new(daikin.Daikin)
 	case "datalogger":
 		integs[iName] = new(datalogger.DataLogger)
+	case "hostchecker":
+		integs[iName] = new(hostchecker.HostChecker)
 	case "influx":
 		integs[iName] = new(influx.Influx)
-	case "network":
-		integs[iName] = new(network.Network)
 	case "pimqttgpio":
 		integs[iName] = new(pimqttgpio.PiMqttGpio)
 	case "scraper":

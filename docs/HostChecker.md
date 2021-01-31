@@ -1,18 +1,18 @@
-# The Network Integration
+# The HostChecker Integration
 ## Description and Purpose
-The Network Integration currently provide the HostChecker facility which can monitor the presence and responsiveness of other devices on the network.
+This Integration provides the HostChecker facility which can monitor the presence and responsiveness of other devices on the network.
 
 ## Configuration
 The HostChecker is configured like this...
 ```
-[[HostChecker]]
+[[Checker]]
   Name = "MainRouter"
   Host = "192.168.1.1"
   Label = "4G Router"
   Period = 60
   Port = 80
 
-[[HostChecker]]
+[[Checker]]
   Name = "PiHole"
   Host = "192.168.1.90"
   Label = "Pi-Hole & DHCP"

@@ -1,39 +1,39 @@
-[[HostChecker]]
+[[Checker]]
   Name = "MainRouter"
   Host = "192.168.1.1"
   Label = "4G Router"
   Period = 60
   Port = 80
 
-[[HostChecker]]
+[[Checker]]
   Name = "PiHole"
   Host = "192.168.1.90"
   Label = "Pi-Hole & DHCP"
   Period = 60
   Port = 80
 
-[[HostChecker]]
+[[Checker]]
   Name = "VoipHub"
   Host = "192.168.1.2"
   Label = "VOIP Hub"
   Period = 120
   Port = 80
 
-[[HostChecker]]
+[[Checker]]
   Name = "NAS"
   Host = "192.168.1.19"
   Label = "File Server"
   Period = 180
   Port = 445
 
-[[HostChecker]]
+[[Checker]]
   Name = "tv1"
   Host = "lgwebostv"
   Label = "Living Room TV"
   Period = 1800
   Port = 80
 
-[[HostChecker]]
+[[Checker]]
   Name = "wonkyPi"
   Host = "192.168.1.92"
   Port = 8080
@@ -41,42 +41,42 @@
   Period = 60
 
 
-[[HostChecker]]
+[[Checker]]
   Name = "BrotherA3"
   Host = "192.168.1.17"
   Port = 80
   Pabel = "Brother A3 Printer"
   Period = 120
 
-[[HostChecker]]
+[[Checker]]
   Name = "Epson"
   Host = "192.168.1.30"
   Port = 80
   Pabel = "Epson Printer"
   Period = 120
   
-[[HostChecker]]
+[[Checker]]
   Name = "Deco_Main"
   Host = "192.168.1.40"
   Port = 80
   Pabel = "Primary Deco M5"
   Period = 60
 
-[[HostChecker]]
+[[Checker]]
   Name = "Deco_SpareRoom"
   Host = "192.168.1.42"
   Port = 80
   Pabel = "Deco M5 - Spare Room"
   Period = 60
 
-[[HostChecker]]
+[[Checker]]
   Name = "Deco_Paul"
   Host = "192.168.1.44"
   Port = 80
   Pabel = "Deco M5 - Paul's Studio"
   Period = 60
 
-[[HostChecker]]
+[[Checker]]
   Name = "Deco_Steve"
   Host = "192.168.1.46"
   Port = 80

@@ -24,8 +24,8 @@ Currently available Integrations...
 | Automation  | Event-based Automation       |       | [Automation](docs/Automation.md) |
 | DataLogger  | Log Data to CSV files        |       | [](docs/) |
 | Daikin      | HVAC Control and Monitoring  |       | [Daikin](docs/Daikin.md) |
+| HostChecker | Monitor Device availability  |       | [HostChecker](docs/HostChecker.md) |
 | Influx      | Log Data to InfluxDB         |       | [Influx](docs/Influx.md) |
-| Network     | Includes: HostChecker        |       | [Network](docs/Network.md) |
 | PiMqttGpio  | Capture pi-mqtt-gpio data    |   Y   | [PiMqttGpio](docs/PiMqttGpio.md) |
 | Scraper     | Web Scraping                 |   Y   | [Scraper](docs/Scraper.md) |
 | Tuya        | Tuya WiFi lights             |       | [](docs/) |
