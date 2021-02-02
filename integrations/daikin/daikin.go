@@ -371,20 +371,14 @@ func (d *Daikin) monitorUnits() {
 
 				} else {
 					unit.online = true
-					// log.Printf("DEBUG: ... Unit - %s, Unit Temp - %f, Outside Temp - %f\n", unit.Label, unit.sensorInfo["htemp"].floatValue, unit.sensorInfo["otemp"].floatValue)
+					// log.Printf("DEBUG: ... Unit - %s, Unit Temp - %f, Outside Temp - %f\n", unit.Label, unit.sensorInfo["htemp"].floatValue, unit.sensorInfo["otemp"].floatValue)					d.evChan <- events.EventT{
 					d.evChan <- events.EventT{
-						Integration: "Daikin",
-						DeviceType:  "Inverter",
-						DeviceName:  unit.Label,
-						EventName:   "Temperature",
-						Value:       fmt.Sprintf("%.1f", si["htemp"].floatValue),
+						Name:  "Daikin/Inverter/" + unit.Label + "/Temperature",
+						Value: fmt.Sprintf("%.1f", si["htemp"].floatValue),
 					}
 					d.evChan <- events.EventT{
-						Integration: "Daikin",
-						DeviceType:  "Inverter",
-						DeviceName:  unit.Label,
-						EventName:   "OutsideTemperature",
-						Value:       fmt.Sprintf("%.1f", si["otemp"].floatValue),
+						Name:  "Daikin/Inverter/" + unit.Label + "/OutsideTemperature",
+						Value: fmt.Sprintf("%.1f", si["otemp"].floatValue),
 					}
 					d.mqttChan <- mqtt.MessageT{
 						Topic:    mqttPrefix + unit.Label + "/temperature",
@@ -425,13 +419,6 @@ func (d *Daikin) monitorUnits() {
 						Payload:  payload,
 					}
 
-					d.evChan <- events.EventT{
-						Integration: "Daikin",
-						DeviceType:  "Inverter",
-						DeviceName:  unit.Label,
-						EventName:   "ControInfo",
-						Value:       pubCi,
-					}
 					unit.controlInfo = ci
 				}
 				// write the updated unit back into the map
@@ -447,6 +434,10 @@ func (d *Daikin) monitorUnits() {
 			continue
 		}
 	}
+}
+
+func getDeviceName(evName string) string {
+	return strings.Split(evName, "/")[events.EvDeviceName]
 }
 
 // monitorActions listens for Control Actions from Automations and performs them
@@ -468,7 +459,7 @@ func (d *Daikin) monitorActions() {
 	stopChan := d.stopChans[sc]
 	d.invertersMu.RUnlock()
 	sid := events.GetSubscriberID(subscriberName)
-	ch, err := events.Subscribe(sid, "Daikin", events.ActionControlDeviceType, "+", "+")
+	ch, err := events.Subscribe(sid, "Daikin/"+events.ActionControlDeviceType+"/+/+")
 	if err != nil {
 		log.Fatalf("ERROR: Daikin Integration could not subscribe to event - %v\n", err)
 	}
@@ -478,20 +469,20 @@ func (d *Daikin) monitorActions() {
 			return
 		case ev := <-ch:
 			log.Printf("DEBUG: Daikin Action Monitor got %v\n", ev)
-			unitMAC, found := d.invertersByLabel[ev.DeviceName]
+			unitMAC, found := d.invertersByLabel[getDeviceName(ev.Name)]
 			if !found {
-				log.Printf("WARNING: Daikin automation got Action for unknown unit <%s>\n", ev.DeviceName)
+				log.Printf("WARNING: Daikin automation got Action for unknown unit <%s>\n", getDeviceName(ev.Name))
 				continue
 			}
 
 			// get the existing settings from the unit
 			ci, err := d.requestControlInfo(unitMAC)
 			if err != nil {
-				log.Printf("WARNING: Could not retrieve Control info for unit: %s\n", ev.DeviceName)
+				log.Printf("WARNING: Could not retrieve Control info for unit: %s\n", getDeviceName(ev.Name))
 				continue
 			}
 			inv := d.inverters[unitMAC]
-			control := ev.EventName
+			control := strings.Split(ev.Name, "/")[events.EvControl]
 
 			var power, setting, mode, fan, sweep string
 

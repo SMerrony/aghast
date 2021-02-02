@@ -314,7 +314,7 @@ func (t *Tuya) monitorActions() {
 	stopChan := t.stopChans[sc]
 	t.tuyaMu.RUnlock()
 	sid := events.GetSubscriberID(subscriberName)
-	ch, err := events.Subscribe(sid, "Daikin", events.ActionControlDeviceType, "+", "+")
+	ch, err := events.Subscribe(sid, "Tuya"+"/"+events.ActionControlDeviceType+"/+/+")
 	if err != nil {
 		log.Fatalf("ERROR: Tuya Integration could not subscribe to event - %v\n", err)
 	}

@@ -1,4 +1,4 @@
-// Copyright ©2020 Steve Merrony
+// Copyright ©2020,2021 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -111,13 +111,13 @@ func (d *DataLogger) logger(l loggerT) {
 	}
 	csvWriter := csv.NewWriter(file)
 	sid := events.GetSubscriberID(subscribeName)
-	ch, err := events.Subscribe(sid, l.Integration, l.DeviceType, l.DeviceName, l.EventName)
+	ch, err := events.Subscribe(sid, l.Integration+"/"+l.DeviceType+"/"+l.DeviceName+"/"+l.EventName)
 	if err != nil {
 		log.Printf("WARNING: DataLogger Integration could not subscribe to event for %v\n", l)
 		d.loggerMu.RUnlock()
 		return
 	}
-	defer events.Unsubscribe(sid, l.Integration, l.DeviceType, l.DeviceName, l.EventName)
+	defer events.Unsubscribe(sid, l.Integration+"/"+l.DeviceType+"/"+l.DeviceName+"/"+l.EventName)
 
 	idRoot := l.Integration + "/" + l.DeviceType
 	d.loggerMu.RUnlock()
@@ -137,9 +137,8 @@ func (d *DataLogger) logger(l loggerT) {
 			record := make([]string, 5)
 			record[0] = ts
 			record[1] = idRoot
-			record[2] = ev.DeviceName
-			record[3] = ev.EventName
-			record[4] = fmt.Sprintf("%v", ev.Value)
+			record[2] = ev.Name
+			record[3] = fmt.Sprintf("%v", ev.Value)
 			csvWriter.Write(record)
 			d.loggerMu.RLock()
 			if unflushed++; unflushed == l.FlushEvery {

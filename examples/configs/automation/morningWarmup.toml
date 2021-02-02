@@ -3,10 +3,7 @@ Description = "Warm upstairs"
 Enabled = true
 
 [Event]
-  Integration = "Time"
-  DeviceType  = "Events"
-  DeviceName  = "TimedEvent"
-  EventName   = "MorningPrewarming"
+  Name = "Time/Events/TimedEvent/MorningPrewarming"
 
 [Action.1]
   Integration = "Daikin"

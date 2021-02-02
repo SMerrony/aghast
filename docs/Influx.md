@@ -14,19 +14,13 @@ URL = "http://localhost:8086"
 
 # Data to log
 [[Logger]]
-  Name = "OutsideTemp"
-  Integration = "Daikin"
-  DeviceDataType = "Inverter"
-  DeviceName = "Hall"         
-  EventName = "OutsideTemperature"
+  Name = "OutsideTemp"      
+  EventName = "Daikin/Inverter/Hall/OutsideTemperature"
   DataType = "float"                    # Either 'float', 'integer', or 'string'
   
 [[Logger]]
-  Name = "HallTemp"
-  Integration = "Daikin"
-  DeviceDataType = "Inverter"
-  DeviceName = "Hall"           
-  EventName = "Temperature"
+  Name = "HallTemp"   
+  EventName = "Daikin/Inverter/Hall/Temperature"
   DataType = "float"
 ```
 

@@ -1,4 +1,4 @@
-// Copyright ©2020 Steve Merrony
+// Copyright ©2020,2021 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,67 +35,60 @@ func TestGetSubscriberID(t *testing.T) {
 	}
 }
 
-func TestGetSubKey(t *testing.T) {
-	res := "integ.devtype.devname.eventName"
-	if sk := getSubKey("integ", "devtype", "devname", "eventName"); sk != res {
-		t.Errorf("got %s, want '%s'", sk, res)
-	}
-}
-
 func TestSubscription(t *testing.T) {
 	subIDs = make([]string, 20)
 	subscriptions = make(map[string][]subscriptionT)
 	sid := GetSubscriberID("test")
-	if isSubscribed(sid, "integ", "devtype", "devname", "eventName") {
+	if isSubscribed(sid, "eventName") {
 		t.Error("isSubscribed gave false positive")
 	}
-	ch, err := Subscribe(sid, "integ", "devtype", "devname", "eventName")
+	ch, err := Subscribe(sid, "eventName")
 	if err != nil {
 		t.Errorf(err.Error())
 	}
 	if ch == nil {
 		t.Error("Got nil channel from test subscription")
 	}
-	if !isSubscribed(sid, "integ", "devtype", "devname", "eventName") {
+	if !isSubscribed(sid, "eventName") {
 		t.Error("isSubscribed negative for newly-subscribed event")
 	}
-	ch, err = Subscribe(sid, "integ", "devtype", "devname", "eventName")
+	ch, err = Subscribe(sid, "eventName")
 	if err == nil {
 		t.Error("re-subscription to already-subscribed event did not return an error")
 	}
 
 	// 2nd sub to same event
 	sid2 := GetSubscriberID("test")
-	if isSubscribed(sid2, "integ", "devtype", "devname", "eventName") {
+	if isSubscribed(sid2, "eventName") {
 		t.Error("2nd isSubscribed gave false positive")
 	}
-	ch, err = Subscribe(sid2, "integ", "devtype", "devname", "eventName")
+	ch, err = Subscribe(sid2, "eventName")
 	if err != nil {
 		t.Errorf(err.Error())
 	}
 	if ch == nil {
 		t.Error("Got nil channel from 2nd test subscription")
 	}
-	if !isSubscribed(sid2, "integ", "devtype", "devname", "eventName") {
+	if !isSubscribed(sid2, "eventName") {
 		t.Error("isSubscribed negative for 2nd newly-subscribed event")
 	}
-	ch, err = Subscribe(sid2, "integ", "devtype", "devname", "eventName")
+	ch, err = Subscribe(sid2, "eventName")
 	if err == nil {
 		t.Error("2nd re-subscription to already-subscribed event did not return an error")
 	}
 
 	// AND unsubscription...
-	ch, err = Subscribe(sid, "integ", "devtype", "devname", "anotherEventName")
+	ch, err = Subscribe(sid, "anotherEventName")
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	if err = Unsubscribe(sid, "integ", "devtype", "devname", "eventName"); err != nil {
+	if err = Unsubscribe(sid, "eventName"); err != nil {
 		t.Error("failed to unsubscribe from event")
 	}
-	if isSubscribed(sid, "integ", "devtype", "devname", "eventName") {
+	if isSubscribed(sid, "eventName") {
 		t.Error("isSubscribed positive for newly-unsubscribed event")
 	}
-	if !isSubscribed(sid, "integ", "devtype", "devname", "anotherEventName") {
+	if !isSubscribed(sid, "anotherEventName") {
 		t.Error("isSubscribed negative for previously subscribed event")
 	}
 }

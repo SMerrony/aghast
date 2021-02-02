@@ -49,10 +49,9 @@ type Influx struct {
 }
 
 type loggerT struct {
-	Name                    string
-	Integration, DeviceType string
-	DeviceName, EventName   string
-	DataType                string
+	Name      string
+	EventName string
+	DataType  string
 }
 
 // LoadConfig loads and stores the configuration for this Integration
@@ -107,7 +106,7 @@ func (i *Influx) addStopChan() (ix int) {
 
 func (i *Influx) logger(l loggerT) {
 	sid := events.GetSubscriberID(subscribeName)
-	ch, err := events.Subscribe(sid, l.Integration, l.DeviceType, l.DeviceName, l.EventName)
+	ch, err := events.Subscribe(sid, l.EventName)
 	if err != nil {
 		log.Printf("WARNING: Influx Integration (logger) could not subscribe to event for %v\n", l)
 		return
@@ -116,7 +115,7 @@ func (i *Influx) logger(l loggerT) {
 	i.influxMu.RLock()
 	stopChan := i.stopChans[sc]
 	i.influxMu.RUnlock()
-	log.Printf("DEBUG: Influx logger starting for %s, %s, %s, subscriber #: %d\n", l.Integration, l.DeviceName, l.EventName, sid)
+	log.Printf("DEBUG: Influx logger starting for %s, subscriber #: %d\n", l.EventName, sid)
 	for {
 		select {
 		case <-stopChan:
@@ -132,9 +131,7 @@ func (i *Influx) logger(l loggerT) {
 				}
 				p := influxdb2.NewPoint(l.Name,
 					map[string]string{
-						"Integration": l.Integration,
-						"DeviceType":  l.DeviceType,
-						"DeviceName":  l.DeviceName,
+						"EventName": l.EventName,
 					},
 					map[string]interface{}{
 						l.EventName: fl,
@@ -149,9 +146,7 @@ func (i *Influx) logger(l loggerT) {
 				}
 				p := influxdb2.NewPoint(l.Name,
 					map[string]string{
-						"Integration": l.Integration,
-						"DeviceType":  l.DeviceType,
-						"DeviceName":  l.DeviceName,
+						"EventName": l.EventName,
 					},
 					map[string]interface{}{
 						l.EventName: num,
@@ -162,9 +157,7 @@ func (i *Influx) logger(l loggerT) {
 				// everything else treated as a string
 				p := influxdb2.NewPoint(l.Name,
 					map[string]string{
-						"Integration": l.Integration,
-						"DeviceType":  l.DeviceType,
-						"DeviceName":  l.DeviceName,
+						"EventName": l.EventName,
 					},
 					map[string]interface{}{
 						l.EventName: ev.Value,

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -34,10 +35,11 @@ import (
 
 // The HostChecker type encapsulates the HostChecker Integration
 type HostChecker struct {
-	mqttChan  chan mqtt.MessageT
-	mutex     sync.RWMutex
-	Checker   []hostCheckerT
-	stopChans []chan bool // used for stopping Goroutines
+	mqttChan       chan mqtt.MessageT
+	mutex          sync.RWMutex
+	Checker        []hostCheckerT
+	checkersByName map[string]int
+	stopChans      []chan bool // used for stopping Goroutines
 }
 
 type hostCheckerT struct {
@@ -52,9 +54,9 @@ type hostCheckerT struct {
 }
 
 const (
-	configFilename = "/hostchecker.toml"
-	subscriberName = "HostChecker"
-	mqttPrefix     = "aghast/hostchecker/"
+	configFilename  = "/hostchecker.toml"
+	integrationName = "HostChecker"
+	mqttPrefix      = "aghast/hostchecker/"
 )
 
 // LoadConfig func should simply load any config (TOML) files for this Integration
@@ -69,6 +71,10 @@ func (h *HostChecker) LoadConfig(confdir string) error {
 	if err != nil {
 		log.Fatalf("ERROR: Could not load HostChecker config due to %s\n", err.Error())
 	}
+	h.checkersByName = make(map[string]int)
+	for i, c := range h.Checker {
+		h.checkersByName[c.Name] = i
+	}
 	if len(h.Checker) > 0 {
 		log.Printf("INFO: HostChecker Integration has %d checkers configured\n", len(h.Checker))
 	}
@@ -78,7 +84,7 @@ func (h *HostChecker) LoadConfig(confdir string) error {
 // ProvidesDeviceTypes returns a slice of device types that this Integration could supply.
 // (This included unconfigured types.)
 func (h *HostChecker) ProvidesDeviceTypes() []string {
-	return []string{"HostChecker", "Query"}
+	return []string{integrationName, "Query"}
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
@@ -125,12 +131,6 @@ func (h *HostChecker) runChecker(hc hostCheckerT, evChan chan events.EventT) {
 		h.mutex.Lock()
 		if err != nil {
 			if hc.alive || hc.firstCheck { // has state changed?
-				evChan <- events.EventT{
-					Integration: "HostChecker",
-					DeviceType:  "Checker",
-					DeviceName:  hc.Name,
-					EventName:   "StateChanged",
-					Value:       "Unavailable"}
 				mqMsg := mqtt.MessageT{
 					Topic:    mqttPrefix + hc.Name + "/state",
 					Qos:      0,
@@ -142,12 +142,6 @@ func (h *HostChecker) runChecker(hc hostCheckerT, evChan chan events.EventT) {
 			hc.alive = false
 		} else {
 			if !hc.alive || hc.firstCheck {
-				evChan <- events.EventT{
-					Integration: "HostChecker",
-					DeviceType:  "Checker",
-					DeviceName:  hc.Name,
-					EventName:   "StateChanged",
-					Value:       "Available"}
 				mqMsg := mqtt.MessageT{
 					Topic:    mqttPrefix + hc.Name + "/state",
 					Qos:      0,
@@ -158,12 +152,6 @@ func (h *HostChecker) runChecker(hc hostCheckerT, evChan chan events.EventT) {
 			}
 			hc.alive = true
 			hc.responseTime = after.Sub(before)
-			evChan <- events.EventT{
-				Integration: "HostChecker",
-				DeviceType:  "Checker",
-				DeviceName:  hc.Name,
-				EventName:   "Latency",
-				Value:       hc.responseTime}
 			h.mqttChan <- mqtt.MessageT{
 				Topic:    mqttPrefix + hc.Name + "/latency",
 				Qos:      0,
@@ -178,6 +166,41 @@ func (h *HostChecker) runChecker(hc hostCheckerT, evChan chan events.EventT) {
 			return
 		case <-ticker.C:
 			continue
+		}
+	}
+}
+
+func (h *HostChecker) monitorQueries() {
+	sc := h.addStopChan()
+	h.mutex.RLock()
+	stopChan := h.stopChans[sc]
+	h.mutex.RUnlock()
+	sid := events.GetSubscriberID(integrationName)
+	// events are HostChecker.Query.CheckerName.<FetchLast | IsAvailable>
+	ch, err := events.Subscribe(sid, integrationName+"/"+events.QueryDeviceType+"/+/+")
+	if err != nil {
+		log.Fatalf("ERROR: PiMqttGpio Integration could not subscribe to event - %v\n", err)
+	}
+	for {
+		select {
+		case <-stopChan:
+			return
+		case ev := <-ch:
+			log.Printf("DEBUG: HostChecker Query Monitor got %v\n", ev)
+			switch strings.Split(ev.Name, "/")[3] {
+			case events.IsAvailable:
+				var isAlive bool
+				h.mutex.Lock()
+				isAlive = h.Checker[h.checkersByName[strings.Split(ev.Name, "/")[2]]].alive
+				h.mutex.RUnlock()
+				if isAlive {
+					ev.Value.(chan interface{}) <- "Available"
+				} else {
+					ev.Value.(chan interface{}) <- "Unavailable"
+				}
+			default:
+				log.Printf("WARNING: HostChecker received unknown query type %s\n", ev.Name)
+			}
 		}
 	}
 }

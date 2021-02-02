@@ -214,7 +214,7 @@ func (s *Scraper) monitorQueries() {
 	stopChan := s.stopChans[sc]
 	s.mutex.RUnlock()
 	sid := events.GetSubscriberID(subscriberName)
-	ch, err := events.Subscribe(sid, subscriberName, events.QueryDeviceType, "+", "+")
+	ch, err := events.Subscribe(sid, subscriberName+"/"+events.QueryDeviceType+"/+/+")
 	if err != nil {
 		log.Fatalf("ERROR: Scraper Integration could not subscribe to event - %v\n", err)
 	}
@@ -224,22 +224,23 @@ func (s *Scraper) monitorQueries() {
 			return
 		case ev := <-ch:
 			log.Printf("DEBUG: Scraper Query Monitor got %v\n", ev)
-			switch ev.EventName {
+			switch strings.Split(ev.Name, "/")[events.EvQueryType] {
 			case events.FetchLast:
 				var val interface{}
 				s.mutex.RLock()
-				switch s.Scrape[s.scrapersByName[ev.DeviceName]].ValueType {
+				dev := s.scrapersByName[strings.Split(ev.Name, "/")[events.EvDeviceName]]
+				switch s.Scrape[dev].ValueType {
 				case "float":
-					val = s.Scrape[s.scrapersByName[ev.DeviceName]].savedFloat
+					val = s.Scrape[dev].savedFloat
 				case "integer":
-					val = s.Scrape[s.scrapersByName[ev.DeviceName]].savedInteger
+					val = s.Scrape[dev].savedInteger
 				case "string":
-					val = s.Scrape[s.scrapersByName[ev.DeviceName]].savedString
+					val = s.Scrape[dev].savedString
 				}
 				s.mutex.RUnlock()
 				ev.Value.(chan interface{}) <- val
 			default:
-				log.Printf("WARNING: Scraper received unknown query type %s\n", ev.EventName)
+				log.Printf("WARNING: Scraper received unknown query type %s\n", ev.Name)
 			}
 		}
 	}

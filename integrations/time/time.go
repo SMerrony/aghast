@@ -182,11 +182,8 @@ func (t *Time) timeEvents() {
 			if any {
 				for _, te := range evs {
 					t.evChan <- events.EventT{
-						Integration: integName,
-						DeviceType:  eventType,
-						DeviceName:  "TimedEvent",
-						EventName:   te.Name,
-						Value:       te.Hhmmss, // why not? :-)
+						Name:  integName + "/" + eventType + "/TimedEvent/" + te.Name,
+						Value: te.Hhmmss, // why not? :-)
 					}
 				}
 			}
@@ -208,19 +205,19 @@ func (t *Time) tickers() {
 		case <-stopChan:
 			return
 		case tick := <-secs.C:
-			t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Second", Value: tick.Second()}
+			t.evChan <- events.EventT{Name: integName + "/" + tickerType + "/" + tickerDev + "/" + "Second", Value: tick.Second()}
 			// new minute?
 			if tick.Minute() != lastMinute {
 				events.DumpSubs()
-				t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Minute", Value: tick.Minute()}
+				t.evChan <- events.EventT{Name: integName + "/" + tickerType + "/" + tickerDev + "/" + "Minute", Value: tick.Minute()}
 				lastMinute = tick.Minute()
 				// new hour?
 				if tick.Hour() != lastHour {
-					t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Hour", Value: tick.Hour()}
+					t.evChan <- events.EventT{Name: integName + "/" + tickerType + "/" + tickerDev + "/" + "Hour", Value: tick.Hour()}
 					lastHour = tick.Hour()
 					// new day?
 					if tick.Day() != lastDay {
-						t.evChan <- events.EventT{Integration: integName, DeviceType: tickerType, DeviceName: tickerDev, EventName: "Day", Value: tick.Day()}
+						t.evChan <- events.EventT{Name: integName + "/" + tickerType + "/" + tickerDev + "/" + "Day", Value: tick.Day()}
 						lastDay = tick.Day()
 					}
 				}

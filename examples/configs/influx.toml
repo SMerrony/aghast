@@ -6,49 +6,31 @@ URL = "http://localhost:8086"
 
 # Data to log
 [[Logger]]
-  Name = "OutsideTemp"
-  Integration = "Daikin"
-  DeviceType = "Inverter"
-  DeviceName = "Hall"         
-  EventName = "OutsideTemperature"
+  Name = "OutsideTemp"      
+  EventName = "Daikin/Inverter/Hall/OutsideTemperature"
   DataType = "float"                    # Either 'float', 'integer', or 'string'
   
 [[Logger]]
-  Name = "HallTemp"
-  Integration = "Daikin"
-  DeviceType = "Inverter"
-  DeviceName = "Hall"           
-  EventName = "Temperature"
+  Name = "HallTemp"   
+  EventName = "Daikin/Inverter/Hall/Temperature"
   DataType = "float"
 
 [[Logger]]
-  Name = "MusicTemp"
-  Integration = "Daikin"
-  DeviceType = "Inverter"
-  DeviceName = "Music Room"           
-  EventName = "Temperature"
+  Name = "MusicTemp"       
+  EventName = "Daikin/Inverter/Music Room/Temperature"
   DataType = "float"
 
 [[Logger]]
-  Name = "SalonTemp"
-  Integration = "Daikin"
-  DeviceType = "Inverter"
-  DeviceName = "Living Room"           
-  EventName = "Temperature"
+  Name = "SalonTemp"      
+  EventName = "Daikin/Inverter/Living Room/Temperature"
   DataType = "float"
 
 [[Logger]]
-  Name = "DiningTemp"
-  Integration = "Daikin"
-  DeviceType = "Inverter"
-  DeviceName = "Dining Room"           
-  EventName = "Temperature"
+  Name = "DiningTemp"         
+  EventName = "Daikin/Inverter/Dining Room/Temperature"
   DataType = "float"
 
 [[Logger]]
-  Name = "MasterBedTemp"
-  Integration = "Daikin"
-  DeviceType = "Inverter"
-  DeviceName = "Master Bedroom"           
-  EventName = "Temperature"
+  Name = "MasterBedTemp"     
+  EventName = "Daikin/Inverter/Master Bedroom/Temperature"
   DataType = "float"

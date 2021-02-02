@@ -24,6 +24,7 @@ import (
 	"log"
 	"math"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/BurntSushi/toml"
@@ -34,7 +35,7 @@ import (
 
 const (
 	configFilename = "/pimqttgpio.toml"
-	subscriberName = "PiMQTTgpio"
+	subscriberName = "PiMqttGpio"
 	mqttPrefix     = "aghast/pimqttgpio/"
 )
 
@@ -122,7 +123,7 @@ func (p *PiMqttGpio) monitorQueries() {
 	stopChan := p.stopChans[sc]
 	p.mutex.RUnlock()
 	sid := events.GetSubscriberID(subscriberName)
-	ch, err := events.Subscribe(sid, "PiMqttGpio", events.QueryDeviceType, "+", "+")
+	ch, err := events.Subscribe(sid, subscriberName+"/"+events.QueryDeviceType+"/+/+")
 	if err != nil {
 		log.Fatalf("ERROR: PiMqttGpio Integration could not subscribe to event - %v\n", err)
 	}
@@ -132,22 +133,23 @@ func (p *PiMqttGpio) monitorQueries() {
 			return
 		case ev := <-ch:
 			log.Printf("DEBUG: PiMqttGpio Query Monitor got %v\n", ev)
-			switch ev.EventName {
+			switch strings.Split(ev.Name, "/")[events.EvQueryType] {
 			case events.FetchLast:
 				var val interface{}
 				p.mutex.RLock()
-				switch p.Sensor[p.sensorsByName[ev.DeviceName]].ValueType {
+				dev := p.sensorsByName[strings.Split(ev.Name, "/")[events.EvDeviceName]]
+				switch p.Sensor[dev].ValueType {
 				case "string":
-					val = p.Sensor[p.sensorsByName[ev.DeviceName]].savedString
+					val = p.Sensor[dev].savedString
 				case "integer":
-					val = p.Sensor[p.sensorsByName[ev.DeviceName]].savedInteger
+					val = p.Sensor[dev].savedInteger
 				case "float":
-					val = p.Sensor[p.sensorsByName[ev.DeviceName]].savedFloat
+					val = p.Sensor[dev].savedFloat
 				}
 				p.mutex.RUnlock()
 				ev.Value.(chan interface{}) <- val
 			default:
-				log.Printf("WARNING: PiMqttGpio received unknown query type %s\n", ev.EventName)
+				log.Printf("WARNING: PiMqttGpio received unknown query type %s\n", ev.Name)
 			}
 		}
 	}
@@ -205,11 +207,8 @@ func (p *PiMqttGpio) monitorSensor(ix int) {
 
 			if p.Sensor[ix].ForwardEvent {
 				p.evChan <- events.EventT{
-					Integration: "PiMqttGpio",
-					DeviceType:  "Sensor",
-					DeviceName:  p.Sensor[ix].TopicPrefix,
-					EventName:   p.Sensor[ix].SensorType,
-					Value:       evValue,
+					Name:  "PiMqttGpio/Sensor/" + p.Sensor[ix].TopicPrefix + "/" + p.Sensor[ix].SensorType,
+					Value: evValue,
 				}
 			}
 			if p.Sensor[ix].ForwardMQTT {

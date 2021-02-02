@@ -3,10 +3,7 @@ Description = "Main Downstairs Heaters On"
 Enabled = true
 
 [Event]
-  Integration = "Time"
-  DeviceType  = "Events"
-  DeviceName  = "TimedEvent"
-  EventName   = "MorningHeatingOn"
+  Name = "Time/Events/TimedEvent/MorningHeatingOn"
 
 [Action.1]
   Integration = "Daikin"
