@@ -6,13 +6,14 @@ Enabled = true
   Topic = "aghast/client/DemoButton"
 
 [Condition]
-  # Integration = "HostChecker"
-  # Name = "BrotherA3"
-  # IsAvailable = true
-  Integration = "PiMqttGpio"
-  Name = "MusicRoomTemp"
-  Is = "<"                # one of: "=", "!=", "<", ">", 
-  Value = 17.0
+  Integration = "HostChecker"
+  Name = "BrotherA3"
+  IsAvailable = false
+# [Condition]
+#   Integration = "PiMqttGpio"
+#   Name = "StevesOfficeTemp"
+#   Is = "<"                # one of: "=", "!=", "<", ">", 
+#   Value = 17.0
 # [Condition]
 #    Integration = "Scraper"
 #    Name = "BrotherA3"

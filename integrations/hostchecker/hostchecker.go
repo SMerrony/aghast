@@ -93,6 +93,7 @@ func (h *HostChecker) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	for _, dev := range h.Checker {
 		go h.runChecker(dev, evChan)
 	}
+	go h.monitorQueries()
 }
 
 func (h *HostChecker) addStopChan() (ix int) {
@@ -160,6 +161,7 @@ func (h *HostChecker) runChecker(hc hostCheckerT, evChan chan events.EventT) {
 			}
 		}
 		hc.firstCheck = false
+		h.Checker[h.checkersByName[hc.Name]] = hc
 		h.mutex.Unlock()
 		select {
 		case <-stopChan:
@@ -176,7 +178,7 @@ func (h *HostChecker) monitorQueries() {
 	stopChan := h.stopChans[sc]
 	h.mutex.RUnlock()
 	sid := events.GetSubscriberID(integrationName)
-	// events are HostChecker.Query.CheckerName.<FetchLast | IsAvailable>
+	// events are HostChecker/Query/CheckerName/<FetchLast | IsAvailable>
 	ch, err := events.Subscribe(sid, integrationName+"/"+events.QueryDeviceType+"/+/+")
 	if err != nil {
 		log.Fatalf("ERROR: PiMqttGpio Integration could not subscribe to event - %v\n", err)
@@ -190,13 +192,14 @@ func (h *HostChecker) monitorQueries() {
 			switch strings.Split(ev.Name, "/")[3] {
 			case events.IsAvailable:
 				var isAlive bool
-				h.mutex.Lock()
+				h.mutex.RLock()
 				isAlive = h.Checker[h.checkersByName[strings.Split(ev.Name, "/")[2]]].alive
 				h.mutex.RUnlock()
+				// log.Printf("DEBUG: HostChecker Query - %s yields %v\n", ev.Name, h.Checker[h.checkersByName[strings.Split(ev.Name, "/")[2]]])
 				if isAlive {
-					ev.Value.(chan interface{}) <- "Available"
+					ev.Value.(chan interface{}) <- true
 				} else {
-					ev.Value.(chan interface{}) <- "Unavailable"
+					ev.Value.(chan interface{}) <- false
 				}
 			default:
 				log.Printf("WARNING: HostChecker received unknown query type %s\n", ev.Name)

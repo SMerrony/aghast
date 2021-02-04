@@ -37,7 +37,7 @@
   Name = "wonkyPi"
   Host = "192.168.1.92"
   Port = 8080
-  Pabel = "Ancient Pi"
+  Label = "Ancient Pi"
   Period = 60
 
 
@@ -45,40 +45,40 @@
   Name = "BrotherA3"
   Host = "192.168.1.17"
   Port = 80
-  Pabel = "Brother A3 Printer"
+  Label = "Brother A3 Printer"
   Period = 120
 
 [[Checker]]
   Name = "Epson"
   Host = "192.168.1.30"
   Port = 80
-  Pabel = "Epson Printer"
+  Label = "Epson Printer"
   Period = 120
   
 [[Checker]]
   Name = "Deco_Main"
   Host = "192.168.1.40"
   Port = 80
-  Pabel = "Primary Deco M5"
+  Label = "Primary Deco M5"
   Period = 60
 
 [[Checker]]
   Name = "Deco_SpareRoom"
   Host = "192.168.1.42"
   Port = 80
-  Pabel = "Deco M5 - Spare Room"
+  Label = "Deco M5 - Spare Room"
   Period = 60
 
 [[Checker]]
   Name = "Deco_Paul"
   Host = "192.168.1.44"
   Port = 80
-  Pabel = "Deco M5 - Paul's Studio"
+  Label = "Deco M5 - Paul's Studio"
   Period = 60
 
 [[Checker]]
   Name = "Deco_Steve"
   Host = "192.168.1.46"
   Port = 80
-  Pabel = "Deco M5 - Steve's Office"
+  Label = "Deco M5 - Steve's Office"
   Period = 60

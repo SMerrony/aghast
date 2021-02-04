@@ -132,13 +132,14 @@ func (a *Automation) LoadConfig(confDir string) error {
 			if conf.Get("Condition.IsAvailable") != nil {
 				newAuto.condition.IsAvailable = conf.Get("Condition.IsAvailable").(bool)
 				newAuto.condition.conditionType = availabilityCond
+			} else {
+				newAuto.condition.is = conf.Get("Condition.Is").(string)
+				newAuto.condition.value = conf.Get("Condition.Value")
 			}
 			if conf.Get("Condition.Index") != nil {
 				newAuto.condition.Index = int(conf.Get("Condition.Index").(int64))
 				newAuto.condition.conditionType = indexedValueCond
 			}
-			newAuto.condition.is = conf.Get("Condition.Is").(string)
-			newAuto.condition.value = conf.Get("Condition.Value")
 		} else {
 			// dummy value
 			newAuto.condition.Integration = "NONE"
@@ -245,13 +246,28 @@ func (a *Automation) waitForIntegrationEvent(stopChan chan bool, sid int, auto a
 
 func (a *Automation) testCondition(cond conditionT) bool {
 	respChan := make(chan interface{})
-	a.evChan <- events.EventT{
-		Name:  cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" + events.FetchLast,
-		Value: respChan,
+	switch cond.conditionType {
+	case availabilityCond:
+		a.evChan <- events.EventT{
+			Name:  cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" + events.IsAvailable,
+			Value: respChan,
+		}
+	case plainValueCond:
+		a.evChan <- events.EventT{
+			Name:  cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" + events.FetchLast,
+			Value: respChan,
+		}
+	case indexedValueCond: // TODO - change this
+		a.evChan <- events.EventT{
+			Name:  cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" + events.FetchLast,
+			Value: respChan,
+		}
 	}
 	resp := <-respChan
 	log.Printf("DEBUG: Automation manager testCondition got %v\n", resp)
 	switch resp.(type) {
+	case bool:
+		return resp.(bool) == cond.IsAvailable
 	case map[int]int:
 		resp = resp.(map[int]int)[cond.Index]
 	}
