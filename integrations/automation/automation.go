@@ -266,10 +266,6 @@ func (a *Automation) testCondition(cond conditionT) bool {
 	switch resp.(type) {
 	case bool:
 		return resp.(bool) == cond.IsAvailable
-		// case map[int]int:
-		// 	resp = resp.(map[int]int)[cond.Index]
-	}
-	switch resp.(type) {
 	case float64:
 		switch cond.is {
 		case "<":
