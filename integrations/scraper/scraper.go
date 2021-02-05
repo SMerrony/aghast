@@ -214,7 +214,7 @@ func (s *Scraper) monitorQueries() {
 	stopChan := s.stopChans[sc]
 	s.mutex.RUnlock()
 	sid := events.GetSubscriberID(subscriberName)
-	ch, err := events.Subscribe(sid, subscriberName+"/"+events.QueryDeviceType+"/+/+")
+	ch, err := events.Subscribe(sid, subscriberName+"/"+events.QueryDeviceType+"/+/+/+")
 	if err != nil {
 		log.Fatalf("ERROR: Scraper Integration could not subscribe to event - %v\n", err)
 	}
@@ -225,17 +225,22 @@ func (s *Scraper) monitorQueries() {
 		case ev := <-ch:
 			log.Printf("DEBUG: Scraper Query Monitor got %v\n", ev)
 			switch strings.Split(ev.Name, "/")[events.EvQueryType] {
-			case events.FetchLast:
+			case events.FetchLastIndexed:
 				var val interface{}
 				s.mutex.RLock()
 				dev := s.scrapersByName[strings.Split(ev.Name, "/")[events.EvDeviceName]]
+				ind, err := strconv.Atoi(strings.Split(ev.Name, "/")[events.EvIndex])
+				if err != nil {
+					log.Printf("WARNING: Scraper Query Monitor got malformed request %s\n", ev.Name)
+					continue
+				}
 				switch s.Scrape[dev].ValueType {
 				case "float":
-					val = s.Scrape[dev].savedFloat
+					val = s.Scrape[dev].savedFloat[ind]
 				case "integer":
-					val = s.Scrape[dev].savedInteger
+					val = s.Scrape[dev].savedInteger[ind]
 				case "string":
-					val = s.Scrape[dev].savedString
+					val = s.Scrape[dev].savedString[ind]
 				}
 				s.mutex.RUnlock()
 				ev.Value.(chan interface{}) <- val

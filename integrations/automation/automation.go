@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"log"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -111,10 +112,6 @@ func (a *Automation) LoadConfig(confDir string) error {
 		log.Printf("DEBUG: ... %s, %s\n", newAuto.Name, newAuto.Description)
 		if conf.Get("Event.Name") != nil {
 			newAuto.eventType = integrationEvent
-			// newAuto.Event.Integration = conf.Get("Event.Integration").(string)
-			// newAuto.Event.DeviceType = conf.Get("Event.DeviceType").(string)
-			// newAuto.Event.DeviceName = conf.Get("Event.DeviceName").(string)
-			// newAuto.Event.Name = conf.Get("Event.EventName").(string)
 			newAuto.Event.Name = conf.Get("Event.Name").(string)
 		}
 		if conf.Get("Event.Topic") != nil {
@@ -257,9 +254,10 @@ func (a *Automation) testCondition(cond conditionT) bool {
 			Name:  cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" + events.FetchLast,
 			Value: respChan,
 		}
-	case indexedValueCond: // TODO - change this
+	case indexedValueCond:
 		a.evChan <- events.EventT{
-			Name:  cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" + events.FetchLast,
+			Name: cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" +
+				events.FetchLastIndexed + "/" + strconv.Itoa(cond.Index),
 			Value: respChan,
 		}
 	}
@@ -268,8 +266,8 @@ func (a *Automation) testCondition(cond conditionT) bool {
 	switch resp.(type) {
 	case bool:
 		return resp.(bool) == cond.IsAvailable
-	case map[int]int:
-		resp = resp.(map[int]int)[cond.Index]
+		// case map[int]int:
+		// 	resp = resp.(map[int]int)[cond.Index]
 	}
 	switch resp.(type) {
 	case float64:

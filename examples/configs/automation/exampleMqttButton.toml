@@ -5,21 +5,21 @@ Enabled = true
 [Event]
   Topic = "aghast/client/DemoButton"
 
-[Condition]
-  Integration = "HostChecker"
-  Name = "BrotherA3"
-  IsAvailable = false
+# [Condition]
+#   Integration = "HostChecker"
+#   Name = "BrotherA3"
+#   IsAvailable = false
 # [Condition]
 #   Integration = "PiMqttGpio"
 #   Name = "StevesOfficeTemp"
 #   Is = "<"                # one of: "=", "!=", "<", ">", 
 #   Value = 17.0
-# [Condition]
-#    Integration = "Scraper"
-#    Name = "BrotherA3"
-#    Index = 2  
-#    Is = ">"                # one of: "=", "!=", "<", ">", 
-#    Value = 20
+[Condition]
+   Integration = "Scraper"
+   Name = "BrotherA3"
+   Index = 2  
+   Is = "<"                # one of: "=", "!=", "<", ">", 
+   Value = 20
 
 [Action.1]
   Integration = "Daikin"

@@ -39,6 +39,8 @@ const (
 
 	// FetchLast request last value
 	FetchLast = "FetchLast"
+	// FetchLastIndexed request one of last value set
+	FetchLastIndexed = "FetchLastIndexed"
 	// IsAvailable request status
 	IsAvailable = "IsAvailable"
 )
@@ -49,6 +51,7 @@ const (
 	EvDeviceType
 	EvDeviceName
 	EvQueryType
+	EvIndex
 )
 
 // EvControl - Conventional Control element
