@@ -68,9 +68,10 @@ type automationT struct {
 }
 
 const (
-	availabilityCond int = iota
-	plainValueCond
-	indexedValueCond
+	isAvailableCond int = iota
+	isOnCond
+	isValueCond
+	isIndexedValueCond
 )
 
 type conditionT struct {
@@ -79,6 +80,7 @@ type conditionT struct {
 	conditionType int
 	Index         int
 	IsAvailable   bool
+	IsOn          bool
 	is            string // comparison operator, one of: "=", "!=", "<", ">", "<=", ">="
 	value         interface{}
 }
@@ -125,18 +127,25 @@ func (a *Automation) LoadConfig(confDir string) error {
 		if conf.Get("Condition") != nil {
 			newAuto.condition.Integration = conf.Get("Condition.Integration").(string)
 			newAuto.condition.Name = conf.Get("Condition.Name").(string)
-			newAuto.condition.conditionType = plainValueCond // default
-			if conf.Get("Condition.IsAvailable") != nil {
+			newAuto.condition.conditionType = isValueCond // default
+			switch {
+			case conf.Get("Condition.IsAvailable") != nil:
 				newAuto.condition.IsAvailable = conf.Get("Condition.IsAvailable").(bool)
-				newAuto.condition.conditionType = availabilityCond
-			} else {
+				newAuto.condition.conditionType = isAvailableCond
+
+			case conf.Get("Condition.Is") != nil:
 				newAuto.condition.is = conf.Get("Condition.Is").(string)
 				newAuto.condition.value = conf.Get("Condition.Value")
-			}
-			if conf.Get("Condition.Index") != nil {
+
+			case conf.Get("Condition.IsOn") != nil:
+				newAuto.condition.IsOn = conf.Get("Condition.IsOn").(bool)
+				newAuto.condition.conditionType = isOnCond
+
+			case conf.Get("Condition.Index") != nil:
 				newAuto.condition.Index = int(conf.Get("Condition.Index").(int64))
-				newAuto.condition.conditionType = indexedValueCond
+				newAuto.condition.conditionType = isIndexedValueCond
 			}
+
 		} else {
 			// dummy value
 			newAuto.condition.Integration = "NONE"
@@ -244,17 +253,22 @@ func (a *Automation) waitForIntegrationEvent(stopChan chan bool, sid int, auto a
 func (a *Automation) testCondition(cond conditionT) bool {
 	respChan := make(chan interface{})
 	switch cond.conditionType {
-	case availabilityCond:
+	case isAvailableCond:
 		a.evChan <- events.EventT{
 			Name:  cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" + events.IsAvailable,
 			Value: respChan,
 		}
-	case plainValueCond:
+	case isOnCond:
+		a.evChan <- events.EventT{
+			Name:  cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" + events.IsOn,
+			Value: respChan,
+		}
+	case isValueCond:
 		a.evChan <- events.EventT{
 			Name:  cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" + events.FetchLast,
 			Value: respChan,
 		}
-	case indexedValueCond:
+	case isIndexedValueCond:
 		a.evChan <- events.EventT{
 			Name: cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" +
 				events.FetchLastIndexed + "/" + strconv.Itoa(cond.Index),
@@ -265,7 +279,12 @@ func (a *Automation) testCondition(cond conditionT) bool {
 	log.Printf("DEBUG: Automation manager testCondition got %v\n", resp)
 	switch resp.(type) {
 	case bool:
-		return resp.(bool) == cond.IsAvailable
+		switch cond.conditionType {
+		case isAvailableCond:
+			return resp.(bool) == cond.IsAvailable
+		case isOnCond:
+			return resp.(bool) == cond.IsOn
+		}
 	case float64:
 		switch cond.is {
 		case "<":

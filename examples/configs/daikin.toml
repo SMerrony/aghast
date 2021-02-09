@@ -2,31 +2,31 @@
   MAC = "C0E434E69F27"      # The unpunctuated MAC address of the unit
   Label = "Steve's Office"  # A user-friendly label for the unit - must be unique
   
-[[Inverter]]
-  MAC = "C0E434E6A3C6"
-  Label = "Dining Room"
+# [[Inverter]]
+#   MAC = "C0E434E6A3C6"
+#   Label = "Dining Room"
 
-[[Inverter]]
-  MAC = "C0E434E60BC6"
-  Label = "Spare Bedroom"
+# [[Inverter]]
+#   MAC = "C0E434E60BC6"
+#   Label = "Spare Bedroom"
 
-[[Inverter]]
-  MAC = "C0E434E615C3"
-  Label = "Paul's Studio"
+# [[Inverter]]
+#   MAC = "C0E434E615C3"
+#   Label = "Paul's Studio"
 
-[[Inverter]]
-  MAC = "C0E434E60BA0"
-  Label = "Master Bedroom"
+# [[Inverter]]
+#   MAC = "C0E434E60BA0"
+#   Label = "Master Bedroom"
 
-[[Inverter]]
-  MAC = "D8C0A664EDEE"
-  Label = "Living Room"
+# [[Inverter]]
+#   MAC = "D8C0A664EDEE"
+#   Label = "Living Room"
 
-[[Inverter]]
-  MAC = "706655B5CD75"
-  Label = "Hall"
+# [[Inverter]]
+#   MAC = "706655B5CD75"
+#   Label = "Hall"
 
-[[Inverter]]
-  MAC = "D8C0A664E830"
-  Label = "Music Room"
+# [[Inverter]]
+#   MAC = "D8C0A664E830"
+#   Label = "Music Room"
   

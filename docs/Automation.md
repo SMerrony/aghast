@@ -65,6 +65,12 @@ You may optionally specify a Condition that must be satisfied for the Automation
 
 Some Integrations supply multiple results (eg. Scraper) and you will need to add an `Index = ` line to the Condition.
 
+There are several Condition types:
+ * Is - as above, must have comparitor and Value specified
+ * Index - same as "Is" but for a specified Value from an array of Values
+ * IsAvailable - either `true` or `false`
+ * IsOn - either `true` or `false`
+
 ### Actions
 One or more Actions must be attached to an Event to form an Automation.
 

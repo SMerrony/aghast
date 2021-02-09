@@ -167,7 +167,7 @@ func (d *Daikin) LoadConfig(confdir string) error {
 
 // ProvidesDeviceTypes returns a slice of device types that this Integration supplies.
 func (d *Daikin) ProvidesDeviceTypes() []string {
-	return []string{"Inverter", "Control"}
+	return []string{"Inverter", "Control", "Query"}
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
@@ -180,17 +180,17 @@ func (d *Daikin) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	}
 	d.runDiscovery(maxUnits, scanTimeout)
 
-	msg := mqtt.MessageT{
+	d.mqttChan <- mqtt.MessageT{
 		Topic:    mqttPrefix + "status",
 		Qos:      0,
 		Retained: false,
 		Payload:  "Daikin Starting",
 	}
-	d.mqttChan <- msg
-	// configured and accessible units are now in d, we can start monitoring etc.
+
 	go d.monitorUnits()
 	go d.monitorClients()
 	go d.monitorActions()
+	go d.monitorQueries()
 	go d.rerunDiscovery(maxUnits, scanTimeout)
 }
 
@@ -432,6 +432,38 @@ func (d *Daikin) monitorUnits() {
 			return
 		case <-everyMinute.C:
 			continue
+		}
+	}
+}
+
+func (d *Daikin) monitorQueries() {
+	sc := d.addStopChan()
+	d.invertersMu.RLock()
+	stopChan := d.stopChans[sc]
+	d.invertersMu.RUnlock()
+	sid := events.GetSubscriberID(subscriberName)
+	ch, err := events.Subscribe(sid, subscriberName+"/"+events.QueryDeviceType+"/+/+")
+	if err != nil {
+		log.Fatalf("ERROR: Daikin Integration could not subscribe to event - %v\n", err)
+	}
+	for {
+		select {
+		case <-stopChan:
+			return
+		case ev := <-ch:
+			log.Printf("DEBUG: Daikin Query Monitor got %v\n", ev)
+			switch strings.Split(ev.Name, "/")[events.EvQueryType] {
+			case events.IsOn:
+				var isOn bool
+				d.invertersMu.RLock()
+				dev := d.invertersByLabel[strings.Split(ev.Name, "/")[events.EvDeviceName]]
+				isOn = d.inverters[dev].controlInfo["pow"].boolValue
+				log.Printf("DEBUG: Daikin - Queried %s and got %v\n", dev, isOn)
+				d.invertersMu.RUnlock()
+				ev.Value.(chan interface{}) <- isOn
+			default:
+				log.Printf("WARNING: Daikin received unknown query type %s\n", ev.Name)
+			}
 		}
 	}
 }

@@ -43,6 +43,8 @@ const (
 	FetchLastIndexed = "FetchLastIndexed"
 	// IsAvailable request status
 	IsAvailable = "IsAvailable"
+	// IsOn request status
+	IsOn = "IsOn"
 )
 
 // Standard - but not compulsory - Event Name elemnts

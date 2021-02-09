@@ -14,12 +14,16 @@ Enabled = true
 #   Name = "StevesOfficeTemp"
 #   Is = "<"                # one of: "=", "!=", "<", ">", 
 #   Value = 17.0
+# [Condition]
+#    Integration = "Scraper"
+#    Name = "BrotherA3"
+#    Index = 2  
+#    Is = "<"                # one of: "=", "!=", "<", ">", 
+#    Value = 20
 [Condition]
-   Integration = "Scraper"
-   Name = "BrotherA3"
-   Index = 2  
-   Is = "<"                # one of: "=", "!=", "<", ">", 
-   Value = 20
+   Integration = "Daikin"
+   Name = "Steve's Office"
+   IsOn = false
 
 [Action.1]
   Integration = "Daikin"
