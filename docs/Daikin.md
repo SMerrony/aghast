@@ -56,38 +56,41 @@ Discovery is re-run every 15 minutes - this will pick up any changes, and normal
 ### Automation
 Example Automation...
 ```
-name = "MorningeWarmup"
-description = "Warm upstairs"
-enabled = true
+Name = "MorningHeatingStart"
+Description = "Main Downstairs Heaters On"
+Enabled = true
 
-[event]
-  integration = "Time"
-  deviceType  = "Events"
-  deviceName  = "TimedEvent"
-  eventName   = "MorningPrewarming"
+[Event]
+  Name = "Time/Events/TimedEvent/MorningHeatingOn"
 
-[action.1]
-  integration = "Daikin"
-  deviceLabel = "Steve's Office"
-  execute = [ { control = "temperature", setting = 18.0 },
-              { control = "mode",        setting = "Heat" },
-              { control = "power",       setting = "on" } ]
-[action.2]
-  integration = "Daikin"
-  deviceLabel = "Paul's Studio"
-  execute = [ { control = "temperature", setting = 18.0 },
-              { control = "mode",        setting = "Heat" },
-              { control = "power",       setting = "on" } ]
+[Condition]
+   Integration = "Daikin"
+   Name = "Steve's Office"
+   IsOn = false
 
-[action.3]
-  integration = "Daikin"
-  deviceLabel = "Master Bedroom"
-  execute = [ { control = "temperature", setting = 18.0 },
-              { control = "mode",        setting = "Heat" },
-              { control = "fan",         setting = "3" },
-              { control = "power",       setting = "on" } ]
+[Action.1]
+  Integration = "Daikin"
+  DeviceLabel = "Hall"
+  Execute = [ { Control = "temperature", Setting = 18.0 },
+              { Control = "mode",        Setting = "Heat" },
+              { Control = "power",       Setting = "on" } ]
+
+# [Action.2]
+#   Integration = "Daikin"
+#   DeviceLabel = "Living Room"
+#   Execute = [ { Control = "temperature", Setting = 18.0 },
+#               { Control = "mode",        Setting = "Heat" },
+#               { Control = "power",       Setting = "on" } ]  
+
+[Action.3]
+  Integration = "Daikin"
+  DeviceLabel = "Music Room"
+  Execute = [ { Control = "temperature", Setting = 16.0 },
+              { Control = "mode",        Setting = "Heat" },
+              { Control = "power",       Setting = "on" } ]  
+
 ```
-Due to the oddness of the Daikin interface there are a couple of things to watch out for in the Actions.
+Due to the oddities of the Daikin interface there are a couple of things to watch out for in the Actions.
 * temperature - must be a float, do not specify an integer
 * mode - must be capitalised, one of: "Auto", "Dehumidify", "Cool", "Heat", "Fan"
 * fan - this is fan speed, must be quoted as follows...
@@ -97,3 +100,9 @@ Due to the oddness of the Daikin interface there are a couple of things to watch
   * ...
   * "7" = level 5
 * power - the value must either "on" or "off", YAML booleans will not work
+
+### Queries for Condditions
+The Daikin Integration supports AGHAST queries for use in Conditions inside Automations.
+
+Currently supported queries are...
+ * `IsOn = <true|false>` - tests whether the specified unit is powered on

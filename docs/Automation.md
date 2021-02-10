@@ -53,7 +53,7 @@ These Events come from MQTT and are simply identified by the MQTT topic:
  * Topic - eg. "aghast/client/DemoButton"
 
 
-### Condtion
+### Condition
 You may optionally specify a Condition that must be satisfied for the Automation to proceed...
 ```
 [Condition]
