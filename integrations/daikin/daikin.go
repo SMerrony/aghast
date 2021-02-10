@@ -453,6 +453,14 @@ func (d *Daikin) monitorQueries() {
 		case ev := <-ch:
 			log.Printf("DEBUG: Daikin Query Monitor got %v\n", ev)
 			switch strings.Split(ev.Name, "/")[events.EvQueryType] {
+			case events.IsAvailable:
+				var isAvailable bool
+				d.invertersMu.RLock()
+				dev := d.invertersByLabel[strings.Split(ev.Name, "/")[events.EvDeviceName]]
+				isAvailable = d.inverters[dev].online
+				log.Printf("DEBUG: Daikin - Queried %s and got %v\n", dev, isAvailable)
+				d.invertersMu.RUnlock()
+				ev.Value.(chan interface{}) <- isAvailable
 			case events.IsOn:
 				var isOn bool
 				d.invertersMu.RLock()

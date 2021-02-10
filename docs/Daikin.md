@@ -105,4 +105,6 @@ Due to the oddities of the Daikin interface there are a couple of things to watc
 The Daikin Integration supports AGHAST queries for use in Conditions inside Automations.
 
 Currently supported queries are...
- * `IsOn = <true|false>` - tests whether the specified unit is powered on
+ * `IsAvailable = <true|false>` - tests whether the unit is accessible (online)
+ * `IsOn = <true|false>` - tests whether the unit is powered on
+  
