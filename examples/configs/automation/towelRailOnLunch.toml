@@ -1,0 +1,12 @@
+Name = "TowelRailOnLunch"
+Description = "Turn Towel-Rail on for lunchtime off-peak"
+Enabled = false
+
+[Event]
+#  Name = "Time/Events/TimedEvent/LunchtimeOffPeakStarts"
+  Name = "Time/Ticker/SystemTicker/Minute"
+
+[Action.1]
+  Integration = "Tuya"
+  DeviceLabel = "Towel Rail Socket"
+  Execute = [ { Control = "power", Setting = "on" } ]

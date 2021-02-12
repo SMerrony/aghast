@@ -10,9 +10,18 @@ TuyaRegion = "EU" # One of CN, EU, IN, or US
   Colour = true
   Temperature = true
 
-[[Lamp]]
-  DeviceID = "does_not_exist"
-  Label = "Testing absent Tuya Lamp"
-  Dimmable = false
-  Colour = false
-  Temperature = true
+# [[Lamp]]
+#   DeviceID = "does_not_exist"
+#   Label = "Testing absent Tuya Lamp"
+#   Dimmable = false
+#   Colour = false
+#   Temperature = true
+
+[[Socket]]
+  DeviceID = "!!SECRET(lidlSocket01)"
+  Label = "LIDL Socket 1"
+  
+[[Socket]]
+  DeviceID = "!!SECRET(lidlSocket02)"
+  Label = "Towel Rail Socket"
+  

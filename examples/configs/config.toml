@@ -14,10 +14,10 @@ Integrations = [
   "time",         # the Time integration MUST be enabled
   "automation",
 #  "datalogger",
-  "daikin",
-  "hostchecker",
+#  "daikin",
+#  "hostchecker",
 #  "influx",
 #  "pimqttgpio",
 #  "scraper",
-#  "tuya",
+  "tuya",
 ]
