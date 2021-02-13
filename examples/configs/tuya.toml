@@ -19,7 +19,7 @@ TuyaRegion = "EU" # One of CN, EU, IN, or US
 
 [[Socket]]
   DeviceID = "!!SECRET(lidlSocket01)"
-  Label = "LIDL Socket 1"
+  Label = "LIDL Stairway Socket"
   
 [[Socket]]
   DeviceID = "!!SECRET(lidlSocket02)"

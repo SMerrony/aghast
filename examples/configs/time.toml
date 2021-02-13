@@ -49,3 +49,7 @@ Latitude = "!!SECRET(latitude)"   # Get latitude value from secrets.toml
   Name = "FifteenBeforeSunset"
   Daily = "Sunset"
   OffsetMins = -15
+
+[[Event]]
+  Name = "TowelRailOn"
+  Time = "03:00:00"

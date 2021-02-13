@@ -1,9 +1,9 @@
-Name = "TowelRailOnLunch"
-Description = "Turn Towel-Rail on for lunchtime off-peak"
+Name = "TowelRailOnNight"
+Description = "Turn Towel-Rail on during night-time off-peak"
 Enabled = true
 
 [Event]
-  Name = "Time/Events/TimedEvent/LunchtimeOffPeakStarts"
+  Name = "Time/Events/TimedEvent/TowelRailOn"
 #  Name = "Time/Ticker/SystemTicker/Minute"
 
 [Action.1]

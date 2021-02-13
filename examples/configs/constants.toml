@@ -1,4 +1,3 @@
 backgroundTemp = 15.0
 
 mqttBroker = "localhost"
-# mqttBroker = "mediaserver01"

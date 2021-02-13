@@ -38,9 +38,10 @@ import (
 )
 
 const (
-	configFilename = "/tuya.toml"
-	subscriberName = "Tuya"
-	mqttPrefix     = "aghast/tuya/"
+	configFilename    = "/tuya.toml"
+	subscriberName    = "Tuya"
+	mqttPrefix        = "aghast/tuya/"
+	changeUpdatePause = 500 * time.Millisecond // wait between operation and requery
 )
 
 // The Tuya type encapsulates the Tuya IoT Integration
@@ -269,6 +270,10 @@ func (t *Tuya) monitorClients() {
 					t.tuyaMu.RUnlock()
 					continue
 				}
+				t.tuyaMu.RUnlock()
+				// force status update so GUI responds nicely
+				time.Sleep(changeUpdatePause)
+				t.getLampStatus(t.conf.Lamp[ix])
 			}
 			if foundSocket {
 				log.Printf("DEBUG: Tuya got control %s for %s with payload %s\n", control, t.conf.Socket[ix].Label, payload)
@@ -282,8 +287,56 @@ func (t *Tuya) monitorClients() {
 					t.tuyaMu.RUnlock()
 					continue
 				}
+				t.tuyaMu.RUnlock()
+				// force status update so GUI responds nicely
+				time.Sleep(changeUpdatePause)
+				t.getSocketStatus(t.conf.Socket[ix])
 			}
-			t.tuyaMu.RUnlock()
+		}
+	}
+}
+
+func (t *Tuya) getLampStatus(l lamp) {
+	status, err := device.GetDeviceStatus(l.DeviceID)
+	if err != nil {
+		log.Printf("WARNING: Tuya GetDeviceStatus failed with %s\n", err.Error())
+	} else {
+		// log.Printf("DEBUG: Tuya device status response Code: %d, Message: %s, Success: %v\n", status.Code, status.Msg, status.Success)
+		if status.Success {
+			var currentStatus lampStatusT
+			for _, r := range status.Result {
+				// log.Printf("DEBUG: ... Code: %s, Value: %v\n", r.Code, r.Value)
+				switch r.Code {
+				case "switch_led":
+					currentStatus.SwitchLED = r.Value.(bool)
+				case "work_mode":
+					currentStatus.WorkMode = r.Value.(string)
+				case "bright_value_v2":
+					currentStatus.BrightValueV2 = int(r.Value.(float64))
+				case "temp_value_v2":
+					currentStatus.TempValueV2 = int(r.Value.(float64))
+				case "colour_data_v2":
+					err := json.Unmarshal([]byte(r.Value.(string)), &currentStatus.ColourDataV2)
+					if err != nil {
+						log.Printf("WARNING: Tuya could not unmarshal HSV data from map, %s\n", err.Error())
+					}
+				}
+			}
+			t.tuyaMu.Lock()
+			l.status = currentStatus
+			t.tuyaMu.Unlock()
+			// log.Printf("DEBUG: ... current Status: %v\n", currentStatus)
+			payload, err := json.Marshal(currentStatus)
+			if err != nil {
+				log.Fatalf("ERROR: Tuya could not marshal status info - %s\n", err.Error())
+			}
+			// log.Println("DEBUG: Tuya - sending MQTT update...")
+			t.mqttChan <- mqtt.MessageT{
+				Topic:    mqttPrefix + l.Label + "/status",
+				Qos:      0,
+				Retained: false,
+				Payload:  payload,
+			}
 		}
 	}
 }
@@ -297,54 +350,53 @@ func (t *Tuya) monitorLamps() {
 	everyMinute := time.NewTicker(time.Minute)
 	for {
 		for _, lamp := range t.conf.Lamp {
-			status, err := device.GetDeviceStatus(lamp.DeviceID)
-			if err != nil {
-				log.Printf("WARNING: Tuya GetDeviceStatus failed with %s\n", err.Error())
-			} else {
-				// log.Printf("DEBUG: Tuya device status response Code: %d, Message: %s, Success: %v\n", status.Code, status.Msg, status.Success)
-				if status.Success {
-					var currentStatus lampStatusT
-					for _, r := range status.Result {
-						// log.Printf("DEBUG: ... Code: %s, Value: %v\n", r.Code, r.Value)
-						switch r.Code {
-						case "switch_led":
-							currentStatus.SwitchLED = r.Value.(bool)
-						case "work_mode":
-							currentStatus.WorkMode = r.Value.(string)
-						case "bright_value_v2":
-							currentStatus.BrightValueV2 = int(r.Value.(float64))
-						case "temp_value_v2":
-							currentStatus.TempValueV2 = int(r.Value.(float64))
-						case "colour_data_v2":
-							err := json.Unmarshal([]byte(r.Value.(string)), &currentStatus.ColourDataV2)
-							if err != nil {
-								log.Printf("WARNING: Tuya could not unmarshal HSV data from map, %s\n", err.Error())
-							}
-						}
-					}
-					t.tuyaMu.Lock()
-					lamp.status = currentStatus
-					t.tuyaMu.Unlock()
-					// log.Printf("DEBUG: ... current Status: %v\n", currentStatus)
-					payload, err := json.Marshal(currentStatus)
-					if err != nil {
-						log.Fatalf("ERROR: Tuya could not marshal status info - %s\n", err.Error())
-					}
-					// log.Println("DEBUG: Tuya - sending MQTT update...")
-					t.mqttChan <- mqtt.MessageT{
-						Topic:    mqttPrefix + lamp.Label + "/status",
-						Qos:      0,
-						Retained: false,
-						Payload:  payload,
-					}
-				}
-			}
+			t.getLampStatus(lamp)
 		}
 		select {
 		case <-stopChan:
 			return
 		case <-everyMinute.C:
 			continue
+		}
+	}
+}
+
+func (t *Tuya) getSocketStatus(sock socket) {
+	status, err := device.GetDeviceStatus(sock.DeviceID)
+	if err != nil {
+		log.Printf("WARNING: Tuya GetDeviceStatus failed with %s\n", err.Error())
+	} else {
+		// log.Printf("DEBUG: Tuya device status response Code: %d, Message: %s, Success: %v\n", status.Code, status.Msg, status.Success)
+		if status.Success {
+			var currentStatus socketStatusT
+			for _, r := range status.Result {
+				// log.Printf("DEBUG: ... Code: %s, Value: %v\n", r.Code, r.Value)
+				switch r.Code {
+				case "switch_1":
+					currentStatus.Switch1 = r.Value.(bool)
+				case "countdown_1":
+					currentStatus.Countdown1 = r.Value.(float64)
+				case "relay_status":
+					currentStatus.RelayStatus = r.Value.(string)
+				case "light_mode":
+					currentStatus.LightMode = r.Value.(string)
+				}
+			}
+			t.tuyaMu.Lock()
+			sock.status = currentStatus
+			t.tuyaMu.Unlock()
+			// log.Printf("DEBUG: ... current Status: %v\n", currentStatus)
+			payload, err := json.Marshal(currentStatus)
+			if err != nil {
+				log.Fatalf("ERROR: Tuya could not marshal status info - %s\n", err.Error())
+			}
+			// log.Println("DEBUG: Tuya - sending MQTT update...")
+			t.mqttChan <- mqtt.MessageT{
+				Topic:    mqttPrefix + sock.Label + "/status",
+				Qos:      0,
+				Retained: false,
+				Payload:  payload,
+			}
 		}
 	}
 }
@@ -358,43 +410,7 @@ func (t *Tuya) monitorSockets() {
 	everyMinute := time.NewTicker(time.Minute)
 	for {
 		for _, socket := range t.conf.Socket {
-			status, err := device.GetDeviceStatus(socket.DeviceID)
-			if err != nil {
-				log.Printf("WARNING: Tuya GetDeviceStatus failed with %s\n", err.Error())
-			} else {
-				// log.Printf("DEBUG: Tuya device status response Code: %d, Message: %s, Success: %v\n", status.Code, status.Msg, status.Success)
-				if status.Success {
-					var currentStatus socketStatusT
-					for _, r := range status.Result {
-						// log.Printf("DEBUG: ... Code: %s, Value: %v\n", r.Code, r.Value)
-						switch r.Code {
-						case "switch_1":
-							currentStatus.Switch1 = r.Value.(bool)
-						case "countdown_1":
-							currentStatus.Countdown1 = r.Value.(float64)
-						case "relay_status":
-							currentStatus.RelayStatus = r.Value.(string)
-						case "light_mode":
-							currentStatus.LightMode = r.Value.(string)
-						}
-					}
-					t.tuyaMu.Lock()
-					socket.status = currentStatus
-					t.tuyaMu.Unlock()
-					// log.Printf("DEBUG: ... current Status: %v\n", currentStatus)
-					payload, err := json.Marshal(currentStatus)
-					if err != nil {
-						log.Fatalf("ERROR: Tuya could not marshal status info - %s\n", err.Error())
-					}
-					// log.Println("DEBUG: Tuya - sending MQTT update...")
-					t.mqttChan <- mqtt.MessageT{
-						Topic:    mqttPrefix + socket.Label + "/status",
-						Qos:      0,
-						Retained: false,
-						Payload:  payload,
-					}
-				}
-			}
+			t.getSocketStatus(socket)
 		}
 		select {
 		case <-stopChan:
