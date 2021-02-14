@@ -17,7 +17,7 @@ Integrations = [
 #  "daikin",
 #  "hostchecker",
 #  "influx",
-#  "pimqttgpio",
+  "pimqttgpio",
 #  "scraper",
-  "tuya",
+#  "tuya",
 ]

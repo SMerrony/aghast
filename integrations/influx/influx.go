@@ -124,10 +124,18 @@ func (i *Influx) logger(l loggerT) {
 		case ev := <-ch:
 			switch l.DataType {
 			case "float":
-				fl, err := strconv.ParseFloat(ev.Value.(string), 64)
-				if err != nil {
-					log.Printf("WARNING: Influx logger could not parse float from %v\n", ev.Value.(string))
-					continue
+				var fl float64
+				switch ev.Value.(type) {
+				case float32:
+					fl = float64(ev.Value.(float32))
+				case float64:
+					fl = ev.Value.(float64)
+				case string:
+					fl, err = strconv.ParseFloat(ev.Value.(string), 64)
+					if err != nil {
+						log.Printf("WARNING: Influx logger could not parse float from %v\n", ev.Value.(string))
+						continue
+					}
 				}
 				p := influxdb2.NewPoint(l.Name,
 					map[string]string{
@@ -139,7 +147,17 @@ func (i *Influx) logger(l loggerT) {
 					time.Now())
 				i.writeAPI.WritePoint(p)
 			case "integer":
-				num, err := strconv.Atoi(ev.Value.(string))
+				var num int
+				switch ev.Value.(type) {
+				case int:
+					num = ev.Value.(int)
+				case int32:
+					num = int(ev.Value.(int32))
+				case int64:
+					num = int(ev.Value.(int64))
+				case string:
+					num, err = strconv.Atoi(ev.Value.(string))
+				}
 				if err != nil {
 					log.Printf("WARNING: Influx logger could not parse integer from %v\n", ev.Value.(string))
 					continue
