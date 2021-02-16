@@ -27,13 +27,17 @@ Currently available Integrations...
 | HostChecker | Monitor Device availability  |   Y   | [HostChecker](docs/HostChecker.md) |
 | Influx      | Log Data to InfluxDB         |       | [Influx](docs/Influx.md) |
 | PiMqttGpio  | Capture pi-mqtt-gpio data    |   Y   | [PiMqttGpio](docs/PiMqttGpio.md) |
+| Postgres    | Log Data to PostgreSQL DB    |       | [Postgres](docs/Postgres.md) |
 | Scraper     | Web Scraping                 |   Y   | [Scraper](docs/Scraper.md) |
-| Tuya        | Tuya WiFi lights             |       | [](docs/) |
+| Tuya        | Tuya WiFi lights, ZigBee Sockets |   | [](docs/) |
 
 The Time Integration must be enabled for AGHAST to start, you will also probably need to
 enable Automation and at least one other Integration in order to do anything useful.
 
 If an Integration supports Query, then values from it may be used in Automation Conditions.
+
+The Tuya Integration is a bit of a hack.  But... it can be used to integrated LIDL SmartHome ZigBee 
+(and other ZigBee stuff) if they are first added to the TuyaSmart app.
 
 ## Configuration
 
@@ -59,6 +63,7 @@ Integrations = [
   "hostchecker",
   "influx",
   "pimqttgpio",
+  "postgres",
   "scraper",
   "tuya",
 ]
@@ -86,6 +91,6 @@ The AGHAST server may be started from the command line like this...
 
 The `-configdir` argument is compulsory and must refer to a directory containing the configuration files described above.
 
-## MQTT
-From time-to-time you may wish to purge any retained MQTT messages...
+## MQTT Aide-Memoire
+From time-to-time you may wish to manually purge any retained MQTT messages...
 `mqtt-forget -t '+/#' -f`

@@ -35,6 +35,7 @@ import (
 	"github.com/SMerrony/aghast/integrations/hostchecker"
 	"github.com/SMerrony/aghast/integrations/influx"
 	"github.com/SMerrony/aghast/integrations/pimqttgpio"
+	"github.com/SMerrony/aghast/integrations/postgres"
 	"github.com/SMerrony/aghast/integrations/scraper"
 	"github.com/SMerrony/aghast/integrations/time"
 	"github.com/SMerrony/aghast/integrations/tuya"
@@ -76,6 +77,8 @@ func newIntegration(iName string) {
 		integs[iName] = new(influx.Influx)
 	case "pimqttgpio":
 		integs[iName] = new(pimqttgpio.PiMqttGpio)
+	case "postgres":
+		integs[iName] = new(postgres.Postgres)
 	case "scraper":
 		integs[iName] = new(scraper.Scraper)
 	case "time":

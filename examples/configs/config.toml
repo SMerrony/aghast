@@ -18,6 +18,7 @@ Integrations = [
 #  "hostchecker",
 #  "influx",
   "pimqttgpio",
+  "postgres",
 #  "scraper",
 #  "tuya",
 ]

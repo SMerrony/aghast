@@ -1,0 +1,36 @@
+# Postgres connection details
+PgHost = "localhost"
+PgPort = "5432"        # Use quotes for this
+PgUser = "steve"
+PgPassword = "aghast"  # Use a !!SECRET in production
+PgDatabase = "aghast"
+
+[[Logger]]  
+  Name = "OutsideUnitTemp"      
+  EventName = "Daikin/Inverter/Hall/OutsideTemperature"
+  DataType = "float"                    # Either 'float', 'integer', or 'string'
+  
+[[Logger]]
+  Name = "MusicUnitTemp"       
+  EventName = "Daikin/Inverter/Music Room/Temperature"
+  DataType = "float"
+
+[[Logger]]
+  Name = "MusicRoomActualTemp"
+  EventName = "PiMqttGpio/Sensor/pizero01/gpio/dht22_temperature"
+  DataType = "float"
+
+[[Logger]]
+  Name = "MusicRoomHumidity"
+  EventName = "PiMqttGpio/Sensor/pizero01/gpio/dht22_humidity"
+  DataType = "integer"
+
+[[Logger]]
+  Name = "LivingRoomActualTemp"
+  EventName = "PiMqttGpio/Sensor/pizero02/gpio/dht22_temperature"  
+  DataType = "float"
+
+[[Logger]]
+  Name = "LivingRoomHumidity"
+  EventName = "PiMqttGpio/Sensor/pizero02/gpio/dht22_humidity"  
+  DataType = "integer"
