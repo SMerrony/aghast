@@ -16,7 +16,7 @@
   SensorType     = "dht22_humidity"
   ValueType      = "float" 
   RoundToInteger = true   # Round a float to nearest integer and then handle as integer
-  ForwardAghast  = false  # Do not create an AGHAST Event for each value received   
+  ForwardEvent   = true  # Do not create an AGHAST Event for each value received   
   ForwardMQTT    = true   # Create an AGHAST-sourced MQTT message for each value
 
 [[Sensor]]
@@ -34,5 +34,5 @@
   SensorType     = "dht22_humidity"
   ValueType      = "float" 
   RoundToInteger = true   # Round a float to nearest integer and then handle as integer
-  ForwardAghast  = false  # Do not create an AGHAST Event for each value received   
+  ForwardEvent   = true  # Do not create an AGHAST Event for each value received   
   ForwardMQTT    = true   # Create an AGHAST-sourced MQTT message for each value

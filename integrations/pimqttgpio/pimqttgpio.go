@@ -203,6 +203,8 @@ func (p *PiMqttGpio) monitorSensor(ix int) {
 					p.Sensor[ix].savedFloat = floatVal
 					mqttValue = string(payload)
 				}
+			default:
+				log.Printf("WARNING: PiMqttGpio unexpected Value Type: %s\n", p.Sensor[ix].ValueType)
 			}
 
 			if p.Sensor[ix].ForwardEvent {
