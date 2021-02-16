@@ -42,7 +42,7 @@
             "#c5b0d5"
         ],
         "outputs": 1,
-        "x": 750,
+        "x": 890,
         "y": 1300,
         "wires": [
             []
@@ -2361,6 +2361,339 @@
         ]
     },
     {
+        "id": "70d57739.da2658",
+        "type": "mqtt in",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "aghast/pimqttgpio/MusicRoomTemp",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 180,
+        "y": 1780,
+        "wires": [
+            [
+                "3e75c330.f2897c",
+                "551ac7cf.5c2258"
+            ]
+        ]
+    },
+    {
+        "id": "3e75c330.f2897c",
+        "type": "ui_gauge",
+        "z": "4b791646.563ff",
+        "name": "",
+        "group": "815ce589.0485e8",
+        "order": 1,
+        "width": "3",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Temp.",
+        "label": "C",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "40",
+        "colors": [
+            "#0015b3",
+            "#32e600",
+            "#ca3838"
+        ],
+        "seg1": "15",
+        "seg2": "25",
+        "x": 670,
+        "y": 1760,
+        "wires": []
+    },
+    {
+        "id": "270dfcd4.33d104",
+        "type": "mqtt in",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "aghast/pimqttgpio/MusicRoomHumidity",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 1860,
+        "wires": [
+            [
+                "b9c58941.c1ae98",
+                "ef4df7e1.c56468"
+            ]
+        ]
+    },
+    {
+        "id": "b9c58941.c1ae98",
+        "type": "ui_gauge",
+        "z": "4b791646.563ff",
+        "name": "",
+        "group": "815ce589.0485e8",
+        "order": 2,
+        "width": "3",
+        "height": "2",
+        "gtype": "gage",
+        "title": "R.H.",
+        "label": "%",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#0015b3",
+            "#32e600",
+            "#ca3838"
+        ],
+        "seg1": "40",
+        "seg2": "60",
+        "x": 670,
+        "y": 1840,
+        "wires": []
+    },
+    {
+        "id": "ef4df7e1.c56468",
+        "type": "ui_chart",
+        "z": "4b791646.563ff",
+        "name": "",
+        "group": "815ce589.0485e8",
+        "order": 4,
+        "width": "0",
+        "height": "0",
+        "label": "Rel. Humidity",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "0",
+        "ymax": "100",
+        "removeOlder": "6",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "x": 690,
+        "y": 1880,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "551ac7cf.5c2258",
+        "type": "change",
+        "z": "4b791646.563ff",
+        "name": "Rename 3",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "Music Room Actual",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 690,
+        "y": 1800,
+        "wires": [
+            [
+                "29f3e347.447c9c"
+            ]
+        ]
+    },
+    {
+        "id": "18f434a3.86fedb",
+        "type": "mqtt in",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "aghast/pimqttgpio/StevesOfficeTemp",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 180,
+        "y": 2000,
+        "wires": [
+            [
+                "87f9ea09.867828",
+                "3be25899.d4b328"
+            ]
+        ]
+    },
+    {
+        "id": "87f9ea09.867828",
+        "type": "ui_gauge",
+        "z": "4b791646.563ff",
+        "name": "",
+        "group": "1f364058.48bfb8",
+        "order": 1,
+        "width": "3",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Temp.",
+        "label": "C",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "40",
+        "colors": [
+            "#0015b3",
+            "#32e600",
+            "#ca3838"
+        ],
+        "seg1": "15",
+        "seg2": "25",
+        "x": 670,
+        "y": 1980,
+        "wires": []
+    },
+    {
+        "id": "6d0f6fe4.98ee6",
+        "type": "mqtt in",
+        "z": "4b791646.563ff",
+        "name": "",
+        "topic": "aghast/pimqttgpio/StevesOfficeHumidity",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 2080,
+        "wires": [
+            [
+                "ef6e2ee6.a6684"
+            ]
+        ]
+    },
+    {
+        "id": "409b9de.fa88e64",
+        "type": "ui_gauge",
+        "z": "4b791646.563ff",
+        "name": "",
+        "group": "77cb11f0.9fc15",
+        "order": 2,
+        "width": "3",
+        "height": "2",
+        "gtype": "gage",
+        "title": "R.H.",
+        "label": "%",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#0015b3",
+            "#32e600",
+            "#ca3838"
+        ],
+        "seg1": "40",
+        "seg2": "60",
+        "x": 670,
+        "y": 2060,
+        "wires": []
+    },
+    {
+        "id": "4208cdb.48bc334",
+        "type": "ui_chart",
+        "z": "4b791646.563ff",
+        "name": "",
+        "group": "1f364058.48bfb8",
+        "order": 4,
+        "width": "0",
+        "height": "0",
+        "label": "Rel. Humidity",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "0",
+        "ymax": "100",
+        "removeOlder": "1",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "86400",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "x": 690,
+        "y": 2100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ef6e2ee6.a6684",
+        "type": "rbe",
+        "z": "4b791646.563ff",
+        "name": "RemoveRogues",
+        "func": "narrowband",
+        "gap": "20%",
+        "start": "",
+        "inout": "out",
+        "property": "payload",
+        "x": 460,
+        "y": 2080,
+        "wires": [
+            [
+                "409b9de.fa88e64",
+                "4208cdb.48bc334"
+            ]
+        ]
+    },
+    {
+        "id": "3be25899.d4b328",
+        "type": "change",
+        "z": "4b791646.563ff",
+        "name": "Rename 3",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "Living Room Actual",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 690,
+        "y": 2020,
+        "wires": [
+            [
+                "29f3e347.447c9c"
+            ]
+        ]
+    },
+    {
         "id": "a9b28f4d.fcc1d",
         "type": "ui_group",
         "name": "GF Charts",
@@ -2374,7 +2707,7 @@
         "id": "fb4e4d64.1c3728",
         "type": "mqtt-broker",
         "name": "Local MQTT Broker",
-        "broker": "mediaserver01",
+        "broker": "localhost",
         "port": "1883",
         "clientid": "",
         "usetls": false,
@@ -2442,11 +2775,40 @@
         "collapse": false
     },
     {
+        "id": "815ce589.0485e8",
+        "type": "ui_group",
+        "name": "Music Room Monitor",
+        "tab": "c3756570.b70f2",
+        "order": 7,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "77cb11f0.9fc15",
+        "type": "ui_group",
+        "name": "PiZero02",
+        "tab": "83606bf6.b32388",
+        "order": 4,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
         "id": "c3756570.b70f2",
         "type": "ui_tab",
         "name": "Ground Floor HVAC",
         "icon": "dashboard",
-        "order": 1,
+        "order": 2,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "83606bf6.b32388",
+        "type": "ui_tab",
+        "name": "Steve",
+        "icon": "dashboard",
+        "order": 8,
         "disabled": false,
         "hidden": false
     }
