@@ -27,10 +27,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/BurntSushi/toml"
 	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
+	"github.com/pelletier/go-toml"
 )
 
 const (
@@ -72,7 +72,7 @@ func (p *PiMqttGpio) LoadConfig(confdir string) error {
 		log.Fatalf("ERROR: Could not read PiMqttGpio config due to %s\n", err.Error())
 	}
 	// conf := confT{}
-	err = toml.Unmarshal(confBytes, &p)
+	err = toml.Unmarshal(confBytes, p)
 	if err != nil {
 		log.Fatalf("ERROR: Could not load PiMqttGpio config due to %s\n", err.Error())
 	}

@@ -26,12 +26,12 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/BurntSushi/toml"
 	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pelletier/go-toml"
 )
 
 const (

@@ -27,10 +27,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/BurntSushi/toml"
 	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
+	"github.com/pelletier/go-toml"
 )
 
 // The HostChecker type encapsulates the HostChecker Integration
@@ -67,7 +67,7 @@ func (h *HostChecker) LoadConfig(confdir string) error {
 	if err != nil {
 		log.Fatalf("ERROR: Could not read HostChecker config due to %s\n", err.Error())
 	}
-	err = toml.Unmarshal(confBytes, &h)
+	err = toml.Unmarshal(confBytes, h)
 	if err != nil {
 		log.Fatalf("ERROR: Could not load HostChecker config due to %s\n", err.Error())
 	}

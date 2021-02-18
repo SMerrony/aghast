@@ -5,15 +5,36 @@ PgUser = "steve"
 PgPassword = "aghast"  # Use a !!SECRET in production
 PgDatabase = "aghast"
 
+# Outside
+
 [[Logger]]  
   Name = "OutsideUnitTemp"      
   EventName = "Daikin/Inverter/Hall/OutsideTemperature"
   DataType = "float"                    # Either 'float', 'integer', or 'string'
+
+# Ground floor Units
+
+[[Logger]]
+  Name = "DininRoomgUnitTemp"         
+  EventName = "Daikin/Inverter/Dining Room/Temperature"
+  DataType = "float"
   
 [[Logger]]
-  Name = "MusicUnitTemp"       
+  Name = "HallUnitTemp"   
+  EventName = "Daikin/Inverter/Hall/Temperature"
+  DataType = "float"
+  
+[[Logger]]
+  Name = "LivingRoomUnitTemp"      
+  EventName = "Daikin/Inverter/Living Room/Temperature"
+  DataType = "float"
+  
+[[Logger]]
+  Name = "MusicRoomUnitTemp"       
   EventName = "Daikin/Inverter/Music Room/Temperature"
   DataType = "float"
+
+# Ground floor monitors
 
 [[Logger]]
   Name = "MusicRoomActualTemp"
@@ -34,3 +55,26 @@ PgDatabase = "aghast"
   Name = "LivingRoomHumidity"
   EventName = "PiMqttGpio/Sensor/pizero02/gpio/dht22_humidity"  
   DataType = "integer"
+
+# First floor Units
+
+[[Logger]]
+  Name = "MasterBedUnitTemp"     
+  EventName = "Daikin/Inverter/Master Bedroom/Temperature"
+  DataType = "float"
+
+[[Logger]]
+  Name = "PaulsStudioUnitTemp"     
+  EventName = "Daikin/Inverter/Paul's Studio/Temperature"
+  DataType = "float"
+
+[[Logger]]
+  Name = "StevesOfficeUnitTemp"     
+  EventName = "Daikin/Inverter/Steve's Office/Temperature"
+  DataType = "float"
+
+[[Logger]]
+  Name = "SpareRoomUnitTemp"     
+  EventName = "Daikin/Inverter/Spare Bedroom/Temperature"
+  DataType = "float"
+ 
