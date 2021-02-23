@@ -28,6 +28,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/pelletier/go-toml"
@@ -47,10 +48,12 @@ const (
 
 // The Automation type encapsulates Automation
 type Automation struct {
-	automations []automationT
-	evChan      chan events.EventT
-	mq          mqtt.MQTT
-	stopChans   map[string]chan bool
+	confDir           string
+	automations       []automationT
+	automationsByName map[string]int
+	evChan            chan events.EventT
+	mq                mqtt.MQTT
+	stopChans         map[string]chan bool
 }
 
 type eventTypeT int
@@ -65,6 +68,7 @@ type automationT struct {
 	condition        conditionT
 	actions          map[string]actionT
 	sortedActionKeys []string
+	confFilename     string
 }
 
 const (
@@ -94,16 +98,18 @@ type actionT struct {
 
 // LoadConfig loads and stores the configuration for this Integration
 func (a *Automation) LoadConfig(confDir string) error {
+	a.confDir = confDir
 	confs, err := ioutil.ReadDir(confDir + automationsSubDir)
 	if err != nil {
 		log.Printf("ERROR: Could not read 'automations' config directory, %v\n", err)
 		return err
 	}
-	for _, conf := range confs {
-		log.Printf("DEBUG: Automation manager loading config: %s\n", conf.Name())
+	a.automationsByName = make(map[string]int)
+	for _, config := range confs {
+		log.Printf("DEBUG: Automation manager loading config: %s\n", config.Name())
 		var newAuto automationT
 		newAuto.actions = make(map[string]actionT)
-		conf, err := toml.LoadFile(confDir + automationsSubDir + "/" + conf.Name())
+		conf, err := toml.LoadFile(confDir + automationsSubDir + "/" + config.Name())
 		if err != nil {
 			log.Println("ERROR: Could not load Automation configuration ", err.Error())
 			return err
@@ -111,6 +117,7 @@ func (a *Automation) LoadConfig(confDir string) error {
 		newAuto.Name = conf.Get("Name").(string)
 		newAuto.Description = conf.Get("Description").(string)
 		newAuto.Enabled = conf.Get("Enabled").(bool)
+		newAuto.confFilename = config.Name()
 		log.Printf("DEBUG: ... %s, %s\n", newAuto.Name, newAuto.Description)
 		if conf.Get("Event.Name") != nil {
 			newAuto.eventType = integrationEvent
@@ -172,6 +179,9 @@ func (a *Automation) LoadConfig(confDir string) error {
 		sort.Strings(newAuto.sortedActionKeys)
 		a.automations = append(a.automations, newAuto)
 		log.Printf("DEBUG: ... %v\n", newAuto)
+	}
+	for ix, au := range a.automations {
+		a.automationsByName[au.Name] = ix
 	}
 	return nil
 }
@@ -369,6 +379,15 @@ func (a *Automation) monitorMqtt(stopChan chan bool) {
 			}
 			action := topicSlice[3]
 			switch action {
+			case "changeEnabled":
+				aname := string(msg.Payload.([]uint8))
+				log.Printf("DEBUG: Automation manager got changeEnabled msg %v %s\n", msg, aname)
+				newEnabled := !a.automations[a.automationsByName[aname]].Enabled
+				a.automations[a.automationsByName[aname]].Enabled = newEnabled
+				err := config.ChangeEnabled(a.confDir+automationsSubDir+"/"+a.automations[a.automationsByName[aname]].confFilename, newEnabled)
+				if err != nil {
+					log.Printf("WARNING: Automation manager could not rewrite Enabled line in config for: %s\n", a.automations[a.automationsByName[aname]].confFilename)
+				}
 			case "list":
 				type AutoListElementT struct {
 					Name, Description string

@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
@@ -192,4 +193,27 @@ func PreprocessTOML(configDir string, fileName string) (preprocessed []byte, e e
 	}
 
 	// return preprocessed, nil
+}
+
+// ChangeEnabled rewrites an Automation config with the first "Enabled = <bool>" changed to
+// the supplied state.
+func ChangeEnabled(filepath string, newEnabled bool) (err error) {
+	conf, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return err
+	}
+	lines := strings.Split(string(conf), "\n")
+	for i, line := range lines {
+		if strings.HasPrefix(line, "Enabled") {
+			if newEnabled {
+				lines[i] = "Enabled = true"
+			} else {
+				lines[i] = "Enabled = false"
+			}
+			break
+		}
+	}
+	output := strings.Join(lines, "\n")
+	err = ioutil.WriteFile(filepath, []byte(output), 0644)
+	return err
 }
