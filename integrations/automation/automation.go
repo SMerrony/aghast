@@ -236,6 +236,7 @@ func (a *Automation) waitForIntegrationEvent(stopChan chan bool, sid int, auto a
 		log.Printf("DEBUG: Automation Manager waiting for Event %s\n", auto.Event.Name)
 		select {
 		case <-stopChan:
+			events.Unsubscribe(sid, auto.Event.Name)
 			log.Printf("INFO: Automation %s stopping", auto.Name)
 			return
 		case <-ch:
