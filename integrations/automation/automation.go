@@ -96,7 +96,8 @@ type actionT struct {
 	settings    []interface{}
 }
 
-// LoadConfig loads and stores the configuration for this Integration
+// LoadConfig loads and stores the configuration for this Integration.
+// All Automations are loaded, whether they are enabled or not.
 func (a *Automation) LoadConfig(confDir string) error {
 	a.confDir = confDir
 	confs, err := ioutil.ReadDir(confDir + automationsSubDir)
@@ -197,14 +198,13 @@ func (a *Automation) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	a.evChan = evChan
 	a.mq = mq
 	a.stopChans = make(map[string]chan bool)
-
 	// for each automation, subscribe to its Event
-	sid := events.GetSubscriberID(subscribeName)
 	for _, auto := range a.automations {
 		if auto.Enabled {
 			sc := make(chan bool)
 			switch auto.eventType {
 			case integrationEvent:
+				sid := events.GetSubscriberID(subscribeName)
 				go a.waitForIntegrationEvent(sc, sid, auto)
 			case mqttEvent:
 				go a.waitForMqttEvent(sc, auto)
@@ -374,19 +374,35 @@ func (a *Automation) monitorMqtt(stopChan chan bool) {
 			payload := string(msg.Payload.([]uint8))
 			topicSlice := strings.Split(msg.Topic, "/")
 			if len(topicSlice) < 4 {
-				log.Printf("WARNING: Automation manager got invalid MQTT request on topic: %s\n", payload)
+				log.Printf("WARNING: Automation Manager got invalid MQTT request on topic: %s\n", payload)
 				continue
 			}
 			action := topicSlice[3]
 			switch action {
 			case "changeEnabled":
 				aname := string(msg.Payload.([]uint8))
-				log.Printf("DEBUG: Automation manager got changeEnabled msg %v %s\n", msg, aname)
+				// log.Printf("DEBUG: Automation manager got changeEnabled msg %v %s\n", msg, aname)
 				newEnabled := !a.automations[a.automationsByName[aname]].Enabled
 				a.automations[a.automationsByName[aname]].Enabled = newEnabled
 				err := config.ChangeEnabled(a.confDir+automationsSubDir+"/"+a.automations[a.automationsByName[aname]].confFilename, newEnabled)
 				if err != nil {
-					log.Printf("WARNING: Automation manager could not rewrite Enabled line in config for: %s\n", a.automations[a.automationsByName[aname]].confFilename)
+					log.Printf("WARNING: Automation Manager could not rewrite Enabled line in config for: %s\n", a.automations[a.automationsByName[aname]].confFilename)
+				}
+				if newEnabled {
+					sc := make(chan bool)
+					switch a.automations[a.automationsByName[aname]].eventType {
+					case integrationEvent:
+						sid := events.GetSubscriberID(subscribeName)
+						go a.waitForIntegrationEvent(sc, sid, a.automations[a.automationsByName[aname]])
+					case mqttEvent:
+						go a.waitForMqttEvent(sc, a.automations[a.automationsByName[aname]])
+					}
+					a.stopChans[a.automations[a.automationsByName[aname]].Name] = sc
+				} else {
+					log.Printf("INFO: Automation Manager Stopping newly disabled Automation %s\n", aname)
+					a.stopChans[aname] <- true
+					delete(a.stopChans, aname)
+					log.Printf("INFO: Automation Manager Stopped newly disabled Automation %s\n", aname)
 				}
 			case "list":
 				type AutoListElementT struct {

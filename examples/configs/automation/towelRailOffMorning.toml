@@ -1,6 +1,6 @@
 Name = "TowelRailOffMorning"
 Description = "Turn Towel-Rail off for overnight off-peak"
-Enabled = true
+Enabled = false
 
 [Event]
   Name = "Time/Events/TimedEvent/NightOffPeakEnds"
