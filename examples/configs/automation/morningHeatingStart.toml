@@ -8,7 +8,7 @@ Enabled = true
 [Action.1]
   Integration = "Daikin"
   DeviceLabel = "Hall"
-  Execute = [ { Control = "temperature", Setting = 18.0 },
+  Execute = [ { Control = "temperature", Setting = 24.0 },
               { Control = "mode",        Setting = "Heat" },
               { Control = "power",       Setting = "on" } ]
 
@@ -22,7 +22,7 @@ Enabled = true
 [Action.3]
   Integration = "Daikin"
   DeviceLabel = "Music Room"
-  Execute = [ { Control = "temperature", Setting = 16.0 },
+  Execute = [ { Control = "temperature", Setting = 22.0 },
               { Control = "mode",        Setting = "Heat" },
               { Control = "power",       Setting = "on" } ]  
 

@@ -49,6 +49,7 @@ const (
 	maxUnits           = 20
 	scanTimeout        = 10 * time.Second
 	inverterReqTimeout = 5 * time.Second
+	changeUpdatePause  = time.Second
 )
 
 // The Daikin type encapsulates the 'Daikin' HVAC Integration.
@@ -346,8 +347,28 @@ func (d *Daikin) monitorClients() {
 			resp.Body.Close()
 
 			// refresh our copy the unit data
+			// 1st force status update so GUI responds nicely
+			time.Sleep(changeUpdatePause)
 			qci, err := d.requestControlInfo(unitMAC)
 			if err == nil {
+				var pubCi ControlInfoMsgT
+				pubCi.Power = fmt.Sprintf("%v", qci["pow"].boolValue)
+				pubCi.Mode = int(qci["mode"].intValue)
+				pubCi.Stemp = qci["stemp"].floatValue
+				pubCi.Frate = qci["f_rate"].stringValue
+				pubCi.Fdir = int(qci["f_dir"].intValue)
+				pubCi.LastUpdate = time.Now().Format("15:04:05")
+				payload, err := json.Marshal(pubCi)
+				if err != nil {
+					panic(err)
+				}
+				d.mqttChan <- mqtt.MessageT{
+					Topic:    mqttPrefix + topicSlice[3] + "/controlinfo",
+					Qos:      0,
+					Retained: true,
+					Payload:  payload,
+				}
+
 				inv.controlInfo = qci
 			}
 		}
@@ -411,6 +432,10 @@ func (d *Daikin) monitorUnits() {
 					payload, err := json.Marshal(pubCi)
 					if err != nil {
 						panic(err)
+					}
+					d.evChan <- events.EventT{
+						Name:  "Daikin/Inverter/" + unit.Label + "/stemp",
+						Value: fmt.Sprintf("%.1f", ci["stemp"].floatValue),
 					}
 					d.mqttChan <- mqtt.MessageT{
 						Topic:    mqttPrefix + unit.Label + "/controlinfo",

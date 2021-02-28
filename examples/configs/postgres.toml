@@ -9,10 +9,10 @@ PgDatabase = "aghast"
 
 [[Logger]]  
   Name = "OutsideUnitTemp"      
-  EventName = "Daikin/Inverter/Hall/OutsideTemperature"
+  EventName = "Daikin/Inverter/Steve's Office/OutsideTemperature"
   DataType = "float"                    # Either 'float', 'integer', or 'string'
 
-# Ground floor Units
+# Ground floor Unit Temperatures
 
 [[Logger]]
   Name = "DininRoomgUnitTemp"         
@@ -32,6 +32,28 @@ PgDatabase = "aghast"
 [[Logger]]
   Name = "MusicRoomUnitTemp"       
   EventName = "Daikin/Inverter/Music Room/Temperature"
+  DataType = "float"
+
+# Ground floor Set Temperatures
+
+[[Logger]]
+  Name = "DiningRoomSetTemp"         
+  EventName = "Daikin/Inverter/Dining Room/stemp"
+  DataType = "float"
+  
+[[Logger]]
+  Name = "HallSetTemp"   
+  EventName = "Daikin/Inverter/Hall/stemp"
+  DataType = "float"
+  
+[[Logger]]
+  Name = "LivingRoomSetTemp"      
+  EventName = "Daikin/Inverter/Living Room/stemp"
+  DataType = "float"
+  
+[[Logger]]
+  Name = "MusicRoomSetTemp"       
+  EventName = "Daikin/Inverter/Music Room/stemp"
   DataType = "float"
 
 # Ground floor monitors
