@@ -53,9 +53,13 @@ type MessageT struct {
 	Payload  interface{}
 }
 
-func (m *MQTT) Start(broker string, port int, clientID string) chan MessageT {
+func (m *MQTT) Start(broker string, port int, username string, password string, clientID string) chan MessageT {
 	m.options = mqtt.NewClientOptions()
 	m.options.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
+	if username != "" {
+		m.options.SetUsername(username)
+		m.options.SetPassword(password)
+	}
 	m.options.SetClientID(clientID)
 
 	m.connectHandler = func(client mqtt.Client) {

@@ -48,6 +48,8 @@ type MainConfigT struct {
 	Longitude, Latitude float64
 	MqttBroker          string
 	MqttPort            int
+	MqttUsername        string
+	MqttPassword        string
 	MqttClientID        string
 	Integrations        []string
 	ControlPort         int
