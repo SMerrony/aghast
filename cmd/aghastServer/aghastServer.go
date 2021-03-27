@@ -53,7 +53,7 @@ func main() {
 	}
 
 	mq := mqtt.MQTT{}
-	mqttChan := mq.Start(conf.MqttBroker, conf.MqttPort, conf.MqttClientID)
+	mqttChan := mq.Start(conf.MqttBroker, conf.MqttPort, conf.MqttUsername, conf.MqttPassword, conf.MqttClientID)
 
 	// start the event manager - this should happen before Integrations are started
 	eventChan := events.StartEventManager(conf.LogEvents)

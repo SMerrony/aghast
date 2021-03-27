@@ -4,6 +4,8 @@ Postcode = "!!SECRET(postcode)"
 MqttBroker = "!!CONSTANT(mqttBroker)"  # Hostname or IP of MQTT Broker
 MqttPort = 1883               # MQTT Broker port
 MqttClientID = "aghast-DEV"   # MQTT Client ID
+MqttUsername = "!!CONSTANT(mqttUsername)"
+MqttPassword = "!!CONSTANT(mqttPassword)"
 
 LogEvents = true              # A LOT of stuff will be logged if this is true!
 
