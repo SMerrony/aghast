@@ -1,0 +1,12 @@
+Name = "SocketTest"
+Description = "Test Zigbee2MQTT"
+Enabled = false
+
+[Event]
+  Name = "Time/Ticker/SystemTicker/Minute"
+
+[Action.1]
+  Integration = "Zigbee2MQTT"
+  DeviceLabel = "Office_Socket"
+  Execute = [ { Control = "state", Setting = "TOGGLE" } ]
+

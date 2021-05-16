@@ -4,7 +4,7 @@
 [[Scrape]]
   Name = "BrotherA3"
   URL = "http://192.168.1.17/general/status.html"
-  Interval = 30               # Every hour
+  Interval = 3600               # Every hour
   Selector = ".tonerremain"   # CSS Selector to find
   Attribute = "height"        # Attribute whose value we want
   Suffix = "px"               # this will be removed from published values
@@ -15,7 +15,7 @@
 # # Scrape the Epson XP-530 web interface
 [[Scrape]]
   Name = "EpsonInkjet"
-  Interval = 7200
+  Interval = 3600
   URL = "http://192.168.1.30/PRESENTATION/HTML/TOP/PRTINFO.HTML"
   Selector = ".tank img"
   Attribute = "height"

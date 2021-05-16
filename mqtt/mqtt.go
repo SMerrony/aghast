@@ -72,11 +72,6 @@ func (m *MQTT) Start(broker string, port int, username string, password string, 
 	}
 	m.options.OnConnectionLost = m.connLostHander
 
-	// m.pubHandler = func(client mqtt.Client, msg mqtt.Message) {
-	// 	log.Printf("DEBUG: Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
-	// }
-	// m.options.SetDefaultPublishHandler(m.pubHandler)
-
 	m.client = mqtt.NewClient(m.options)
 	if token := m.client.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
@@ -101,17 +96,7 @@ func (m *MQTT) Start(broker string, port int, username string, password string, 
 func (m *MQTT) publishViaMQTT() {
 	for {
 		msg := <-m.PublishChan
-		// log.Printf("DEBUG: PublishViaMQTT got msg to forward for topic: %s, Payload: %v\n", msg.Topic, msg.Payload)
-		// // check we already subscribed?
-		// if _, subbed := m.subscribedTopics[msg.Topic]; !subbed {
-		// 	token := m.client.Subscribe(msg.Topic, 1, nil)
-		// 	token.Wait()
-		// 	log.Printf("DEBUG: MQTT - Subbed to topic: %s\n", msg.Topic)
-		// 	m.subscribedTopics[msg.Topic] = true
-		// }
 		m.client.Publish(msg.Topic, msg.Qos, msg.Retained, msg.Payload)
-		// token.Wait()
-		// log.Println("DEBUG: ... forwarded")
 	}
 }
 

@@ -25,3 +25,10 @@ Enabled = true
               { Control = "mode",        Setting = "Heat" },
               { Control = "fan",         Setting = "3" },
               { Control = "power",       Setting = "on" } ]
+
+[Action.4]
+  Integration = "Daikin"
+  DeviceLabel = "Dining Room"
+  Execute = [ { Control = "temperature", Setting = 18.0 },
+              { Control = "mode",        Setting = "Heat" },
+              { Control = "power",       Setting = "on" } ]

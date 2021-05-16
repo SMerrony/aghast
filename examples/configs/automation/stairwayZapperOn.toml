@@ -1,0 +1,11 @@
+Name = "StairwayZapperOn"
+Description = "Turn zapper on at night-time off-peak start"
+Enabled = true
+
+[Event]
+  Name = "Time/Events/TimedEvent/NightOffPeakStarts"
+
+[Action.1]
+  Integration = "Zigbee2MQTT"
+  DeviceLabel = "Stairway_Socket"
+  Execute = [ { Control = "state", Setting = "ON" } ]

@@ -21,18 +21,6 @@ Latitude = "!!SECRET(latitude)"   # Get latitude value from secrets.toml
   Time = "14:20:00"
 
 [[Event]]
-  Name = "Test1"
-  Time = "12:27:00"
-
-[[Event]]
-  Name = "Test2"
-  Time = "16:54:00"
-
-# [[Event]]
-# Name = "TenBeforeWork"
-# Time = "16:39:00"
-
-[[Event]]
   Name = "MorningHeatingOn"
   Time = "06:25:00"          # 25mins before off-peak ends
 

@@ -7,6 +7,6 @@ Enabled = true
 #  Name = "Time/Ticker/SystemTicker/Minute"
 
 [Action.1]
-  Integration = "Tuya"
-  DeviceLabel = "Towel Rail Socket"
-  Execute = [ { Control = "power", Setting = "on" } ]
+  Integration = "Zigbee2MQTT"
+  DeviceLabel = "Towel_Rail"
+  Execute = [ { Control = "state", Setting = "ON" } ]

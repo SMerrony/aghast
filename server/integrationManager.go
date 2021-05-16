@@ -39,6 +39,7 @@ import (
 	"github.com/SMerrony/aghast/integrations/scraper"
 	"github.com/SMerrony/aghast/integrations/time"
 	"github.com/SMerrony/aghast/integrations/tuya"
+	"github.com/SMerrony/aghast/integrations/zigbee2mqtt"
 	"github.com/SMerrony/aghast/mqtt"
 )
 
@@ -85,6 +86,8 @@ func newIntegration(iName string) {
 		integs[iName] = new(time.Time)
 	case "tuya":
 		integs[iName] = new(tuya.Tuya)
+	case "zigbee2mqtt":
+		integs[iName] = new(zigbee2mqtt.Zigbee2MQTT)
 	default:
 		log.Fatalf("ERROR: Integration '%s' is not known\n", iName)
 	}

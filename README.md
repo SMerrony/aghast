@@ -30,6 +30,7 @@ Currently available Integrations...
 | Postgres    | Log Data to PostgreSQL DB    |       | [Postgres](docs/Postgres.md) |
 | Scraper     | Web Scraping                 |   Y   | [Scraper](docs/Scraper.md) |
 | Tuya        | Tuya WiFi lights, ZigBee Sockets |   | [](docs/) |
+| Zigbee2MQTT | Zigbee2MQTT sockets...       |       | [](docs/) |
 
 The Time Integration must be enabled for AGHAST to start, you will also probably need to
 enable Automation and at least one other Integration in order to do anything useful.
@@ -66,6 +67,7 @@ Integrations = [
   "postgres",
   "scraper",
   "tuya",
+  "zigbee2mqtt",
 ]
 ```
 Every Integration **must** have an associated `<Integration>.toml` configuration file or `<Integration>` subdirectory in the same directory,

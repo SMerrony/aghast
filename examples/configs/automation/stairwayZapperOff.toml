@@ -1,0 +1,12 @@
+Name = "StairwayZapperOff"
+Description = "Turn zapper off at sunrise"
+Enabled = true
+
+[Event]
+  Name = "Time/Events/TimedEvent/Sunrise"
+
+[Action.1]
+  Integration = "Zigbee2MQTT"
+  DeviceLabel = "Stairway_Socket"
+  Execute = [ { Control = "state", Setting = "OFF" } ]
+
