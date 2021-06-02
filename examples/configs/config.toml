@@ -16,12 +16,12 @@ Integrations = [
   "time",         # the Time integration MUST be enabled
   "automation",
 #  "datalogger",
-#  "daikin",
+  "daikin",
 #  "hostchecker",
 #  "influx",
 #  "pimqttgpio",
 #  "postgres",
 #  "scraper",
 #  "tuya",
-  "zigbee2mqtt",
+#  "zigbee2mqtt",
 ]

@@ -804,7 +804,7 @@ func parseKnownInfo(body []byte, im infoMap) (e error) {
 				}
 
 			case floatT:
-				if len(elements[1]) < 3 && elements[1][0] == '-' {
+				if len(elements[1]) < 3 && (elements[1][0] == '-' || elements[1][0] == 'M') {
 					info.floatValue = 0.0
 					info.valueUnavailable = true
 				} else {
