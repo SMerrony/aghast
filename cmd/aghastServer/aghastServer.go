@@ -53,15 +53,15 @@ func main() {
 	}
 
 	mq := mqtt.MQTT{}
-	mqttChan := mq.Start(conf.MqttBroker, conf.MqttPort, conf.MqttUsername, conf.MqttPassword, conf.MqttClientID)
+	mqttChan := mq.Start(conf.MqttBroker, conf.MqttPort, conf.MqttUsername, conf.MqttPassword, conf.MqttClientID, conf.MqttBaseTopic)
 
 	// start the event manager - this should happen before Integrations are started
 	eventChan := events.StartEventManager(conf.LogEvents)
 
 	server.StartIntegrations(conf, eventChan, mq)
 
-	mqttChan <- mqtt.MessageT{
-		Topic:    "aghast/status",
+	mqttChan <- mqtt.AghastMsgT{
+		Subtopic: "/status",
 		Qos:      0,
 		Retained: false,
 		Payload:  "Started",

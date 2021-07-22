@@ -35,7 +35,7 @@ import (
 const (
 	configFilename    = "/zigbee2mqtt.toml"
 	subscriberName    = "Z2M"
-	mqttPrefix        = "aghast/z2m/"
+	mqttPrefix        = "/z2m/"
 	changeUpdatePause = 500 * time.Millisecond // wait between operation and requery
 )
 
@@ -43,7 +43,7 @@ const (
 type Zigbee2MQTT struct {
 	conf      confT
 	evChan    chan events.EventT
-	mqttChan  chan mqtt.MessageT
+	mqttChan  chan mqtt.GeneralMsgT
 	stopChans []chan bool // used for stopping Goroutines
 	mq        mqtt.MQTT
 	z2mMu     sync.RWMutex
@@ -97,7 +97,7 @@ func (z *Zigbee2MQTT) ProvidesDeviceTypes() []string {
 // Start launches the Integration, LoadConfig() should have been called beforehand.
 func (z *Zigbee2MQTT) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	z.evChan = evChan
-	z.mqttChan = mq.PublishChan
+	z.mqttChan = mq.ThirdPartyChan
 	z.mq = mq
 
 	//go z.monitorClients()
@@ -130,14 +130,14 @@ func (z *Zigbee2MQTT) querySockets() {
 	stopChan := z.stopChans[sc]
 	z.z2mMu.RUnlock()
 	everyMinute := time.NewTicker(time.Minute)
-	var req mqtt.MessageT
+	var req mqtt.GeneralMsgT
 	for {
 		for _, socket := range z.conf.Socket {
 			req.Topic = z.conf.TopicRoot + "/" + socket.FriendlyName + "/get"
 			req.Payload = "{\"state\": \"\"}"
 			req.Qos = 0
 			req.Retained = false
-			z.mq.PublishChan <- req
+			z.mqttChan <- req
 		}
 		select {
 		case <-stopChan:
@@ -212,12 +212,12 @@ func (z *Zigbee2MQTT) monitorActions() {
 				control := strings.Split(ev.Name, "/")[events.EvControl]
 				switch control {
 				case "state":
-					var req mqtt.MessageT
+					var req mqtt.GeneralMsgT
 					req.Topic = z.conf.TopicRoot + "/" + z.conf.Socket[ix].FriendlyName + "/set/state"
 					req.Payload = ev.Value.(string)
 					req.Qos = 0
 					req.Retained = false
-					z.mq.PublishChan <- req
+					z.mqttChan <- req
 				default:
 					log.Printf("WARNING: Zigbee2MQTT Action got unknown control <%s>\n", control)
 				}

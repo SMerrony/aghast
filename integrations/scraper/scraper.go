@@ -36,7 +36,7 @@ import (
 
 const (
 	configFilename = "/scraper.toml"
-	mqttPrefix     = "aghast/scraper/"
+	mqttPrefix     = "/scraper/"
 	subscriberName = "Scraper"
 )
 
@@ -179,8 +179,8 @@ func (s *Scraper) runScraper(scr scraperT) {
 				t := mqttPrefix + scr.Name + "/" + scr.Subtopics[scr.Indices[ix]]
 				s.mutex.Unlock()
 				// log.Printf("DEBUG: ... would publish %s to topic %s\n", a, t)
-				s.mq.PublishChan <- mqtt.MessageT{
-					Topic:    t,
+				s.mq.PublishChan <- mqtt.AghastMsgT{
+					Subtopic: t,
 					Qos:      0,
 					Retained: true,
 					Payload:  a,

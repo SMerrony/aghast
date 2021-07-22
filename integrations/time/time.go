@@ -48,6 +48,7 @@ const (
 type Time struct {
 	timeMu              sync.RWMutex
 	evChan              chan events.EventT
+	mq                  mqtt.MQTT
 	Latitude, Longitude float64
 	Alert               []timeEventT            `toml:"Event"`
 	alertsByTime        map[string][]timeEventT // indexed by "hh:mm:ss"
@@ -146,6 +147,7 @@ func (t *Time) ProvidesDeviceTypes() []string {
 // Start any services this Integration provides.
 func (t *Time) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	t.evChan = evChan
+	t.mq = mq
 	go t.tickers()
 	go t.timeEvents()
 }
@@ -185,6 +187,12 @@ func (t *Time) timeEvents() {
 						Name:  integName + "/" + eventType + "/TimedEvent/" + te.Name,
 						Value: te.Hhmmss, // why not? :-)
 					}
+					t.mq.PublishChan <- mqtt.AghastMsgT{
+						Subtopic: "/time/events/" + te.Name,
+						Qos:      0,
+						Retained: false,
+						Payload:  "{\"event\": \"" + te.Name + "\"}",
+					}
 				}
 			}
 		}
@@ -206,18 +214,26 @@ func (t *Time) tickers() {
 			return
 		case tick := <-secs.C:
 			t.evChan <- events.EventT{Name: integName + "/" + tickerType + "/" + tickerDev + "/" + "Second", Value: tick.Second()}
+			sec := strconv.Itoa(tick.Second())
+			t.mq.PublishChan <- mqtt.AghastMsgT{Subtopic: "/time/tickers/seconds", Qos: 0, Retained: false, Payload: "{\"second\": " + sec + "}"}
 			// new minute?
 			if tick.Minute() != lastMinute {
-				events.DumpSubs()
+				// events.DumpSubs()
 				t.evChan <- events.EventT{Name: integName + "/" + tickerType + "/" + tickerDev + "/" + "Minute", Value: tick.Minute()}
+				minute := strconv.Itoa(tick.Minute())
+				t.mq.PublishChan <- mqtt.AghastMsgT{Subtopic: "/time/tickers/minutes", Qos: 0, Retained: false, Payload: "{\"minute\": " + minute + "}"}
 				lastMinute = tick.Minute()
 				// new hour?
 				if tick.Hour() != lastHour {
 					t.evChan <- events.EventT{Name: integName + "/" + tickerType + "/" + tickerDev + "/" + "Hour", Value: tick.Hour()}
+					hour := strconv.Itoa(tick.Hour())
+					t.mq.PublishChan <- mqtt.AghastMsgT{Subtopic: "/time/tickers/hours", Qos: 0, Retained: false, Payload: "{\"hour\": " + hour + "}"}
 					lastHour = tick.Hour()
 					// new day?
 					if tick.Day() != lastDay {
 						t.evChan <- events.EventT{Name: integName + "/" + tickerType + "/" + tickerDev + "/" + "Day", Value: tick.Day()}
+						day := strconv.Itoa(tick.Day())
+						t.mq.PublishChan <- mqtt.AghastMsgT{Subtopic: "/time/tickers/days", Qos: 0, Retained: false, Payload: "{\"day\": " + day + "}"}
 						lastDay = tick.Day()
 					}
 				}

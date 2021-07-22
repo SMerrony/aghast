@@ -50,6 +50,7 @@ Postcode = "!!SECRET(postcode)"
 MqttBroker = "!!CONSTANT(mqttBroker)"  # Hostname or IP of MQTT Broker
 MqttPort = 1883               # MQTT Broker port
 MqttClientID = "aghast"       # MQTT Client ID
+MqttBaseTopic = "aghast"      # First element of topic for all messages we send
 
 LogEvents = false             # A LOT of stuff will be logged if this is true!
 

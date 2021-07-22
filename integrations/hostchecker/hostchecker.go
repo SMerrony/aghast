@@ -35,7 +35,7 @@ import (
 
 // The HostChecker type encapsulates the HostChecker Integration
 type HostChecker struct {
-	mqttChan       chan mqtt.MessageT
+	mqttChan       chan mqtt.AghastMsgT
 	mutex          sync.RWMutex
 	Checker        []hostCheckerT
 	checkersByName map[string]int
@@ -56,7 +56,7 @@ type hostCheckerT struct {
 const (
 	configFilename  = "/hostchecker.toml"
 	integrationName = "HostChecker"
-	mqttPrefix      = "aghast/hostchecker/"
+	mqttPrefix      = "/hostchecker/"
 )
 
 // LoadConfig func should simply load any config (TOML) files for this Integration
@@ -132,8 +132,8 @@ func (h *HostChecker) runChecker(hc hostCheckerT, evChan chan events.EventT) {
 		h.mutex.Lock()
 		if err != nil {
 			if hc.alive || hc.firstCheck { // has state changed?
-				mqMsg := mqtt.MessageT{
-					Topic:    mqttPrefix + hc.Name + "/state",
+				mqMsg := mqtt.AghastMsgT{
+					Subtopic: mqttPrefix + hc.Name + "/state",
 					Qos:      0,
 					Retained: true,
 					Payload:  "false",
@@ -143,8 +143,8 @@ func (h *HostChecker) runChecker(hc hostCheckerT, evChan chan events.EventT) {
 			hc.alive = false
 		} else {
 			if !hc.alive || hc.firstCheck {
-				mqMsg := mqtt.MessageT{
-					Topic:    mqttPrefix + hc.Name + "/state",
+				mqMsg := mqtt.AghastMsgT{
+					Subtopic: mqttPrefix + hc.Name + "/state",
 					Qos:      0,
 					Retained: true,
 					Payload:  "true",
@@ -153,8 +153,8 @@ func (h *HostChecker) runChecker(hc hostCheckerT, evChan chan events.EventT) {
 			}
 			hc.alive = true
 			hc.responseTime = after.Sub(before)
-			h.mqttChan <- mqtt.MessageT{
-				Topic:    mqttPrefix + hc.Name + "/latency",
+			h.mqttChan <- mqtt.AghastMsgT{
+				Subtopic: mqttPrefix + hc.Name + "/latency",
 				Qos:      0,
 				Retained: true,
 				Payload:  fmt.Sprintf("%d", hc.responseTime/time.Millisecond),

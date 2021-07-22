@@ -51,6 +51,7 @@ type MainConfigT struct {
 	MqttUsername        string
 	MqttPassword        string
 	MqttClientID        string
+	MqttBaseTopic       string
 	Integrations        []string
 	ControlPort         int
 	ConfigDir           string
@@ -108,7 +109,7 @@ func LoadMainConfig(configDir string) (MainConfigT, error) {
 		log.Fatalf("ERROR: Could not load Main config due to %s\n", err.Error())
 		return conf, err
 	}
-	log.Printf("DEBUG: Main config for %s loaded, MQTT Broker is %s\n", conf.SystemName, conf.MqttBroker)
+	log.Printf("INFO: Main config for %s loaded, MQTT Broker is %s, base topic is %s\n", conf.SystemName, conf.MqttBroker, conf.MqttBaseTopic)
 	conf.ConfigDir = configDir
 	return conf, nil
 }

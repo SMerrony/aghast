@@ -36,7 +36,7 @@ import (
 const (
 	configFilename = "/pimqttgpio.toml"
 	subscriberName = "PiMqttGpio"
-	mqttPrefix     = "aghast/pimqttgpio/"
+	mqttPrefix     = "/pimqttgpio/"
 )
 
 // PiMqttGpio encapsulates the type of this Integration
@@ -215,8 +215,8 @@ func (p *PiMqttGpio) monitorSensor(ix int) {
 			}
 			if p.Sensor[ix].ForwardMQTT {
 				// log.Println("DEBUG: ... will forward to MQTT")
-				p.mq.PublishChan <- mqtt.MessageT{
-					Topic:    mqttPrefix + p.Sensor[ix].Name,
+				p.mq.PublishChan <- mqtt.AghastMsgT{
+					Subtopic: mqttPrefix + p.Sensor[ix].Name,
 					Qos:      0,
 					Retained: false,
 					Payload:  mqttValue,

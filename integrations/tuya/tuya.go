@@ -40,7 +40,7 @@ import (
 const (
 	configFilename    = "/tuya.toml"
 	subscriberName    = "Tuya"
-	mqttPrefix        = "aghast/tuya/"
+	mqttPrefix        = "/tuya/"
 	changeUpdatePause = 500 * time.Millisecond // wait between operation and requery
 )
 
@@ -48,7 +48,7 @@ const (
 type Tuya struct {
 	conf           confT
 	evChan         chan events.EventT
-	mqttChan       chan mqtt.MessageT
+	mqttChan       chan mqtt.AghastMsgT
 	stopChans      []chan bool // used for stopping Goroutines
 	mq             mqtt.MQTT
 	tuyaMu         sync.RWMutex
@@ -331,8 +331,8 @@ func (t *Tuya) getLampStatus(l lamp) {
 				log.Fatalf("ERROR: Tuya could not marshal status info - %s\n", err.Error())
 			}
 			// log.Println("DEBUG: Tuya - sending MQTT update...")
-			t.mqttChan <- mqtt.MessageT{
-				Topic:    mqttPrefix + l.Label + "/status",
+			t.mqttChan <- mqtt.AghastMsgT{
+				Subtopic: mqttPrefix + l.Label + "/status",
 				Qos:      0,
 				Retained: false,
 				Payload:  payload,
@@ -391,8 +391,8 @@ func (t *Tuya) getSocketStatus(sock socket) {
 				log.Fatalf("ERROR: Tuya could not marshal status info - %s\n", err.Error())
 			}
 			// log.Println("DEBUG: Tuya - sending MQTT update...")
-			t.mqttChan <- mqtt.MessageT{
-				Topic:    mqttPrefix + sock.Label + "/status",
+			t.mqttChan <- mqtt.AghastMsgT{
+				Subtopic: mqttPrefix + sock.Label + "/status",
 				Qos:      0,
 				Retained: false,
 				Payload:  payload,

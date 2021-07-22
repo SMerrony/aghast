@@ -419,8 +419,8 @@ func (a *Automation) monitorMqtt(stopChan chan bool) {
 				if err != nil {
 					log.Fatalln("ERROR: Automation manager fatal error marshalling data to JSON")
 				}
-				a.mq.PublishChan <- mqtt.MessageT{
-					Topic:    mqttPrefix + "list",
+				a.mq.PublishChan <- mqtt.AghastMsgT{
+					Subtopic: "/automation/list",
 					Qos:      0,
 					Retained: false,
 					Payload:  resp,

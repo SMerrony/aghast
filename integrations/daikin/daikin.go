@@ -45,7 +45,7 @@ const (
 	subscriberName     = "Daikin"
 	udpPort            = ":30050"
 	udpQuery           = "DAIKIN_UDP" + getBasicInfo
-	mqttPrefix         = "aghast/daikin/"
+	mqttPrefix         = "/daikin/"
 	maxUnits           = 20
 	scanTimeout        = 10 * time.Second
 	inverterReqTimeout = 5 * time.Second
@@ -59,7 +59,7 @@ type Daikin struct {
 	invertersByLabel      map[string]string    // map into the above via label
 	unconfiguredInverters []inverterT          // we found these, but they aren't configured
 	evChan                chan events.EventT
-	mqttChan              chan mqtt.MessageT
+	mqttChan              chan mqtt.AghastMsgT
 	stopChans             []chan bool // used for stopping Goroutines
 	mq                    mqtt.MQTT
 	httpReqClient         *http.Client
@@ -181,8 +181,8 @@ func (d *Daikin) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	}
 	d.runDiscovery(maxUnits, scanTimeout)
 
-	d.mqttChan <- mqtt.MessageT{
-		Topic:    mqttPrefix + "status",
+	d.mqttChan <- mqtt.AghastMsgT{
+		Subtopic: mqttPrefix + "status",
 		Qos:      0,
 		Retained: false,
 		Payload:  "Daikin Starting",
@@ -362,8 +362,8 @@ func (d *Daikin) monitorClients() {
 				if err != nil {
 					panic(err)
 				}
-				d.mqttChan <- mqtt.MessageT{
-					Topic:    mqttPrefix + topicSlice[3] + "/controlinfo",
+				d.mqttChan <- mqtt.AghastMsgT{
+					Subtopic: mqttPrefix + topicSlice[3] + "/controlinfo",
 					Qos:      0,
 					Retained: true,
 					Payload:  payload,
@@ -401,14 +401,14 @@ func (d *Daikin) monitorUnits() {
 						Name:  "Daikin/Inverter/" + unit.Label + "/OutsideTemperature",
 						Value: fmt.Sprintf("%.1f", si["otemp"].floatValue),
 					}
-					d.mqttChan <- mqtt.MessageT{
-						Topic:    mqttPrefix + unit.Label + "/temperature",
+					d.mqttChan <- mqtt.AghastMsgT{
+						Subtopic: mqttPrefix + unit.Label + "/temperature",
 						Qos:      0,
 						Retained: true,
 						Payload:  fmt.Sprintf("%.1f", si["htemp"].floatValue),
 					}
-					d.mqttChan <- mqtt.MessageT{
-						Topic:    mqttPrefix + unit.Label + "/outsidetemperature",
+					d.mqttChan <- mqtt.AghastMsgT{
+						Subtopic: mqttPrefix + unit.Label + "/outsidetemperature",
 						Qos:      0,
 						Retained: true,
 						Payload:  fmt.Sprintf("%.1f", si["otemp"].floatValue),
@@ -437,8 +437,8 @@ func (d *Daikin) monitorUnits() {
 						Name:  "Daikin/Inverter/" + unit.Label + "/stemp",
 						Value: fmt.Sprintf("%.1f", ci["stemp"].floatValue),
 					}
-					d.mqttChan <- mqtt.MessageT{
-						Topic:    mqttPrefix + unit.Label + "/controlinfo",
+					d.mqttChan <- mqtt.AghastMsgT{
+						Subtopic: mqttPrefix + unit.Label + "/controlinfo",
 						Qos:      0,
 						Retained: true,
 						Payload:  payload,
@@ -511,12 +511,12 @@ func (d *Daikin) monitorActions() {
 		if r := recover(); r != nil {
 			msg := fmt.Sprintf("ERROR: Daikin Automation Action panicked.\n%v\nFix the Automation and restart AGHAST!", r)
 			log.Print(msg)
-			d.mqttChan <- mqtt.MessageT{
-				Topic:    mqtt.StatusTopic,
-				Qos:      0,
-				Retained: true,
-				Payload:  msg,
-			}
+			// d.mqttChan <- mqtt.MessageT{
+			// 	Topic:    mqtt.StatusTopic,
+			// 	Qos:      0,
+			// 	Retained: true,
+			// 	Payload:  msg,
+			// }
 		}
 	}()
 	sc := d.addStopChan()

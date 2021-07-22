@@ -6,6 +6,7 @@ MqttPort = 1883               # MQTT Broker port
 MqttClientID = "aghast-DEV"   # MQTT Client ID
 MqttUsername = ""
 MqttPassword = ""
+MqttBaseTopic = "aghast"
 
 LogEvents = true              # A LOT of stuff will be logged if this is true!
 
@@ -14,14 +15,14 @@ ControlPort = 46445           # HTTP port for back-end admin control
 # List of Integrations we want enabled
 Integrations = [
   "time",         # the Time integration MUST be enabled
-  "automation",
+#  "automation",
 #  "datalogger",
-  "daikin",
-#  "hostchecker",
+#  "daikin",
+  "hostchecker",
 #  "influx",
 #  "pimqttgpio",
 #  "postgres",
-#  "scraper",
+  "scraper",
 #  "tuya",
-#  "zigbee2mqtt",
+  "zigbee2mqtt",
 ]

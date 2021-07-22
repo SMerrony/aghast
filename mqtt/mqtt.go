@@ -31,29 +31,40 @@ import (
 const (
 	mqttOutboundQueueLen = 100
 	mqttInboundQueueLen  = 100
-	// StatusTopic is used for sending important system-wide messages
-	StatusTopic = "aghast/status"
+	// StatusSubtopic is used for sending important system-wide messages
+	StatusSubtopic = "/status"
 )
 
 // MQTT encapsulates a connection to an MQTT Broker
 type MQTT struct {
-	PublishChan    chan MessageT
+	PublishChan    chan AghastMsgT
+	ThirdPartyChan chan GeneralMsgT
 	client         mqtt.Client
 	options        *mqtt.ClientOptions
 	connectHandler mqtt.OnConnectHandler
 	connLostHander mqtt.ConnectionLostHandler
-	pubHandler     mqtt.MessageHandler
+	// pubHandler     mqtt.MessageHandler
+	baseTopic string
 }
 
-// MessageT is the type of messages sent via the AGHAST MQTT channels
-type MessageT struct {
+// AghastMsgT is the type of messages sent via the AGHAST MQTT channels
+type AghastMsgT struct {
+	Subtopic string
+	Qos      byte
+	Retained bool
+	Payload  interface{}
+}
+
+// GeneralMsgT is the type of messages received
+type GeneralMsgT struct {
 	Topic    string
 	Qos      byte
 	Retained bool
 	Payload  interface{}
 }
 
-func (m *MQTT) Start(broker string, port int, username string, password string, clientID string) chan MessageT {
+func (m *MQTT) Start(broker string, port int, username string, password string, clientID string, baseTopic string) chan AghastMsgT {
+	m.baseTopic = baseTopic
 	m.options = mqtt.NewClientOptions()
 	m.options.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
 	if username != "" {
@@ -63,7 +74,7 @@ func (m *MQTT) Start(broker string, port int, username string, password string, 
 	m.options.SetClientID(clientID)
 
 	m.connectHandler = func(client mqtt.Client) {
-		log.Println("DEBUG: MQTT Connected to Broker")
+		log.Println("INFO: AGHAST Connected to MQTT Broker")
 	}
 	m.options.OnConnect = m.connectHandler
 
@@ -77,11 +88,14 @@ func (m *MQTT) Start(broker string, port int, username string, password string, 
 		panic(token.Error())
 	}
 
-	m.PublishChan = make(chan MessageT, mqttOutboundQueueLen)
-	go m.publishViaMQTT()
+	m.PublishChan = make(chan AghastMsgT, mqttOutboundQueueLen)
+	go m.aghastPublish()
 
-	msg := MessageT{
-		Topic:    StatusTopic,
+	m.ThirdPartyChan = make(chan GeneralMsgT, mqttOutboundQueueLen)
+	go m.thirdPartyPublish()
+
+	msg := AghastMsgT{
+		Subtopic: StatusSubtopic,
 		Qos:      0,
 		Retained: false,
 		Payload:  "Starting",
@@ -92,19 +106,27 @@ func (m *MQTT) Start(broker string, port int, username string, password string, 
 
 }
 
-// publishViaMQTT sends messages to any MQTT listeners via the configured Broker
-func (m *MQTT) publishViaMQTT() {
+// aghastPublish sends messages to any MQTT listeners via the configured Broker
+func (m *MQTT) aghastPublish() {
 	for {
 		msg := <-m.PublishChan
+		m.client.Publish(m.baseTopic+msg.Subtopic, msg.Qos, msg.Retained, msg.Payload)
+	}
+}
+
+// thirdPartyPublish is used to send non-Aghast messages
+func (m *MQTT) thirdPartyPublish() {
+	for {
+		msg := <-m.ThirdPartyChan
 		m.client.Publish(msg.Topic, msg.Qos, msg.Retained, msg.Payload)
 	}
 }
 
 // SubscribeToTopic returns a channel which will receive any MQTT messages published to the topic
-func (m *MQTT) SubscribeToTopic(topic string) (c chan MessageT) {
-	c = make(chan MessageT, mqttInboundQueueLen)
+func (m *MQTT) SubscribeToTopic(topic string) (c chan GeneralMsgT) {
+	c = make(chan GeneralMsgT, mqttInboundQueueLen)
 	m.client.Subscribe(topic, 1, func(client mqtt.Client, msg mqtt.Message) {
-		cMsg := MessageT{msg.Topic(), msg.Qos(), msg.Retained(), msg.Payload()}
+		cMsg := GeneralMsgT{msg.Topic(), msg.Qos(), msg.Retained(), msg.Payload()}
 		c <- cMsg
 		// log.Printf("DEBUG: MQTT subscription got topic: %s,  msg: %v\n", msg.Topic(), msg.Payload())
 	})
@@ -117,9 +139,9 @@ func (m *MQTT) UnsubscribeFromTopic(topic string) {
 }
 
 // testing...
-func sub(client mqtt.Client) {
-	topic := "topic/test"
-	token := client.Subscribe(topic, 1, nil)
-	token.Wait()
-	fmt.Printf("Subscribed to topic: %s", topic)
-}
+// func sub(client mqtt.Client) {
+// 	topic := "topic/test"
+// 	token := client.Subscribe(topic, 1, nil)
+// 	token.Wait()
+// 	fmt.Printf("Subscribed to topic: %s", topic)
+// }
