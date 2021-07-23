@@ -3,10 +3,8 @@ Description = "Turn Towel-Rail off for lunchtime off-peak"
 Enabled = true
 
 [Event]
-  Name = "Time/Events/TimedEvent/LunchtimeOffPeakEnds"
-#  Name = "Time/Ticker/SystemTicker/Minute"
+  Topic = "aghast/time/events/LunchtimeOffPeakEnds"
 
 [Action.1]
-  Integration = "Zigbee2MQTT"
-  DeviceLabel = "Towel_Rail"
+  Topic = "zigbee2mqtt/Towel_Rail/set"
   Execute = [ { Control = "state", Setting = "OFF" } ]

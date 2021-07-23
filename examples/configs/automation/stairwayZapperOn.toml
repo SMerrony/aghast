@@ -4,8 +4,8 @@ Enabled = true
 
 [Event]
   Name = "Time/Events/TimedEvent/NightOffPeakStarts"
+  Topic = "aghast/time/events/NightOffPeakStarts"
 
 [Action.1]
-  Integration = "Zigbee2MQTT"
-  DeviceLabel = "Stairway_Socket"
+  Topic = "zigbee2mqtt/Stairway_Socket/set"
   Execute = [ { Control = "state", Setting = "ON" } ]

@@ -3,32 +3,28 @@ Description = "Warm upstairs"
 Enabled = true
 
 [Event]
-  Name = "Time/Events/TimedEvent/MorningPrewarming"
+  Topic = "aghast/time/events/MorningPrewarming"
 
 [Action.1]
-  Integration = "Daikin"
-  DeviceLabel = "Steve's Office"
-  Execute = [ { Control = "temperature", Setting = 18.0 },
+  Topic = "daikin2mqtt/Steve_Office/set/controls"
+  Execute = [ { Control = "set_temp",    Setting = 18.0 },
               { Control = "mode",        Setting = "Heat" },
-              { Control = "power",       Setting = "on" } ]
+              { Control = "power",       Setting = true } ]
 [Action.2]
-  Integration = "Daikin"
-  DeviceLabel = "Paul's Studio"
-  Execute = [ { Control = "temperature", Setting = 18.0 },
+  Topic = "daikin2mqtt/Paul_Studio/set/controls"
+  Execute = [ { Control = "set_temp",    Setting = 18.0 },
               { Control = "mode",        Setting = "Heat" },
-              { Control = "power",       Setting = "on" } ]
+              { Control = "power",       Setting = true } ]
 
 [Action.3]
-  Integration = "Daikin"
-  DeviceLabel = "Master Bedroom"
-  Execute = [ { Control = "temperature", Setting = 18.0 },
+  Topic = "daikin2mqtt/Master_Bedroom/set/controls"
+  Execute = [ { Control = "set_temp",    Setting = 18.0 },
               { Control = "mode",        Setting = "Heat" },
               { Control = "fan",         Setting = "3" },
-              { Control = "power",       Setting = "on" } ]
+              { Control = "power",       Setting = true } ]
 
 [Action.4]
-  Integration = "Daikin"
-  DeviceLabel = "Dining Room"
-  Execute = [ { Control = "temperature", Setting = 18.0 },
+  Topic = "daikin2mqtt/Dining_Room/set/controls"
+  Execute = [ { Control = "set_temp",    Setting = 18.0 },
               { Control = "mode",        Setting = "Heat" },
-              { Control = "power",       Setting = "on" } ]
+              { Control = "power",       Setting = true } ]

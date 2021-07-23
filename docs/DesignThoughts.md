@@ -77,6 +77,15 @@ Every instance of a Device must have a unique name, eg. ModemPinger, SystemClock
 
 ### Event System
 
+***N.B. After using AHAST for some time, and having had more experience with MQTT, we have decided
+to rework the Event system using MQTT (only).  Internal events will be phased out and be 
+replaced my MQTT messages.***
+
+It turned out that much of the infrastructure for our 'event system' was easily provided by an
+MQTT broker and a small amount of code.  Also, the MQTT broker (currently using Mosquitto) is 
+easily able to handle any workload AGHAST might throw at it - even when running on a modest
+hardware platform such as an SBC.
+
 We have both internal Events (described here) and external events which are handled either by specific 
 Integrations or by MQTT.
 
@@ -225,4 +234,6 @@ ConfigDir/                   # any name - passed to server at startup
   * Client-Server architecture
     * Client could be written in Go using the go-app package to deliver a progressive web app
     * Or, serve up via HTTP and just have plain browser clients
-    * Or, server via MQTT and have Node-Red clients :-)
+    * Or, serve everything via MQTT and have eg. Node-Red clients :-)
+
+We chose the third option!

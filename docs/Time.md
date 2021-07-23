@@ -18,6 +18,15 @@ They publish events every new second, minute, hour, and day to...
  * deviceType - "Ticker"
  * deviceName - "SystemTicker"
  * eventName - one of "Second", "Minute", "Hour", or "Day"
+  
+And also via MQTT to 
+* `aghast/time/tickers/seconds`, 
+* `aghast/time/tickers/minutes`, 
+* `aghast/time/tickers/hours`, and
+* `aghast/time/tickers/days`.
+
+The MQTT messages contain a JSON payload corresponding to the tick, eg. `{"second": 27}`, or `{"hour": 23}`
+
 
 ### User-Defined Events
 User-defined Events are defined via the `time.toml` file (which must exist even if no Events are defined).
@@ -49,6 +58,9 @@ The Name must be unique and contain no white space.  It is used as the final par
  * integration: "Time"
  * deviceType: "Events"
  * deviceName: "TimedEvent"
+
+Events are published to MQTT, eg. the first example above is published to `aghast/time/events/NightOffPeakStarts` 
+with a payload of `{"event": "NightOffPeakStarts"}`
 
 Then follows either a Time or Daily configuration...
 #### Time  
