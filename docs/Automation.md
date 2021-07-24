@@ -43,6 +43,8 @@ The  `Topic` line identifies the triggering message.
 
 ### Condition
 You may optionally specify a Condition that must be satisfied for the Automation to proceed...
+
+Old...
 ```
 [Condition]
   Integration = "PiMqttGpio"
@@ -51,10 +53,41 @@ You may optionally specify a Condition that must be satisfied for the Automation
   Value = 17.0
 ```
 
+New...
+
+
+This is the simplest case, the target responds with a single, raw value...
+```
+[Condition]
+  Topic = "pizero02/gpio/sensor/dht22_humidity"  # No payload or key is required for this query
+  Is = ">"
+  Value = 50.0
+```
+
+This target responds with a JSON payload, we need to specify what key to examine...
+```
+[Condition]
+  Topic = "daikin2mqtt/Living_Room/get/sensors"  # No payload is required for this query
+  Key = "ext_temp"
+  Is = "<"
+  Value = 17.0
+```
+
+This target needs a custom payload for the query, and returns JSON...
+```
+[Condition]
+  Topic = "zigbee2mqtt/Office_Socket/get"
+  Payload = "{\"state\": \"\"}"
+  Key = "state"
+  Is = "="
+  Value = "ON"
+```
+
+
 Some Integrations supply multiple results (eg. Scraper) and you will need to add an `Index = ` line to the Condition.
 
 There are several Condition types:
- * Is - as above, must have comparitor and Value specified
+ * Is - as above, must have comparator and Value specified
  * Index - same as "Is" but for a specified Value from an array of Values
  * IsAvailable - either `true` or `false`
  * IsOn - either `true` or `false`
