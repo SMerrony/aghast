@@ -44,6 +44,10 @@ type MQTT struct {
 	connectHandler mqtt.OnConnectHandler
 	connLostHander mqtt.ConnectionLostHandler
 	// pubHandler     mqtt.MessageHandler
+	broker    string
+	port      int
+	username  string
+	password  string
 	baseTopic string
 }
 
@@ -55,7 +59,7 @@ type AghastMsgT struct {
 	Payload  interface{}
 }
 
-// GeneralMsgT is the type of messages received
+// GeneralMsgT is the type of messages received or sent to third-parties
 type GeneralMsgT struct {
 	Topic    string
 	Qos      byte
@@ -63,7 +67,35 @@ type GeneralMsgT struct {
 	Payload  interface{}
 }
 
+// TempConnection returns a new instance of MQTT for single-shot usage,
+// mainly to ensure that subscription and unsubscriptions do not interfere with other execution flows.
+func TempConnection(existingMQTT MQTT) *MQTT {
+	var m MQTT
+	m.options = mqtt.NewClientOptions()
+	m.options.AddBroker(fmt.Sprintf("tcp://%s:%d", existingMQTT.broker, existingMQTT.port))
+	if existingMQTT.username != "" {
+		m.options.SetUsername(existingMQTT.username)
+		m.options.SetPassword(existingMQTT.password)
+	}
+	m.client = mqtt.NewClient(m.options)
+	if token := m.client.Connect(); token.Wait() && token.Error() != nil {
+		panic(token.Error())
+	}
+	m.ThirdPartyChan = make(chan GeneralMsgT, mqttOutboundQueueLen)
+	go m.thirdPartyPublish()
+	return &m
+}
+
+// Disconnect from the MQTT Broker after 100ms
+func (m *MQTT) Disconnect() {
+	m.client.Disconnect(100)
+}
+
 func (m *MQTT) Start(broker string, port int, username string, password string, clientID string, baseTopic string) chan AghastMsgT {
+	m.broker = broker
+	m.port = port
+	m.username = username
+	m.password = password
 	m.baseTopic = baseTopic
 	m.options = mqtt.NewClientOptions()
 	m.options.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))

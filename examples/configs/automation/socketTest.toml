@@ -5,7 +5,22 @@ Enabled = true
 [Event]
   Topic = "aghast/time/tickers/minutes"
 
+# [Condition]
+#   QueryTopic = "zigbee2mqtt/Office_Socket/get"
+#   ReplyTopic = "zigbee2mqtt/Office_Socket"
+#   Payload = "{\"state\": \"\"}"
+#   Key = "state"
+#   Is = "="
+#   Value = "ON"
+
+[Condition]
+  QueryTopic = "daikin2mqtt/Steve_Office/get/controls"
+  ReplyTopic = "daikin2mqtt/Steve_Office/controls"
+  Key = "mode"
+  Is = "="
+  Value = "COOL"
+
 [Action.1]
   Topic = "zigbee2mqtt/Office_Socket/set"
-  Execute = [ { Control = "state", Setting = "TOGGLE" } ]
+  Execute = [ { Control = "state", Setting = "OFF" } ]
 

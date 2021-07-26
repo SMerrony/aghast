@@ -40,12 +40,6 @@ const (
 	mqttPrefix        = "aghast/automation/"
 )
 
-// const (
-// 	noEvent eventTypeT = iota
-// 	integrationEvent
-// 	mqttEvent
-// )
-
 // The Automation type encapsulates Automation
 type Automation struct {
 	confDir           string
@@ -63,33 +57,24 @@ type automationT struct {
 	Description      string
 	Enabled          bool
 	mqttTopic        string
+	hasCondition     bool
 	condition        conditionT
 	actions          map[string]actionT
 	sortedActionKeys []string
 	confFilename     string
 }
 
-const (
-	isAvailableCond int = iota
-	isOnCond
-	isValueCond
-	isIndexedValueCond
-)
-
 type conditionT struct {
-	Integration   string
-	Name          string
-	conditionType int
-	Index         int
-	IsAvailable   bool
-	IsOn          bool
-	is            string // comparison operator, one of: "=", "!=", "<", ">", "<=", ">="
-	value         interface{}
+	QueryTopic string // MQTT topic for querying
+	ReplyTopic string // optional MQTT topic for response
+	Payload    string // MQTT payload for query
+	Key        string // JSON key of condition value
+	Index      int
+	is         string // comparison operator, one of: "=", "!=", "<", ">", "<=", ">="
+	value      interface{}
 }
 
 type actionT struct {
-	// Integration string
-	// deviceLabel string
 	Topic    string
 	controls []string
 	settings []interface{}
@@ -126,30 +111,34 @@ func (a *Automation) LoadConfig(confDir string) error {
 			continue
 		}
 		if conf.Get("Condition") != nil {
-			newAuto.condition.Integration = conf.Get("Condition.Integration").(string)
-			newAuto.condition.Name = conf.Get("Condition.Name").(string)
-			newAuto.condition.conditionType = isValueCond // default
-			switch {
-			case conf.Get("Condition.IsAvailable") != nil:
-				newAuto.condition.IsAvailable = conf.Get("Condition.IsAvailable").(bool)
-				newAuto.condition.conditionType = isAvailableCond
-
-			case conf.Get("Condition.Is") != nil:
-				newAuto.condition.is = conf.Get("Condition.Is").(string)
-				newAuto.condition.value = conf.Get("Condition.Value")
-
-			case conf.Get("Condition.IsOn") != nil:
-				newAuto.condition.IsOn = conf.Get("Condition.IsOn").(bool)
-				newAuto.condition.conditionType = isOnCond
-
-			case conf.Get("Condition.Index") != nil:
-				newAuto.condition.Index = int(conf.Get("Condition.Index").(int64))
-				newAuto.condition.conditionType = isIndexedValueCond
+			newAuto.hasCondition = true
+			if conf.Get("Condition.QueryTopic") == nil {
+				log.Printf("ERROR: No MQTT Topic found for Condition in %s\n", newAuto.Name)
+				continue
+			}
+			newAuto.condition.QueryTopic = conf.Get("Condition.QueryTopic").(string)
+			newAuto.condition.ReplyTopic = ""
+			if conf.Get("Condition.ReplyTopic") != nil {
+				newAuto.condition.ReplyTopic = conf.Get("Condition.ReplyTopic").(string)
+			}
+			newAuto.condition.Key = ""
+			if conf.Get("Condition.Key") != nil {
+				newAuto.condition.Key = conf.Get("Condition.Key").(string)
+			}
+			newAuto.condition.Payload = ""
+			if conf.Get("Condition.Payload") != nil {
+				newAuto.condition.Payload = conf.Get("Condition.Payload").(string)
 			}
 
+			if conf.Get("Condition.Is") == nil {
+				log.Printf("ERROR: No Is clause found for Condition in %s\n", newAuto.Name)
+				continue
+			}
+			newAuto.condition.is = conf.Get("Condition.Is").(string)
+			newAuto.condition.value = conf.Get("Condition.Value")
+
 		} else {
-			// dummy value
-			newAuto.condition.Integration = "NONE"
+			newAuto.hasCondition = false
 		}
 		confMap := conf.ToMap()
 		actsConf := confMap["Action"].(map[string]interface{})
@@ -216,107 +205,103 @@ func (a *Automation) Stop() {
 	log.Println("DEBUG: All Automations should have stopped")
 }
 
-// func (a *Automation) waitForIntegrationEvent(stopChan chan bool, sid int, auto automationT) {
-// 	ch, err := events.Subscribe(sid, auto.Event.Name)
-// 	if err != nil {
-// 		log.Fatalf("ERROR: Automation Manager could not subscribe to Event, %v\n", err)
-// 	}
-// 	for {
-// 		log.Printf("DEBUG: Automation Manager waiting for Event %s\n", auto.Event.Name)
-// 		select {
-// 		case <-stopChan:
-// 			events.Unsubscribe(sid, auto.Event.Name)
-// 			log.Printf("INFO: Automation %s stopping", auto.Name)
-// 			return
-// 		case <-ch:
-// 			log.Printf("DEBUG: Automation Manager received Event %s\n", auto.Event.Name)
-// 			if auto.condition.Integration == "NONE" || a.testCondition(auto.condition) {
-// 				log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
-// 				for _, k := range auto.sortedActionKeys {
-// 					ac := auto.actions[k]
-// 					for i := 0; i < len(ac.controls); i++ {
-// 						a.evChan <- events.EventT{
-// 							Name:  ac.Integration + "/" + events.ActionControlDeviceType + "/" + ac.deviceLabel + "/" + ac.controls[i],
-// 							Value: ac.settings[i],
-// 						}
-// 						log.Printf("DEBUG: Automation Manager sent Event to %s - %s\n", ac.Integration, ac.deviceLabel)
-// 						time.Sleep(100 * time.Millisecond) // Don't flood devices with requests
-// 					}
-// 				}
-// 			} else {
-// 				log.Println("DEBUG: ... condition not met")
-// 			}
-// 		}
-// 	}
-// }
-
 func (a *Automation) testCondition(cond conditionT) bool {
-	respChan := make(chan interface{})
-	switch cond.conditionType {
-	case isAvailableCond:
-		a.evChan <- events.EventT{
-			Name:  cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" + events.IsAvailable,
-			Value: respChan,
+	tempMQTT := mqtt.TempConnection(a.mq)
+	var respChan chan mqtt.GeneralMsgT
+	if cond.ReplyTopic == "" {
+		respChan = tempMQTT.SubscribeToTopic(cond.QueryTopic)
+	} else {
+		respChan = tempMQTT.SubscribeToTopic(cond.ReplyTopic)
+	}
+	tempMQTT.ThirdPartyChan <- mqtt.GeneralMsgT{
+		Topic:    cond.QueryTopic,
+		Qos:      0,
+		Retained: false,
+		Payload:  cond.Payload, // may be empty
+	}
+
+	var (
+		respAsBool bool
+		respAsF64  float64
+		respAsI64  int64
+		respAsStr  string
+	)
+
+	resp := <-respChan // TODO timeout needed
+
+	// we expect either a simple value, or a JSON response in which case a "Key" should have been specified
+	if cond.Key == "" {
+		switch cond.value.(type) {
+		case bool:
+			respAsBool = resp.Payload.(bool)
+		case float64:
+			respAsF64 = resp.Payload.(float64)
+		case int64:
+			respAsI64 = resp.Payload.(int64)
+		case string:
+			respAsStr = resp.Payload.(string)
 		}
-	case isOnCond:
-		a.evChan <- events.EventT{
-			Name:  cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" + events.IsOn,
-			Value: respChan,
+	} else {
+		jsonMap := make(map[string]interface{})
+		err := json.Unmarshal([]byte(resp.Payload.([]uint8)), &jsonMap)
+		if err != nil {
+			log.Printf("ERROR: Automation (Condition) - Could not understand JSON %s\n", resp.Payload.(string))
+			return false // TODO ???
 		}
-	case isValueCond:
-		a.evChan <- events.EventT{
-			Name:  cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" + events.FetchLast,
-			Value: respChan,
+		v, found := jsonMap[cond.Key]
+		if !found {
+			log.Printf("ERROR: Automation (Condition) - Could find Key in JSON %s\n", resp.Payload.(string))
+			return false // TODO ???
 		}
-	case isIndexedValueCond:
-		a.evChan <- events.EventT{
-			Name: cond.Integration + "/" + events.QueryDeviceType + "/" + cond.Name + "/" +
-				events.FetchLastIndexed + "/" + strconv.Itoa(cond.Index),
-			Value: respChan,
+
+		switch v.(type) {
+		case bool:
+			respAsBool = v.(bool)
+		case float64:
+			respAsF64 = v.(float64)
+		case int64:
+			respAsI64 = v.(int64)
+		case string:
+			respAsStr = v.(string)
 		}
 	}
-	resp := <-respChan
-	log.Printf("DEBUG: Automation manager testCondition got %v\n", resp)
-	switch resp.(type) {
+
+	//log.Printf("DEBUG: Automation manager testCondition got %v\n", resp)
+	switch cond.value.(type) {
 	case bool:
-		switch cond.conditionType {
-		case isAvailableCond:
-			return resp.(bool) == cond.IsAvailable
-		case isOnCond:
-			return resp.(bool) == cond.IsOn
-		}
+		return respAsBool == cond.value.(bool)
 	case float64:
 		switch cond.is {
 		case "<":
-			return resp.(float64) < cond.value.(float64)
+			return respAsF64 < cond.value.(float64)
 		case ">":
-			return resp.(float64) > cond.value.(float64)
+			return respAsF64 > cond.value.(float64)
 		case "=":
-			return resp.(float64) == cond.value.(float64)
+			return respAsF64 == cond.value.(float64)
 		case "!=":
-			return resp.(float64) != cond.value.(float64)
+			return respAsF64 != cond.value.(float64)
 		}
 	case int:
 		switch cond.is {
 		case "<":
-			return resp.(int) < int(cond.value.(int64))
+			return int(respAsI64) < int(cond.value.(int64))
 		case ">":
-			return resp.(int) > int(cond.value.(int64))
+			return int(respAsI64) > int(cond.value.(int64))
 		case "=":
-			return resp.(int) == int(cond.value.(int64))
+			return int(respAsI64) == int(cond.value.(int64))
 		case "!=":
-			return resp.(int) != int(cond.value.(int64))
+			return int(respAsI64) != int(cond.value.(int64))
 		}
 	case string:
 		switch cond.is {
 		case "<":
-			return resp.(string) < cond.value.(string)
+			return respAsStr < cond.value.(string)
 		case ">":
-			return resp.(string) > cond.value.(string)
+			return respAsStr > cond.value.(string)
 		case "=":
-			return resp.(string) == cond.value.(string)
+			return respAsStr == cond.value.(string)
 		case "!=":
-			return resp.(string) != cond.value.(string)
+			return respAsStr != cond.value.(string)
 		}
 	default:
 		log.Printf("WARNING: Automation Manager testCondition got unexpected data type for: %v\n", resp)
@@ -333,7 +318,7 @@ func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
 			return
 		case <-mqChan:
 			// log.Printf("DEBUG: Automation Manager received Event %s\n", auto.Event.Name)
-			if auto.condition.Integration == "NONE" || a.testCondition(auto.condition) {
+			if !auto.hasCondition || (auto.hasCondition && a.testCondition(auto.condition)) {
 				log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
 				for _, k := range auto.sortedActionKeys {
 					ac := auto.actions[k]
