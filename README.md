@@ -1,6 +1,6 @@
 # A Go Home Automation SysTem (AGHAST)
 
-AGHAST is primarily an automation _server_ - it does not mandate a specific front-end.
+AGHAST is primarily an MQTT-centric automation _server_ - it does not mandate a specific front-end.
 All data and controls that should be provided to end-users (i.e. not administrators) are exposed via MQTT.
 Node-Red is being used as a front-end during development and example flows are provided, but other MQTT-connected dashboards could be used if prefered.
 
@@ -17,25 +17,22 @@ We believe that end-users of HA systems are generally not interested in the nuts
 Integrations provide support for interacting with real-world or virtual resources, eg. Wifi lights, web scrapers, HVAC systems.
 
 Currently available Integrations...
-| Integration | Description                  | Query | Documentation |
-| ----------- | :--------------------------  | :---: | ------------- |
-| Time        | Includes: Tickers            |       | [Time](docs/Time.md) |
-|             |                              |       |                     |
-| Automation  | Event-based Automation       |       | [Automation](docs/Automation.md) |
-| DataLogger  | Log Data to CSV files        |       | [](docs/) |
-| Daikin      | HVAC Control and Monitoring  |   Y   | [Daikin](docs/Daikin.md) |
-| HostChecker | Monitor Device availability  |   Y   | [HostChecker](docs/HostChecker.md) |
-| Influx      | Log Data to InfluxDB         |       | [Influx](docs/Influx.md) |
-| PiMqttGpio  | Capture pi-mqtt-gpio data    |   Y   | [PiMqttGpio](docs/PiMqttGpio.md) |
-| Postgres    | Log Data to PostgreSQL DB    |       | [Postgres](docs/Postgres.md) |
-| Scraper     | Web Scraping                 |   Y   | [Scraper](docs/Scraper.md) |
-| Tuya        | Tuya WiFi lights, ZigBee Sockets |   | [](docs/) |
-| Zigbee2MQTT | Zigbee2MQTT sockets...       |       | [](docs/) |
+| Integration | Description                  | Documentation |
+| ----------- | :--------------------------  |  ------------- |
+| Time        | Includes: Tickers                | [Time](docs/Time.md) |
+| Automation  | Event-based Automation           | [Automation](docs/Automation.md) |
+| DataLogger  | Log Data to CSV files            | [](docs/) |
+| ~~Daikin~~  | ~~HVAC Control and Monitoring~~  | *Use [daikin2mqtt](https://github.com/SMerrony/daikin2mqtt) instead* |
+| HostChecker | Monitor Device availability      | [HostChecker](docs/HostChecker.md) |
+| Influx      | Log Data to InfluxDB             | [Influx](docs/Influx.md) |
+| PiMqttGpio  | Capture pi-mqtt-gpio data        | [PiMqttGpio](docs/PiMqttGpio.md) |
+| Postgres    | Log Data to PostgreSQL DB        | [Postgres](docs/Postgres.md) |
+| Scraper     | Web Scraping                     | [Scraper](docs/Scraper.md) |
+| Tuya        | Tuya WiFi lights, ZigBee Sockets | Deprecated [](docs/) |
+| ~~Zigbee2MQTT~~ | ~~Zigbee2MQTT sockets...~~   | *Not required with new builtin MQTT functionality* |
 
 The Time Integration must be enabled for AGHAST to start, you will also probably need to
 enable Automation and at least one other Integration in order to do anything useful.
-
-If an Integration supports Query, then values from it may be used in Automation Conditions.
 
 The Tuya Integration is a bit of a hack.  But... it can be used to integrated LIDL SmartHome ZigBee 
 (and other ZigBee stuff) if they are first added to the TuyaSmart app.
@@ -61,20 +58,18 @@ Integrations = [
   "time",         # the Time integration MUST be enabled
   "automation",
 #  "datalogger",  # Commented out, will not be enabled
-  "daikin",
   "hostchecker",
   "influx",
   "pimqttgpio",
   "postgres",
   "scraper",
-  "tuya",
-  "zigbee2mqtt",
+#  "tuya",
 ]
 ```
 Every Integration **must** have an associated `<Integration>.toml` configuration file or `<Integration>` subdirectory in the same directory,
-eg. `time.toml`, `daikin.toml`, `automation`, etc.
+eg. `time.toml`, `datalogger.toml`, `automation`, etc.
 
-N.B. Even if no special configuration is required for an enabled Integration, an empty `<Integration>.toml` configuration file or `<Integration>` subdirectory must exist.
+Even if no special configuration is required for an enabled Integration, an empty `<Integration>.toml` configuration file or `<Integration>` subdirectory must exist.
 
 ### Secrets and Constants
 
@@ -93,6 +88,9 @@ The AGHAST server may be started from the command line like this...
 `./aghastServer -configdir <path/to/config/dir>`
 
 The `-configdir` argument is compulsory and must refer to a directory containing the configuration files described above.
+
+AGHAST is largely stateless (unless Integrations explicitly hold some state), it may be started and stopped without
+losing any data.  There is no intrinsic requirement for a database for the AGHAST core system.
 
 ## MQTT Aide-Memoire
 From time-to-time you may wish to manually purge any retained MQTT messages...
