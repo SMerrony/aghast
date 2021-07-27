@@ -30,7 +30,6 @@ import (
 	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/integrations/automation"
-	"github.com/SMerrony/aghast/integrations/daikin"
 	"github.com/SMerrony/aghast/integrations/datalogger"
 	"github.com/SMerrony/aghast/integrations/hostchecker"
 	"github.com/SMerrony/aghast/integrations/influx"
