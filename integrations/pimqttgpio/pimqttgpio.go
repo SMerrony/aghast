@@ -104,11 +104,6 @@ func (p *PiMqttGpio) Stop() {
 	}
 }
 
-// ProvidesDeviceTypes returns a list of Device Type supported by this Integration
-func (p *PiMqttGpio) ProvidesDeviceTypes() []string {
-	return []string{"Sensor", "Query"}
-}
-
 func (p *PiMqttGpio) addStopChan() (ix int) {
 	p.mutex.Lock()
 	p.stopChans = append(p.stopChans, make(chan bool))

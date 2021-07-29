@@ -33,6 +33,7 @@ import (
 	"github.com/SMerrony/aghast/integrations/datalogger"
 	"github.com/SMerrony/aghast/integrations/hostchecker"
 	"github.com/SMerrony/aghast/integrations/influx"
+	"github.com/SMerrony/aghast/integrations/mqttcache"
 	"github.com/SMerrony/aghast/integrations/pimqttgpio"
 	"github.com/SMerrony/aghast/integrations/postgres"
 	"github.com/SMerrony/aghast/integrations/scraper"
@@ -53,9 +54,6 @@ type Integration interface {
 
 	// Stop terminates the Integration and all Goroutines it contains
 	Stop()
-
-	// ProvidesDeviceTypes returns a list of Device Type supported by this Integration
-	ProvidesDeviceTypes() []string
 }
 
 var integs = make(map[string]Integration)
@@ -67,14 +65,14 @@ func newIntegration(iName string) {
 	switch iName {
 	case "automation":
 		integs[iName] = new(automation.Automation)
-	case "daikin":
-		integs[iName] = new(daikin.Daikin)
 	case "datalogger":
 		integs[iName] = new(datalogger.DataLogger)
 	case "hostchecker":
 		integs[iName] = new(hostchecker.HostChecker)
 	case "influx":
 		integs[iName] = new(influx.Influx)
+	case "mqttcache":
+		integs[iName] = new(mqttcache.MqttCache)
 	case "pimqttgpio":
 		integs[iName] = new(pimqttgpio.PiMqttGpio)
 	case "postgres":
@@ -99,7 +97,6 @@ func StartIntegrations(conf config.MainConfigT, evChan chan events.EventT, mqtt 
 	mq = mqtt
 	for _, i := range conf.Integrations {
 		newIntegration(i)
-		log.Printf("INFO: Integration %s provides %v\n", i, integs[i].ProvidesDeviceTypes())
 		if err := integs[i].LoadConfig(conf.ConfigDir); err != nil {
 			log.Fatalf("ERROR: %s Integration could not load its configuration", i)
 		}

@@ -165,6 +165,15 @@ func (m *MQTT) SubscribeToTopic(topic string) (c chan GeneralMsgT) {
 	return c
 }
 
+// SubscribeToTopicUsingChan uses the providedchan to receive any MQTT messages published to the topic
+func (m *MQTT) SubscribeToTopicUsingChan(topic string, c chan GeneralMsgT) {
+	m.client.Subscribe(topic, 1, func(client mqtt.Client, msg mqtt.Message) {
+		cMsg := GeneralMsgT{msg.Topic(), msg.Qos(), msg.Retained(), msg.Payload()}
+		c <- cMsg
+		// log.Printf("DEBUG: MQTT subscription got topic: %s,  msg: %v\n", msg.Topic(), msg.Payload())
+	})
+}
+
 // UnsubscribeFromTopic does what you'd expect
 func (m *MQTT) UnsubscribeFromTopic(topic string) {
 	m.client.Unsubscribe(topic)

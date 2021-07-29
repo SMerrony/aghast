@@ -1,0 +1,9 @@
+# Example mqttcache configuration
+
+[[Cache]]
+  Topic = "pizero01/gpio/sensor/dht22_temperature"
+  RetainSecs = 600
+
+[[Cache]]
+  Topic = "pizero02/gpio/sensor/dht22_humidity"
+  RetainSecs = 600

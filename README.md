@@ -25,6 +25,7 @@ Currently available Integrations...
 | ~~Daikin~~  | ~~HVAC Control and Monitoring~~  | *Use [daikin2mqtt](https://github.com/SMerrony/daikin2mqtt) instead* |
 | HostChecker | Monitor Device availability      | [HostChecker](docs/HostChecker.md) |
 | Influx      | Log Data to InfluxDB             | [Influx](docs/Influx.md) |
+| MqttCache   | Retain transient MQTT messages   | [MqttCache](docs/MqttCache.md) |
 | PiMqttGpio  | Capture pi-mqtt-gpio data        | [PiMqttGpio](docs/PiMqttGpio.md) |
 | Postgres    | Log Data to PostgreSQL DB        | [Postgres](docs/Postgres.md) |
 | Scraper     | Web Scraping                     | [Scraper](docs/Scraper.md) |
