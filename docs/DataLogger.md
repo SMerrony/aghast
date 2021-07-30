@@ -1,3 +1,11 @@
+# The DataLogger Integration
+## Description and Purpose
+This Integration simply logs the payload (or a JSON value from a payload) of MQTT messages into
+CSV files.
+
+## Configuration
+An example should be self-explanatory...
+```
 LogDir = "/tmp"     # Don't use /tmp for real!
 
 [[Logger]]
@@ -19,7 +27,8 @@ LogDir = "/tmp"     # Don't use /tmp for real!
   
 [[Logger]]
   LogFile = "allTemps.csv"
-  Topic = "daikin2mqtt/+/sensors" # MQTT wildcards are okay
+  Topic = "daikin2mqtt/+/sensors"  # MQTT wildcards are okay
   Key = "unit_temp" 
   FlushEvery = 24
-  
+```
+You may add as many loggers as you wish.

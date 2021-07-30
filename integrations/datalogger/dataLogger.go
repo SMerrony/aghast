@@ -21,6 +21,7 @@ package datalogger
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -40,17 +41,18 @@ const (
 
 // The DataLogger type encapsulates the Data Logging Integration
 type DataLogger struct {
-	loggerMu  sync.RWMutex
+	mutex     sync.RWMutex
 	LogDir    string
 	Logger    []loggerT
 	stopChans []chan bool // used for stopping Goroutines
+	mq        mqtt.MQTT
 }
 
 type loggerT struct {
-	Name, LogFile           string
-	Integration, DeviceType string
-	DeviceName, EventName   string
-	FlushEvery              int
+	LogFile    string
+	Topic      string
+	Key        string
+	FlushEvery int
 }
 
 // LoadConfig loads and stores the configuration for this Integration
@@ -60,25 +62,21 @@ func (d *DataLogger) LoadConfig(confdir string) error {
 		log.Println("ERROR: Could not load DataLogger configuration ", err.Error())
 		return err
 	}
-	d.loggerMu.Lock()
+	d.mutex.Lock()
 	err = toml.Unmarshal(confBytes, d)
 	if err != nil {
 		log.Fatalf("ERROR: Could not load DataLogger config due to %s\n", err.Error())
-		d.loggerMu.Unlock()
+		d.mutex.Unlock()
 		return err
 	}
 	log.Printf("INFO: DataLogger has %d loggers %v\n", len(d.Logger), d.Logger)
-	d.loggerMu.Unlock()
+	d.mutex.Unlock()
 	return nil
-}
-
-// ProvidesDeviceTypes returns a slice of device types that this Integration supplies.
-func (d *DataLogger) ProvidesDeviceTypes() []string {
-	return []string{"CSVlogger"}
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
 func (d *DataLogger) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+	d.mq = mq
 	for _, l := range d.Logger {
 		go d.logger(l)
 	}
@@ -92,41 +90,32 @@ func (d *DataLogger) Stop() {
 	log.Println("DEBUG: DataLogger - All Goroutines should have stopped")
 }
 
-func (d *DataLogger) addStopChan() (ix int) {
-	d.loggerMu.Lock()
-	d.stopChans = append(d.stopChans, make(chan bool))
-	ix = len(d.stopChans) - 1
-	d.loggerMu.Unlock()
-	return ix
+func (d *DataLogger) addStopChan() chan bool {
+	newChan := make(chan bool)
+	d.mutex.Lock()
+	d.stopChans = append(d.stopChans, newChan)
+	d.mutex.Unlock()
+	return newChan
 }
 
 func (d *DataLogger) logger(l loggerT) {
-	d.loggerMu.RLock()
-	log.Printf("INFO: DataLogger starting to log for %s\n", l.Name)
+	d.mutex.RLock()
+	log.Printf("INFO: DataLogger starting to log to %s\n", l.LogFile)
 	file, err := os.OpenFile(d.LogDir+"/"+l.LogFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Printf("WARNING: DataLogger failed to open/create CSV log - %v\n", err)
-		d.loggerMu.RUnlock()
+		d.mutex.RUnlock()
 		return
 	}
 	csvWriter := csv.NewWriter(file)
-	sid := events.GetSubscriberID(subscribeName)
-	ch, err := events.Subscribe(sid, l.Integration+"/"+l.DeviceType+"/"+l.DeviceName+"/"+l.EventName)
-	if err != nil {
-		log.Printf("WARNING: DataLogger Integration could not subscribe to event for %v\n", l)
-		d.loggerMu.RUnlock()
-		return
-	}
-	defer events.Unsubscribe(sid, l.Integration+"/"+l.DeviceType+"/"+l.DeviceName+"/"+l.EventName)
 
-	idRoot := l.Integration + "/" + l.DeviceType
-	d.loggerMu.RUnlock()
+	ch := d.mq.SubscribeToTopic(l.Topic)
+	defer d.mq.UnsubscribeFromTopic(l.Topic)
+
+	d.mutex.RUnlock()
 	unflushed := 0
-	sc := d.addStopChan()
-	d.loggerMu.RLock()
-	stopChan := d.stopChans[sc]
-	log.Printf("DEBUG: DataLogger entering loop for %s\n", l.Name)
-	d.loggerMu.RUnlock()
+	stopChan := d.addStopChan()
+
 	for {
 		select {
 		case <-stopChan:
@@ -136,16 +125,31 @@ func (d *DataLogger) logger(l loggerT) {
 			ts := time.Now().Format(time.RFC3339)
 			record := make([]string, 5)
 			record[0] = ts
-			record[1] = idRoot
-			record[2] = ev.Name
-			record[3] = fmt.Sprintf("%v", ev.Value)
+			record[1] = ev.Topic
+			if l.Key == "" {
+				record[3] = fmt.Sprintf("%v", ev.Payload)
+			} else {
+				record[2] = l.Key
+				jsonMap := make(map[string]interface{})
+				err := json.Unmarshal([]byte(ev.Payload.([]uint8)), &jsonMap)
+				if err != nil {
+					log.Printf("ERROR: DataLogger - Could not understand JSON %s\n", ev.Payload.(string))
+					return
+				}
+				v, found := jsonMap[l.Key]
+				if !found {
+					log.Printf("ERROR: DataLogger - Could find Key in JSON %s\n", ev.Payload.(string))
+					return
+				}
+				record[3] = fmt.Sprintf("%v", v)
+			}
 			csvWriter.Write(record)
-			d.loggerMu.RLock()
+			d.mutex.RLock()
 			if unflushed++; unflushed == l.FlushEvery {
 				csvWriter.Flush()
 				unflushed = 0
 			}
-			d.loggerMu.RUnlock()
+			d.mutex.RUnlock()
 		}
 	}
 }

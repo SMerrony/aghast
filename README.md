@@ -21,7 +21,7 @@ Currently available Integrations...
 | ----------- | :--------------------------  |  ------------- |
 | Time        | Includes: Tickers                | [Time](docs/Time.md) |
 | Automation  | Event-based Automation           | [Automation](docs/Automation.md) |
-| DataLogger  | Log Data to CSV files            | [](docs/) |
+| DataLogger  | Log MQTT Data to CSV files       | [DataLogger](docs/DataLogger.md) |
 | ~~Daikin~~  | ~~HVAC Control and Monitoring~~  | *Use [daikin2mqtt](https://github.com/SMerrony/daikin2mqtt) instead* |
 | HostChecker | Monitor Device availability      | [HostChecker](docs/HostChecker.md) |
 | Influx      | Log Data to InfluxDB             | [Influx](docs/Influx.md) |
