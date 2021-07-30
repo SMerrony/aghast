@@ -16,9 +16,9 @@ ControlPort = 46445           # HTTP port for back-end admin control
 Integrations = [
   "time",         # the Time integration MUST be enabled
   "automation",
-  "datalogger",
+#  "datalogger",
 #  "daikin",
-#  "hostchecker",
+  "hostchecker",
 #  "influx",
    "mqttcache",
 #  "pimqttgpio",

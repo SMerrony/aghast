@@ -29,11 +29,16 @@ There are no defaults and all fields must be provided.
 The responsiveness is returned as a latency figure in milliseconds, be sure to specify an open port.
 
 ## Usage
-HostChecker provides state and latency events as AGHAST Events and MQTT messages.
+HostChecker provides state and latency events as AGHAST MQTT messages.
 
-The MQTT messages have these topics: `aghast/hostchecker/<name>/state` and `aghast/hostchecker/<name>/latency`.
+The MQTT messages have these topics: `aghast/hostchecker/<Name>/state` and `aghast/hostchecker/<Name>/latency`.
 The `state` message has a payload of either "true" or "false", i.e. available or unavailable, and the `latency` payload is 
 an integer - the number of milliseconds the host took to respond. 
 
-The maximum latency reported is 3000ms; after this period the check times out and the host is considered unresponsive/unavailable.
+The maximum latency reported is 2000ms; after this period the check times out and the host is considered unresponsive/unavailable.
 
+### Querying Host Availability via MQTT
+Send a `get` request to `aghast/hostchecker/get/<Name>` - where `<Name>` is what you specified in the HostChecker
+configuration.
+
+A `state` response will be sent to `aghast/hostchecker/<Name>/state` with a value of either "true" or "false".

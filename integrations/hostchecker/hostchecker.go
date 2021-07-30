@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strings"
 	"sync"
 	"time"
 
@@ -40,6 +39,7 @@ type HostChecker struct {
 	Checker        []hostCheckerT
 	checkersByName map[string]int
 	stopChans      []chan bool // used for stopping Goroutines
+	mq             mqtt.MQTT
 }
 
 type hostCheckerT struct {
@@ -54,9 +54,15 @@ type hostCheckerT struct {
 }
 
 const (
-	configFilename  = "/hostchecker.toml"
-	integrationName = "HostChecker"
-	mqttPrefix      = "/hostchecker/"
+	configFilename    = "/hostchecker.toml"
+	mqttPrefix        = "/hostchecker/"
+	getTopicPrefix    = "aghast/hostchecker/get/"
+	getTopicPrefixLen = len(getTopicPrefix)
+)
+
+const (
+	netType = "tcp"
+	timeout = time.Second * 2
 )
 
 // LoadConfig func should simply load any config (TOML) files for this Integration
@@ -81,27 +87,24 @@ func (h *HostChecker) LoadConfig(confdir string) error {
 	return nil
 }
 
-// ProvidesDeviceTypes returns a slice of device types that this Integration could supply.
-// (This included unconfigured types.)
-func (h *HostChecker) ProvidesDeviceTypes() []string {
-	return []string{integrationName, "Query"}
-}
-
 // Start launches the Integration, LoadConfig() should have been called beforehand.
 func (h *HostChecker) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+	h.mutex.Lock()
 	h.mqttChan = mq.PublishChan
+	h.mq = mq
+	h.mutex.Unlock()
 	for _, dev := range h.Checker {
 		go h.runChecker(dev, evChan)
 	}
 	go h.monitorQueries()
 }
 
-func (h *HostChecker) addStopChan() (ix int) {
+func (h *HostChecker) addStopChan() chan bool {
+	newChan := make(chan bool)
 	h.mutex.Lock()
-	h.stopChans = append(h.stopChans, make(chan bool))
-	ix = len(h.stopChans) - 1
+	h.stopChans = append(h.stopChans, newChan)
 	h.mutex.Unlock()
-	return ix
+	return newChan
 }
 
 // Stop terminates the Integration and all Goroutines it contains
@@ -112,18 +115,10 @@ func (h *HostChecker) Stop() {
 }
 
 func (h *HostChecker) runChecker(hc hostCheckerT, evChan chan events.EventT) {
-	const (
-		netType = "tcp"
-		timeout = time.Second * 3
-	)
-
 	dest := fmt.Sprintf("%s:%d", hc.Host, hc.Port)
 	log.Printf("INFO: HostChecker will monitor host %s - %s\n", dest, hc.Name)
 	hc.firstCheck = true
-	sc := h.addStopChan()
-	h.mutex.RLock()
-	stopChan := h.stopChans[sc]
-	h.mutex.RUnlock()
+	stopChan := h.addStopChan()
 	ticker := time.NewTicker(time.Duration(hc.Period) * time.Second)
 	for {
 		before := time.Now()
@@ -173,37 +168,39 @@ func (h *HostChecker) runChecker(hc hostCheckerT, evChan chan events.EventT) {
 }
 
 func (h *HostChecker) monitorQueries() {
-	sc := h.addStopChan()
-	h.mutex.RLock()
-	stopChan := h.stopChans[sc]
-	h.mutex.RUnlock()
-	sid := events.GetSubscriberID(integrationName)
-	// events are HostChecker/Query/CheckerName/<FetchLast | IsAvailable>
-	ch, err := events.Subscribe(sid, integrationName+"/"+events.QueryDeviceType+"/+/+")
-	if err != nil {
-		log.Fatalf("ERROR: PiMqttGpio Integration could not subscribe to event - %v\n", err)
-	}
+	stopChan := h.addStopChan()
+	ch := h.mq.SubscribeToTopic(getTopicPrefix + "+")
 	for {
 		select {
 		case <-stopChan:
 			return
-		case ev := <-ch:
-			log.Printf("DEBUG: HostChecker Query Monitor got %v\n", ev)
-			switch strings.Split(ev.Name, "/")[3] {
-			case events.IsAvailable:
-				var isAlive bool
-				h.mutex.RLock()
-				isAlive = h.Checker[h.checkersByName[strings.Split(ev.Name, "/")[2]]].alive
+		case msg := <-ch:
+			name := msg.Topic[getTopicPrefixLen:]
+			log.Printf("DEBUG: HostChecker got query for %s\n", name)
+			h.mutex.RLock()
+			hcIx, found := h.checkersByName[name]
+			if !found {
 				h.mutex.RUnlock()
-				// log.Printf("DEBUG: HostChecker Query - %s yields %v\n", ev.Name, h.Checker[h.checkersByName[strings.Split(ev.Name, "/")[2]]])
-				if isAlive {
-					ev.Value.(chan interface{}) <- true
-				} else {
-					ev.Value.(chan interface{}) <- false
-				}
-			default:
-				log.Printf("WARNING: HostChecker received unknown query type %s\n", ev.Name)
+				log.Printf("WARNING: HostChecker received /get for unknown host: %s\n", name)
+				continue
 			}
+			hc := h.Checker[hcIx]
+			h.mutex.RUnlock()
+			dest := fmt.Sprintf("%s:%d", hc.Host, hc.Port)
+			_, err := net.DialTimeout(netType, dest, timeout)
+			var payload string
+			if err == nil {
+				payload = "true"
+			} else {
+				payload = "false"
+			}
+			mqMsg := mqtt.AghastMsgT{
+				Subtopic: mqttPrefix + hc.Name + "/state",
+				Qos:      0,
+				Retained: true,
+				Payload:  payload,
+			}
+			h.mqttChan <- mqMsg
 		}
 	}
 }
