@@ -5,98 +5,19 @@ PgUser = "steve"
 PgPassword = "aghast"  # Use a !!SECRET in production
 PgDatabase = "aghast"
 
-# Outside
-
 [[Logger]]  
-  Name = "OutsideUnitTemp"      
-  EventName = "Daikin/Inverter/Steve's Office/OutsideTemperature"
+  Name = "MusicActualTemp" 
+  Topic = "pizero01/gpio/sensor/dht22_temperature"
+  DataType = "float"                    # Either 'float', 'integer', or 'string'
+  
+[[Logger]]  
+  Name = "LivingRoomActualTemp" 
+  Topic = "pizero02/gpio/sensor/dht22_temperature"
   DataType = "float"                    # Either 'float', 'integer', or 'string'
 
-# Ground floor Unit Temperatures
-
 [[Logger]]
-  Name = "DininRoomgUnitTemp"         
-  EventName = "Daikin/Inverter/Dining Room/Temperature"
-  DataType = "float"
-  
-[[Logger]]
-  Name = "HallUnitTemp"   
-  EventName = "Daikin/Inverter/Hall/Temperature"
-  DataType = "float"
-  
-[[Logger]]
-  Name = "LivingRoomUnitTemp"      
-  EventName = "Daikin/Inverter/Living Room/Temperature"
-  DataType = "float"
-  
-[[Logger]]
-  Name = "MusicRoomUnitTemp"       
-  EventName = "Daikin/Inverter/Music Room/Temperature"
-  DataType = "float"
-
-# Ground floor Set Temperatures
-
-[[Logger]]
-  Name = "DiningRoomSetTemp"         
-  EventName = "Daikin/Inverter/Dining Room/stemp"
-  DataType = "float"
-  
-[[Logger]]
-  Name = "HallSetTemp"   
-  EventName = "Daikin/Inverter/Hall/stemp"
-  DataType = "float"
-  
-[[Logger]]
-  Name = "LivingRoomSetTemp"      
-  EventName = "Daikin/Inverter/Living Room/stemp"
-  DataType = "float"
-  
-[[Logger]]
-  Name = "MusicRoomSetTemp"       
-  EventName = "Daikin/Inverter/Music Room/stemp"
-  DataType = "float"
-
-# Ground floor monitors
-
-[[Logger]]
-  Name = "MusicRoomActualTemp"
-  EventName = "PiMqttGpio/Sensor/pizero01/gpio/dht22_temperature"
-  DataType = "float"
-
-[[Logger]]
-  Name = "MusicRoomHumidity"
-  EventName = "PiMqttGpio/Sensor/pizero01/gpio/dht22_humidity"
-  DataType = "integer"
-
-[[Logger]]
-  Name = "LivingRoomActualTemp"
-  EventName = "PiMqttGpio/Sensor/pizero02/gpio/dht22_temperature"  
-  DataType = "float"
-
-[[Logger]]
-  Name = "LivingRoomHumidity"
-  EventName = "PiMqttGpio/Sensor/pizero02/gpio/dht22_humidity"  
-  DataType = "integer"
-
-# First floor Units
-
-[[Logger]]
-  Name = "MasterBedUnitTemp"     
-  EventName = "Daikin/Inverter/Master Bedroom/Temperature"
-  DataType = "float"
-
-[[Logger]]
-  Name = "PaulsStudioUnitTemp"     
-  EventName = "Daikin/Inverter/Paul's Studio/Temperature"
-  DataType = "float"
-
-[[Logger]]
-  Name = "StevesOfficeUnitTemp"     
-  EventName = "Daikin/Inverter/Steve's Office/Temperature"
-  DataType = "float"
-
-[[Logger]]
-  Name = "SpareRoomUnitTemp"     
-  EventName = "Daikin/Inverter/Spare Bedroom/Temperature"
+  Name = "SteveOfficeUnitTemp"       
+  Topic = "daikin2mqtt/Steve_Office/sensors"
+  Key = "unit_temp"                      # payload is JSON, so must specify key
   DataType = "float"
  

@@ -21,22 +21,23 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
 	"sync"
 
-	"github.com/SMerrony/aghast/config"
-	"github.com/SMerrony/aghast/events"
-	"github.com/SMerrony/aghast/mqtt"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pelletier/go-toml"
+
+	"github.com/SMerrony/aghast/config"
+	"github.com/SMerrony/aghast/events"
+	"github.com/SMerrony/aghast/mqtt"
 )
 
 const (
 	configFilename = "/postgres.toml"
-	subscribeName  = "Postgres"
 )
 
 // The Postgres type encapsulates the Postgres Data Logging Integration
@@ -50,12 +51,14 @@ type Postgres struct {
 	mutex      sync.RWMutex
 	stopChans  []chan bool // used for stopping Goroutines
 	dbpool     *pgxpool.Pool
+	mq         mqtt.MQTT
 }
 
 type loggerT struct {
-	Name      string
-	EventName string
-	DataType  string
+	Name     string
+	Topic    string
+	Key      string
+	DataType string
 }
 
 // LoadConfig loads and stores the configuration for this Integration
@@ -76,14 +79,10 @@ func (p *Postgres) LoadConfig(confdir string) error {
 	return nil
 }
 
-// ProvidesDeviceTypes returns a slice of device types that this Integration supplies.
-func (p *Postgres) ProvidesDeviceTypes() []string {
-	return []string{"Logger"}
-}
-
 // Start launches the Integration, LoadConfig() should have been called beforehand.
 func (p *Postgres) Start(evChan chan events.EventT, mq mqtt.MQTT) {
 	p.mutex.Lock()
+	p.mq = mq
 	var err error
 	dbURL := "postgresql://" + p.PgUser + ":" + p.PgPassword + "@" + p.PgHost + ":" + p.PgPort + "/" + p.PgDatabase
 	p.dbpool, err = pgxpool.Connect(context.Background(), dbURL)
@@ -106,90 +105,101 @@ func (p *Postgres) Stop() {
 	log.Println("DEBUG: Postgres - All Goroutines should have stopped")
 }
 
-func (p *Postgres) addStopChan() (ix int) {
+func (p *Postgres) addStopChan() chan bool {
+	newChan := make(chan bool)
 	p.mutex.Lock()
-	p.stopChans = append(p.stopChans, make(chan bool))
-	ix = len(p.stopChans) - 1
+	p.stopChans = append(p.stopChans, newChan)
 	p.mutex.Unlock()
-	return ix
+	return newChan
 }
 
 func (p *Postgres) logger(l loggerT) {
-	sid := events.GetSubscriberID(subscribeName)
-	ch, err := events.Subscribe(sid, l.EventName)
-	if err != nil {
-		log.Printf("WARNING: Postgres Integration (logger) could not subscribe to event for %v\n", l)
-		return
-	}
+	ch := p.mq.SubscribeToTopic(l.Topic)
+	defer p.mq.UnsubscribeFromTopic(l.Topic)
+
 	// lookup or create id value for this data name
 	sql := "SELECT id FROM names WHERE name = '" + l.Name + "'"
 	var nameID int
-	err = p.dbpool.QueryRow(context.Background(), sql).Scan(&nameID)
+	err := p.dbpool.QueryRow(context.Background(), sql).Scan(&nameID)
 	if err == pgx.ErrNoRows {
-		sql = "INSERT INTO names(id, name) VALUES(DEFAULT, '" + l.Name + "')"
+		sql = "INSERT INTO names(id, name, topic) VALUES(DEFAULT, '" + l.Name + "', '" + l.Topic + "')"
 		_, err = p.dbpool.Exec(context.Background(), sql)
 		if err != nil {
-			log.Println("WARNING: Postgres Integration could not insert into 'names' table")
+			log.Printf("ERROR: Postgres Integration could not insert into 'names' table with query\n%s\n", sql)
 			return
 		}
 		sql := "SELECT id FROM names WHERE name = '" + l.Name + "'"
 		err = p.dbpool.QueryRow(context.Background(), sql).Scan(&nameID)
 		if err != nil {
-			log.Println("WARNING: Postgres Integration could not SELECT from  'names' table")
+			log.Println("ERROR: Postgres Integration could not SELECT from  'names' table")
 			return
 		}
 	} else {
 		if err != nil {
-			log.Println("WARNING: Postgres Integration could not query 'names' table")
+			log.Println("ERROR: Postgres Integration could not query 'names' table")
 			return
 		}
 	}
 	idString := strconv.Itoa(nameID)
-	sc := p.addStopChan()
-	p.mutex.RLock()
-	stopChan := p.stopChans[sc]
-	p.mutex.RUnlock()
-	log.Printf("DEBUG: Postgres logger starting for %s, subscriber #: %d\n", l.EventName, sid)
+	stopChan := p.addStopChan()
+	log.Printf("DEBUG: Postgres logger starting for %s\n", l.Topic)
 	for {
 		select {
 		case <-stopChan:
 			return
-		case ev := <-ch:
+		case msg := <-ch:
+			var value interface{}
+			if l.Key == "" {
+				value = string(msg.Payload.([]uint8))
+			} else {
+				jsonMap := make(map[string]interface{})
+				err := json.Unmarshal([]byte(msg.Payload.([]uint8)), &jsonMap)
+				if err != nil {
+					log.Printf("ERROR: DataLogger - Could not understand JSON %s\n", msg.Payload.(string))
+					return
+				}
+				v, found := jsonMap[l.Key]
+				if !found {
+					log.Printf("ERROR: DataLogger - Could find Key in JSON %s\n", msg.Payload.(string))
+					return
+				}
+				value = v
+			}
 			switch l.DataType {
 			case "float":
 				var fl float64
-				switch ev.Value.(type) {
+				switch value.(type) {
 				case float32:
-					fl = float64(ev.Value.(float32))
+					fl = float64(value.(float32))
 				case float64:
-					fl = ev.Value.(float64)
+					fl = value.(float64)
 				case string:
-					fl, err = strconv.ParseFloat(ev.Value.(string), 64)
+					fl, err = strconv.ParseFloat(value.(string), 64)
 					if err != nil {
-						log.Printf("WARNING: Postgres logger could not parse float from %v\n", ev.Value.(string))
+						log.Printf("WARNING: Postgres logger could not parse float from %v\n", value.(string))
 						continue
 					}
 				}
 				sql = fmt.Sprintf("INSERT INTO logged_floats(id, ts, float_val) VALUES( %s, NOW(), %f)", idString, fl)
 			case "integer":
 				var num int
-				switch ev.Value.(type) {
+				switch value.(type) {
 				case int:
-					num = ev.Value.(int)
+					num = value.(int)
 				case int32:
-					num = int(ev.Value.(int32))
+					num = int(value.(int32))
 				case int64:
-					num = int(ev.Value.(int64))
+					num = int(value.(int64))
 				case string:
-					num, err = strconv.Atoi(ev.Value.(string))
+					num, err = strconv.Atoi(value.(string))
 				}
 				if err != nil {
-					log.Printf("WARNING: Postgres logger could not parse integer from %v\n", ev.Value.(string))
+					log.Printf("WARNING: Postgres logger could not parse integer from %v\n", value.(string))
 					continue
 				}
 				sql = fmt.Sprintf("INSERT INTO logged_integers(id, ts, int_val) VALUES( %s, NOW(), %d)", idString, num)
 			case "string":
-				sql = fmt.Sprintf("INSERT INTO logged_strings(id, ts, string_val) VALUES( %s, NOW(), %s)", idString, ev.Value.(string))
+				sql = fmt.Sprintf("INSERT INTO logged_strings(id, ts, string_val) VALUES( %s, NOW(), %s)", idString, value.(string))
 			default:
 				log.Printf("WARNING: Postgres unrecognised ValueType: %s\n", l.DataType)
 				continue

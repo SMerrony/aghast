@@ -25,15 +25,15 @@ PgPassword = "aghast"  # Use a !!SECRET in production
 PgDatabase = "aghast"
 
 [[Logger]]  
-  Name = "OutsideUnitTemp"      
-  EventName = "Daikin/Inverter/Hall/OutsideTemperature"
+  Name = "MusicActualTemp" 
+  Topic = "pizero01/gpio/sensor/dht22_temperature"
   DataType = "float"                    # Either 'float', 'integer', or 'string'
   
 [[Logger]]
-  Name = "MusicUnitTemp"       
-  EventName = "Daikin/Inverter/Music Room/Temperature"
-  DataType = "float"
+  Name = "SteveOfficeUnitTemp"       
+  Topic = "daikin2mqtt/Steve_Office/controls"
+  Key = "set_temp"                      # payload is JSON, so must specify key
+  DataType = "integer"
 ```
-Note that the `EventName`s are AGHAST Events, not MQTT messages.
 
 ## Usage
