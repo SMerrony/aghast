@@ -34,6 +34,7 @@ import (
 	"github.com/SMerrony/aghast/integrations/hostchecker"
 	"github.com/SMerrony/aghast/integrations/influx"
 	"github.com/SMerrony/aghast/integrations/mqttcache"
+	"github.com/SMerrony/aghast/integrations/mqttsender"
 	"github.com/SMerrony/aghast/integrations/pimqttgpio"
 	"github.com/SMerrony/aghast/integrations/postgres"
 	"github.com/SMerrony/aghast/integrations/scraper"
@@ -73,6 +74,8 @@ func newIntegration(iName string) {
 		integs[iName] = new(influx.Influx)
 	case "mqttcache":
 		integs[iName] = new(mqttcache.MqttCache)
+	case "mqttsender":
+		integs[iName] = new(mqttsender.MqttSender)
 	case "pimqttgpio":
 		integs[iName] = new(pimqttgpio.PiMqttGpio)
 	case "postgres":

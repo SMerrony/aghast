@@ -14,7 +14,7 @@ We believe that end-users of HA systems are generally not interested in the nuts
 * An MQTT-Connected dashboard - Node-Red works well and example flows are included
 
 ## Integrations
-Integrations provide support for interacting with real-world or virtual resources, eg. Wifi lights, web scrapers, HVAC systems.
+Integrations provide support for interacting with real-world or virtual resources, eg. Wifi lights, web scrapers, HVAC systems.  Most interaction is via MQTT.
 
 Currently available Integrations...
 | Integration | Description                  | Documentation |
@@ -26,11 +26,12 @@ Currently available Integrations...
 | HostChecker | Monitor Device availability      | [HostChecker](docs/HostChecker.md) |
 | Influx      | Log Data to InfluxDB             | [Influx](docs/Influx.md) |
 | MqttCache   | Retain transient MQTT messages   | [MqttCache](docs/MqttCache.md) |
+| MqttSender  | Send MQTT messages regularly     | [MqttSender](docs/MqttSender.md)
 | PiMqttGpio  | Capture pi-mqtt-gpio data        | [PiMqttGpio](docs/PiMqttGpio.md) |
 | Postgres    | Log Data to PostgreSQL DB        | [Postgres](docs/Postgres.md) |
 | Scraper     | Web Scraping                     | [Scraper](docs/Scraper.md) |
 | Tuya        | Tuya WiFi lights, ZigBee Sockets | Deprecated [](docs/) |
-| ~~Zigbee2MQTT~~ | ~~Zigbee2MQTT sockets...~~   | *Not required with new builtin MQTT functionality* |
+| ~~Zigbee2MQTT~~ | ~~Zigbee2MQTT sockets...~~   | *Not required with new inbuilt MQTT functionality* |
 
 The Time Integration must be enabled for AGHAST to start, you will also probably need to
 enable Automation and at least one other Integration in order to do anything useful.
@@ -61,6 +62,8 @@ Integrations = [
 #  "datalogger",  # Commented out, will not be enabled
   "hostchecker",
   "influx",
+  "mqttcache",
+  "mqttsender",
   "pimqttgpio",
   "postgres",
   "scraper",

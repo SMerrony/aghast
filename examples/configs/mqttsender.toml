@@ -1,0 +1,13 @@
+# Example MqttSender configuration
+
+[[Sender]]
+  Topic = "zigbee2mqtt/Office_Socket/get"
+  Payload = "{\"state\": \"\"}"     # Use "" if nothing is required
+  Interval = "Minutes"              # One of Days, Hours, Minutes, or Seconds
+  Period = 1                        # An integral number of "Intervals"
+  
+[[Sender]]
+  Topic = "zigbee2mqtt/Office_3_Way_Socket/get"
+  Payload = "{\"state_l1\": \"\"}"
+  Interval = "Seconds"              # One of Days, Hours, Minutes, or Seconds
+  Period = 90
