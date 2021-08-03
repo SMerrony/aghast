@@ -1,4 +1,4 @@
-// Copyright ©2020 Steve Merrony
+// Copyright ©2020, 2021 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,23 @@
 package influx
 
 import (
+	"encoding/json"
 	"log"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/SMerrony/aghast/config"
-	"github.com/SMerrony/aghast/events"
-	"github.com/SMerrony/aghast/mqtt"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	influxAPI "github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/pelletier/go-toml"
+
+	"github.com/SMerrony/aghast/config"
+	"github.com/SMerrony/aghast/events"
+	"github.com/SMerrony/aghast/mqtt"
 )
 
 const (
 	configFilename = "/influx.toml"
-	subscribeName  = "Influx"
 )
 
 // The Influx type encapsulates the Data Logging Integration
@@ -44,20 +45,22 @@ type Influx struct {
 	client                  influxdb2.Client
 	writeAPI                influxAPI.WriteAPI
 	Logger                  []loggerT
-	influxMu                sync.RWMutex
+	mutex                   sync.RWMutex
 	stopChans               []chan bool // used for stopping Goroutines
+	mq                      mqtt.MQTT
 }
 
 type loggerT struct {
-	Name      string
-	EventName string
-	DataType  string
+	Name     string
+	Topic    string
+	Key      string
+	DataType string
 }
 
 // LoadConfig loads and stores the configuration for this Integration
 func (i *Influx) LoadConfig(confdir string) error {
-	i.influxMu.Lock()
-	defer i.influxMu.Unlock()
+	i.mutex.Lock()
+	defer i.mutex.Unlock()
 	confBytes, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
 		log.Println("ERROR: Could not load Influx configuration ", err.Error())
@@ -72,17 +75,13 @@ func (i *Influx) LoadConfig(confdir string) error {
 	return nil
 }
 
-// ProvidesDeviceTypes returns a slice of device types that this Integration supplies.
-func (i *Influx) ProvidesDeviceTypes() []string {
-	return []string{"Logger"}
-}
-
 // Start launches the Integration, LoadConfig() should have been called beforehand.
 func (i *Influx) Start(evChan chan events.EventT, mq mqtt.MQTT) {
-	i.influxMu.Lock()
+	i.mutex.Lock()
+	i.mq = mq
 	i.client = influxdb2.NewClient(i.URL, i.Token)
 	i.writeAPI = i.client.WriteAPI(i.Org, i.Bucket)
-	i.influxMu.Unlock()
+	i.mutex.Unlock()
 	for _, l := range i.Logger {
 		go i.logger(l)
 	}
@@ -96,78 +95,95 @@ func (i *Influx) Stop() {
 	log.Println("DEBUG: Influx - All Goroutines should have stopped")
 }
 
-func (i *Influx) addStopChan() (ix int) {
-	i.influxMu.Lock()
-	i.stopChans = append(i.stopChans, make(chan bool))
-	ix = len(i.stopChans) - 1
-	i.influxMu.Unlock()
-	return ix
+func (i *Influx) addStopChan() chan bool {
+	newChan := make(chan bool)
+	i.mutex.Lock()
+	i.stopChans = append(i.stopChans, newChan)
+	i.mutex.Unlock()
+	return newChan
 }
 
 func (i *Influx) logger(l loggerT) {
-	sid := events.GetSubscriberID(subscribeName)
-	ch, err := events.Subscribe(sid, l.EventName)
-	if err != nil {
-		log.Printf("WARNING: Influx Integration (logger) could not subscribe to event for %v\n", l)
-		return
-	}
-	sc := i.addStopChan()
-	i.influxMu.RLock()
-	stopChan := i.stopChans[sc]
-	i.influxMu.RUnlock()
-	log.Printf("DEBUG: Influx logger starting for %s, subscriber #: %d\n", l.EventName, sid)
+	ch := i.mq.SubscribeToTopic(l.Topic)
+	defer i.mq.UnsubscribeFromTopic(l.Topic)
+
+	stopChan := i.addStopChan()
+
+	log.Printf("INFO: Influx logger starting for %s, optional key: %s\n", l.Topic, l.Key)
 	for {
 		select {
 		case <-stopChan:
 			i.writeAPI.Flush()
 			return
-		case ev := <-ch:
+		case msg := <-ch:
+			var value interface{}
+			if l.Key == "" {
+				value = string(msg.Payload.([]uint8))
+			} else {
+				jsonMap := make(map[string]interface{})
+				err := json.Unmarshal([]byte(msg.Payload.([]uint8)), &jsonMap)
+				if err != nil {
+					log.Printf("ERROR: Influx - Could not understand JSON %s\n", msg.Payload.(string))
+					return
+				}
+				v, found := jsonMap[l.Key]
+				if !found {
+					log.Printf("ERROR: Influx - Could find Key in JSON %s\n", msg.Payload.(string))
+					return
+				}
+				value = v
+			}
+			key := l.Topic
+			if l.Key != "" {
+				key += "/" + l.Key
+			}
+			var err error
 			switch l.DataType {
 			case "float":
 				var fl float64
-				switch ev.Value.(type) {
+				switch value.(type) {
 				case float32:
-					fl = float64(ev.Value.(float32))
+					fl = float64(value.(float32))
 				case float64:
-					fl = ev.Value.(float64)
+					fl = value.(float64)
 				case string:
-					fl, err = strconv.ParseFloat(ev.Value.(string), 64)
+					fl, err = strconv.ParseFloat(value.(string), 64)
 					if err != nil {
-						log.Printf("WARNING: Influx logger could not parse float from %v\n", ev.Value.(string))
+						log.Printf("WARNING: Influx logger could not parse float from %v\n", value.(string))
 						continue
 					}
 				}
 				p := influxdb2.NewPoint(l.Name,
 					map[string]string{
-						"EventName": l.EventName,
+						"EventName": key,
 					},
 					map[string]interface{}{
-						l.EventName: fl,
+						key: fl,
 					},
 					time.Now())
 				i.writeAPI.WritePoint(p)
 			case "integer":
 				var num int
-				switch ev.Value.(type) {
+				switch value.(type) {
 				case int:
-					num = ev.Value.(int)
+					num = value.(int)
 				case int32:
-					num = int(ev.Value.(int32))
+					num = int(value.(int32))
 				case int64:
-					num = int(ev.Value.(int64))
+					num = int(value.(int64))
 				case string:
-					num, err = strconv.Atoi(ev.Value.(string))
+					num, err = strconv.Atoi(value.(string))
 				}
 				if err != nil {
-					log.Printf("WARNING: Influx logger could not parse integer from %v\n", ev.Value.(string))
+					log.Printf("WARNING: Influx logger could not parse integer from %v\n", value.(string))
 					continue
 				}
 				p := influxdb2.NewPoint(l.Name,
 					map[string]string{
-						"EventName": l.EventName,
+						"EventName": key,
 					},
 					map[string]interface{}{
-						l.EventName: num,
+						key: num,
 					},
 					time.Now())
 				i.writeAPI.WritePoint(p)
@@ -175,10 +191,10 @@ func (i *Influx) logger(l loggerT) {
 				// everything else treated as a string
 				p := influxdb2.NewPoint(l.Name,
 					map[string]string{
-						"EventName": l.EventName,
+						"EventName": key,
 					},
 					map[string]interface{}{
-						l.EventName: ev.Value,
+						key: value.(string),
 					},
 					time.Now())
 				i.writeAPI.WritePoint(p)

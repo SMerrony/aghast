@@ -5,32 +5,13 @@ Token = "!!SECRET(influxToken)"
 URL = "http://localhost:8086"
 
 # Data to log
-[[Logger]]
-  Name = "OutsideTemp"      
-  EventName = "Daikin/Inverter/Hall/OutsideTemperature"
-  DataType = "float"                    # Either 'float', 'integer', or 'string'
-  
-[[Logger]]
-  Name = "HallTemp"   
-  EventName = "Daikin/Inverter/Hall/Temperature"
-  DataType = "float"
+[[Logger]]  
+  Name = "MusicActualTemp" 
+  Topic = "pizero01/gpio/sensor/dht22_temperature"
+  DataType = "float"     
 
 [[Logger]]
-  Name = "MusicTemp"       
-  EventName = "Daikin/Inverter/Music Room/Temperature"
-  DataType = "float"
-
-[[Logger]]
-  Name = "SalonTemp"      
-  EventName = "Daikin/Inverter/Living Room/Temperature"
-  DataType = "float"
-
-[[Logger]]
-  Name = "DiningTemp"         
-  EventName = "Daikin/Inverter/Dining Room/Temperature"
-  DataType = "float"
-
-[[Logger]]
-  Name = "MasterBedTemp"     
-  EventName = "Daikin/Inverter/Master Bedroom/Temperature"
+  Name = "SteveOfficeUnitTemp"       
+  Topic = "daikin2mqtt/Steve_Office/sensors"
+  Key = "unit_temp"                      # payload is JSON, so must specify key
   DataType = "float"
