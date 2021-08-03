@@ -24,17 +24,27 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
 
 	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/SMerrony/aghast/server"
 )
 
-var configFlag = flag.String("configdir", "", "directory containing configuration files")
+const SemVer = "v0.2.0" // TODO Update SemVer on each release
+
+var (
+	configFlag  = flag.String("configdir", "", "directory containing configuration files")
+	versionFlag = flag.Bool("version", false, "display version number and exit")
+)
 
 func main() {
 	// check flags
 	flag.Parse()
+	if *versionFlag {
+		log.Printf("AGHAST version %s built with %s\n", SemVer, runtime.Version())
+		return
+	}
 	if *configFlag == "" {
 		log.Fatalln("ERROR: You must supply a -configdir")
 	}
@@ -60,7 +70,7 @@ func main() {
 		Subtopic: "/status",
 		Qos:      0,
 		Retained: false,
-		Payload:  "Started",
+		Payload:  "Started " + SemVer,
 	}
 
 	sigChan := make(chan os.Signal, 1)

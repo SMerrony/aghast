@@ -51,8 +51,6 @@ MqttPort = 1883               # MQTT Broker port
 MqttClientID = "aghast"       # MQTT Client ID
 MqttBaseTopic = "aghast"      # First element of topic for all messages we send
 
-LogEvents = false             # A LOT of stuff will be logged if this is true!
-
 ControlPort = 46445           # HTTP port for back-end admin control
 
 # List of Integrations we want enabled

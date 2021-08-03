@@ -44,7 +44,6 @@ const (
 // A MainConfigT holds the top-level configuration details
 type MainConfigT struct {
 	SystemName          string
-	LogEvents           bool
 	Longitude, Latitude float64
 	MqttBroker          string
 	MqttPort            int

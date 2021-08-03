@@ -121,7 +121,7 @@ func (m *MqttCache) monitorMsgSources() {
 			tmpCache.lastMsgTime = time.Now()
 			m.cacheMap[msg.Topic] = tmpCache
 			m.mutex.Unlock()
-			log.Printf("DEBUG: mqttcache got data for %s\n", tmpCache.Topic)
+			// log.Printf("DEBUG: mqttcache got data for %s\n", tmpCache.Topic)
 		}
 	}
 }
@@ -142,7 +142,7 @@ func (m *MqttCache) monitorRequests() {
 			// 3. No data have arrived yet
 			// 4. We don't know this topic (not configured)
 			reqTopic := req.Topic[getTopicPrefixLen:]
-			log.Printf("DEBUG: mqttcache got request for topic '%s'\n", reqTopic)
+			// log.Printf("DEBUG: mqttcache got request for topic '%s'\n", reqTopic)
 			m.mutex.RLock()
 			cache, ok := m.cacheMap[reqTopic]
 			m.mutex.RUnlock()

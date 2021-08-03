@@ -8,17 +8,15 @@ MqttUsername = ""
 MqttPassword = ""
 MqttBaseTopic = "aghast"
 
-LogEvents = true              # A LOT of stuff will be logged if this is true!
-
 ControlPort = 46445           # HTTP port for back-end admin control
 
 # List of Integrations we want enabled
 Integrations = [
   "time",         # the Time integration MUST be enabled
   "automation",
-  "datalogger",
+#  "datalogger",  # as it's commented here, it won't be started
   "hostchecker",
-  "influx",
+#  "influx",
   "mqttcache",
   "mqttsender",
   "postgres",
