@@ -26,7 +26,6 @@ import (
 	"os/signal"
 
 	"github.com/SMerrony/aghast/config"
-	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/SMerrony/aghast/server"
 )
@@ -55,10 +54,7 @@ func main() {
 	mq := mqtt.MQTT{}
 	mqttChan := mq.Start(conf.MqttBroker, conf.MqttPort, conf.MqttUsername, conf.MqttPassword, conf.MqttClientID, conf.MqttBaseTopic)
 
-	// start the event manager - this should happen before Integrations are started
-	eventChan := events.StartEventManager(conf.LogEvents)
-
-	server.StartIntegrations(conf, eventChan, mq)
+	server.StartIntegrations(conf, mq)
 
 	mqttChan <- mqtt.AghastMsgT{
 		Subtopic: "/status",

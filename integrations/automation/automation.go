@@ -29,7 +29,6 @@ import (
 	"strings"
 
 	"github.com/SMerrony/aghast/config"
-	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/pelletier/go-toml"
 )
@@ -45,7 +44,6 @@ type Automation struct {
 	confDir           string
 	automations       []automationT
 	automationsByName map[string]int
-	evChan            chan events.EventT
 	mq                mqtt.MQTT
 	stopChans         map[string]chan bool
 }
@@ -175,9 +173,7 @@ func (a *Automation) ProvidesDeviceTypes() []string {
 
 // Start launches a Goroutine for each Automation, LoadConfig() should have been called beforehand.
 // FIXME We should just subscribe to each event, not launch a Goroutine for each one!
-func (a *Automation) Start(evChan chan events.EventT, mq mqtt.MQTT) {
-
-	a.evChan = evChan
+func (a *Automation) Start(mq mqtt.MQTT) {
 	a.mq = mq
 	a.stopChans = make(map[string]chan bool)
 	// for each automation, subscribe to its Event

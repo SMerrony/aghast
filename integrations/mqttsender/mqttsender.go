@@ -27,7 +27,6 @@ import (
 	"github.com/pelletier/go-toml"
 
 	"github.com/SMerrony/aghast/config"
-	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 )
 
@@ -84,7 +83,7 @@ func (m *MqttSender) LoadConfig(confdir string) error {
 }
 
 // Start func begins running the Integration GoRoutines and should return quickly
-func (m *MqttSender) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+func (m *MqttSender) Start(mq mqtt.MQTT) {
 	m.mq = mq
 	go m.sender()
 }

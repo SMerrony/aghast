@@ -28,14 +28,12 @@ import (
 	gotime "time"
 
 	"github.com/SMerrony/aghast/config"
-	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/integrations/automation"
 	"github.com/SMerrony/aghast/integrations/datalogger"
 	"github.com/SMerrony/aghast/integrations/hostchecker"
 	"github.com/SMerrony/aghast/integrations/influx"
 	"github.com/SMerrony/aghast/integrations/mqttcache"
 	"github.com/SMerrony/aghast/integrations/mqttsender"
-	"github.com/SMerrony/aghast/integrations/pimqttgpio"
 	"github.com/SMerrony/aghast/integrations/postgres"
 	"github.com/SMerrony/aghast/integrations/scraper"
 	"github.com/SMerrony/aghast/integrations/time"
@@ -50,7 +48,7 @@ type Integration interface {
 	LoadConfig(string) error
 
 	// Start func begins running the Integration GoRoutines and should return quickly
-	Start(chan events.EventT, mqtt.MQTT)
+	Start(mqtt.MQTT)
 
 	// Stop terminates the Integration and all Goroutines it contains
 	Stop()
@@ -58,7 +56,6 @@ type Integration interface {
 
 var integs = make(map[string]Integration)
 var mainConfig config.MainConfigT
-var evCh chan events.EventT
 var mq mqtt.MQTT
 
 func newIntegration(iName string) {
@@ -75,8 +72,6 @@ func newIntegration(iName string) {
 		integs[iName] = new(mqttcache.MqttCache)
 	case "mqttsender":
 		integs[iName] = new(mqttsender.MqttSender)
-	case "pimqttgpio":
-		integs[iName] = new(pimqttgpio.PiMqttGpio)
 	case "postgres":
 		integs[iName] = new(postgres.Postgres)
 	case "scraper":
@@ -91,16 +86,15 @@ func newIntegration(iName string) {
 }
 
 // StartIntegrations asks each enabled Integration to configure itself, then starts them.
-func StartIntegrations(conf config.MainConfigT, evChan chan events.EventT, mqtt mqtt.MQTT) {
+func StartIntegrations(conf config.MainConfigT, mqtt mqtt.MQTT) {
 	mainConfig = conf
-	evCh = evChan
 	mq = mqtt
 	for _, i := range conf.Integrations {
 		newIntegration(i)
 		if err := integs[i].LoadConfig(conf.ConfigDir); err != nil {
 			log.Fatalf("ERROR: %s Integration could not load its configuration", i)
 		}
-		go integs[i].Start(evChan, mqtt)
+		go integs[i].Start(mqtt)
 	}
 
 	go dailyTimeRestart()
@@ -186,7 +180,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		if err := integs[i].LoadConfig(mainConfig.ConfigDir); err != nil {
 			log.Fatalf("ERROR: %s Integration could not reload its configuration", i)
 		}
-		go integs[i].Start(evCh, mq)
+		go integs[i].Start(mq)
 	}
 	t, err := template.New("root").Parse(homeTemplateMain)
 	if err != nil {
@@ -221,7 +215,7 @@ func dailyTimeRestart() {
 		if err := integs["time"].LoadConfig(mainConfig.ConfigDir); err != nil {
 			log.Fatalln("ERROR: Time Integration could not reload its configuration")
 		}
-		go integs["time"].Start(evCh, mq)
+		go integs["time"].Start(mq)
 		<-daily.C
 	}
 

@@ -27,7 +27,6 @@ import (
 	"github.com/pelletier/go-toml"
 
 	"github.com/SMerrony/aghast/config"
-	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 )
 
@@ -76,7 +75,7 @@ func (m *MqttCache) LoadConfig(confdir string) error {
 }
 
 // Start func begins running the Integration GoRoutines and should return quickly
-func (m *MqttCache) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+func (m *MqttCache) Start(mq mqtt.MQTT) {
 	m.mq = mq
 	// subscribe to all buffer sources and funnel the messages into a single chan
 	m.allMsgs = make(chan mqtt.GeneralMsgT)

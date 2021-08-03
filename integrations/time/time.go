@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/SMerrony/aghast/config"
-	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/nathan-osman/go-sunrise"
 	"github.com/pelletier/go-toml"
@@ -38,7 +37,6 @@ const (
 	configFilename = "/time.toml"
 	tickerType     = "Ticker"
 	tickerDev      = "SystemTicker"
-	eventType      = "Events"
 	tomlTimeFmt    = "15:04:05"
 )
 
@@ -47,7 +45,6 @@ const (
 // The Time Integration produces time-based events for other Integrations to use.
 type Time struct {
 	timeMu              sync.RWMutex
-	evChan              chan events.EventT
 	mq                  mqtt.MQTT
 	Latitude, Longitude float64
 	Alert               []timeEventT            `toml:"Event"`
@@ -138,15 +135,8 @@ func getHhmmssFromString(Hhmmss string) (hh, mm, ss int, e error) {
 	return hh, mm, ss, nil
 }
 
-// ProvidesDeviceTypes returns a slice of strings naming each Device-type this
-// Integration supplies.
-func (t *Time) ProvidesDeviceTypes() []string {
-	return []string{tickerType, eventType}
-}
-
 // Start any services this Integration provides.
-func (t *Time) Start(evChan chan events.EventT, mq mqtt.MQTT) {
-	t.evChan = evChan
+func (t *Time) Start(mq mqtt.MQTT) {
 	t.mq = mq
 	go t.tickers()
 	go t.timeEvents()
@@ -183,10 +173,6 @@ func (t *Time) timeEvents() {
 			evs, any := t.alertsByTime[HhmmssNow]
 			if any {
 				for _, te := range evs {
-					t.evChan <- events.EventT{
-						Name:  integName + "/" + eventType + "/TimedEvent/" + te.Name,
-						Value: te.Hhmmss, // why not? :-)
-					}
 					t.mq.PublishChan <- mqtt.AghastMsgT{
 						Subtopic: "/time/events/" + te.Name,
 						Qos:      0,
@@ -213,25 +199,20 @@ func (t *Time) tickers() {
 		case <-stopChan:
 			return
 		case tick := <-secs.C:
-			t.evChan <- events.EventT{Name: integName + "/" + tickerType + "/" + tickerDev + "/" + "Second", Value: tick.Second()}
 			sec := strconv.Itoa(tick.Second())
 			t.mq.PublishChan <- mqtt.AghastMsgT{Subtopic: "/time/tickers/seconds", Qos: 0, Retained: false, Payload: "{\"second\": " + sec + "}"}
 			// new minute?
 			if tick.Minute() != lastMinute {
-				// events.DumpSubs()
-				t.evChan <- events.EventT{Name: integName + "/" + tickerType + "/" + tickerDev + "/" + "Minute", Value: tick.Minute()}
 				minute := strconv.Itoa(tick.Minute())
 				t.mq.PublishChan <- mqtt.AghastMsgT{Subtopic: "/time/tickers/minutes", Qos: 0, Retained: false, Payload: "{\"minute\": " + minute + "}"}
 				lastMinute = tick.Minute()
 				// new hour?
 				if tick.Hour() != lastHour {
-					t.evChan <- events.EventT{Name: integName + "/" + tickerType + "/" + tickerDev + "/" + "Hour", Value: tick.Hour()}
 					hour := strconv.Itoa(tick.Hour())
 					t.mq.PublishChan <- mqtt.AghastMsgT{Subtopic: "/time/tickers/hours", Qos: 0, Retained: false, Payload: "{\"hour\": " + hour + "}"}
 					lastHour = tick.Hour()
 					// new day?
 					if tick.Day() != lastDay {
-						t.evChan <- events.EventT{Name: integName + "/" + tickerType + "/" + tickerDev + "/" + "Day", Value: tick.Day()}
 						day := strconv.Itoa(tick.Day())
 						t.mq.PublishChan <- mqtt.AghastMsgT{Subtopic: "/time/tickers/days", Qos: 0, Retained: false, Payload: "{\"day\": " + day + "}"}
 						lastDay = tick.Day()

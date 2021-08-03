@@ -32,7 +32,6 @@ import (
 	"github.com/pelletier/go-toml"
 
 	"github.com/SMerrony/aghast/config"
-	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 )
 
@@ -80,7 +79,7 @@ func (p *Postgres) LoadConfig(confdir string) error {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (p *Postgres) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+func (p *Postgres) Start(mq mqtt.MQTT) {
 	p.mutex.Lock()
 	p.mq = mq
 	var err error

@@ -27,7 +27,7 @@ Currently available Integrations...
 | Influx      | Log Data to InfluxDB             | [Influx](docs/Influx.md) |
 | MqttCache   | Retain transient MQTT messages   | [MqttCache](docs/MqttCache.md) |
 | MqttSender  | Send MQTT messages regularly     | [MqttSender](docs/MqttSender.md)
-| PiMqttGpio  | Capture pi-mqtt-gpio data        | [PiMqttGpio](docs/PiMqttGpio.md) |
+| ~~PiMqttGpio~~  | ~~Capture pi-mqtt-gpio data~~ | *Not required with new inbuilt MQTT functionality* |
 | Postgres    | Log Data to PostgreSQL DB        | [Postgres](docs/Postgres.md) |
 | Scraper     | Web Scraping                     | [Scraper](docs/Scraper.md) |
 | Tuya        | Tuya WiFi lights, ZigBee Sockets | Deprecated [](docs/) |

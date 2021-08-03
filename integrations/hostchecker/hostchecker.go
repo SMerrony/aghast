@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/SMerrony/aghast/config"
-	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/pelletier/go-toml"
 )
@@ -88,13 +87,13 @@ func (h *HostChecker) LoadConfig(confdir string) error {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (h *HostChecker) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+func (h *HostChecker) Start(mq mqtt.MQTT) {
 	h.mutex.Lock()
 	h.mqttChan = mq.PublishChan
 	h.mq = mq
 	h.mutex.Unlock()
 	for _, dev := range h.Checker {
-		go h.runChecker(dev, evChan)
+		go h.runChecker(dev)
 	}
 	go h.monitorQueries()
 }
@@ -114,7 +113,7 @@ func (h *HostChecker) Stop() {
 	}
 }
 
-func (h *HostChecker) runChecker(hc hostCheckerT, evChan chan events.EventT) {
+func (h *HostChecker) runChecker(hc hostCheckerT) {
 	dest := fmt.Sprintf("%s:%d", hc.Host, hc.Port)
 	log.Printf("INFO: HostChecker will monitor host %s - %s\n", dest, hc.Name)
 	hc.firstCheck = true

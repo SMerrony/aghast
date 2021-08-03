@@ -28,7 +28,6 @@ import (
 	"time"
 
 	"github.com/SMerrony/aghast/config"
-	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/gocolly/colly/v2"
 	"github.com/pelletier/go-toml"
@@ -103,19 +102,13 @@ func (s *Scraper) LoadConfig(confdir string) error {
 	return nil
 }
 
-// ProvidesDeviceTypes returns a slice of device types that this Integration supplies.
-func (s *Scraper) ProvidesDeviceTypes() []string {
-	return []string{"Scraper", "Query"}
-}
-
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (s *Scraper) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+func (s *Scraper) Start(mq mqtt.MQTT) {
 	s.mq = mq
 	for _, sc := range s.Scrape {
 		go s.runScraper(sc)
 	}
-	// log.Printf("DEBUG: Scraper has started %d scraper(s)\n", len(s.scrapers))
-	go s.monitorQueries()
+	log.Printf("INFO: Scraper has started %d scraper(s)\n", len(s.Scrape))
 }
 
 func (s *Scraper) addStopChan() (ix int) {
@@ -182,7 +175,7 @@ func (s *Scraper) runScraper(scr scraperT) {
 				s.mq.PublishChan <- mqtt.AghastMsgT{
 					Subtopic: t,
 					Qos:      0,
-					Retained: true,
+					Retained: true, // *** Yes, in this case retention makes sense! ***
 					Payload:  a,
 				}
 			}
@@ -208,45 +201,47 @@ func (s *Scraper) runScraper(scr scraperT) {
 	}
 }
 
-func (s *Scraper) monitorQueries() {
-	sc := s.addStopChan()
-	s.mutex.RLock()
-	stopChan := s.stopChans[sc]
-	s.mutex.RUnlock()
-	sid := events.GetSubscriberID(subscriberName)
-	ch, err := events.Subscribe(sid, subscriberName+"/"+events.QueryDeviceType+"/+/+/+")
-	if err != nil {
-		log.Fatalf("ERROR: Scraper Integration could not subscribe to event - %v\n", err)
-	}
-	for {
-		select {
-		case <-stopChan:
-			return
-		case ev := <-ch:
-			log.Printf("DEBUG: Scraper Query Monitor got %v\n", ev)
-			switch strings.Split(ev.Name, "/")[events.EvQueryType] {
-			case events.FetchLastIndexed:
-				var val interface{}
-				s.mutex.RLock()
-				dev := s.scrapersByName[strings.Split(ev.Name, "/")[events.EvDeviceName]]
-				ind, err := strconv.Atoi(strings.Split(ev.Name, "/")[events.EvIndex])
-				if err != nil {
-					log.Printf("WARNING: Scraper Query Monitor got malformed request %s\n", ev.Name)
-					continue
-				}
-				switch s.Scrape[dev].ValueType {
-				case "float":
-					val = s.Scrape[dev].savedFloat[ind]
-				case "integer":
-					val = s.Scrape[dev].savedInteger[ind]
-				case "string":
-					val = s.Scrape[dev].savedString[ind]
-				}
-				s.mutex.RUnlock()
-				ev.Value.(chan interface{}) <- val
-			default:
-				log.Printf("WARNING: Scraper received unknown query type %s\n", ev.Name)
-			}
-		}
-	}
-}
+// TODO leaving this here for now in case we decide to imnplement a 'get'-style function...
+//
+// func (s *Scraper) monitorQueries() {
+// 	sc := s.addStopChan()
+// 	s.mutex.RLock()
+// 	stopChan := s.stopChans[sc]
+// 	s.mutex.RUnlock()
+// 	sid := events.GetSubscriberID(subscriberName)
+// 	ch, err := events.Subscribe(sid, subscriberName+"/"+events.QueryDeviceType+"/+/+/+")
+// 	if err != nil {
+// 		log.Fatalf("ERROR: Scraper Integration could not subscribe to event - %v\n", err)
+// 	}
+// 	for {
+// 		select {
+// 		case <-stopChan:
+// 			return
+// 		case ev := <-ch:
+// 			log.Printf("DEBUG: Scraper Query Monitor got %v\n", ev)
+// 			switch strings.Split(ev.Name, "/")[events.EvQueryType] {
+// 			case events.FetchLastIndexed:
+// 				var val interface{}
+// 				s.mutex.RLock()
+// 				dev := s.scrapersByName[strings.Split(ev.Name, "/")[events.EvDeviceName]]
+// 				ind, err := strconv.Atoi(strings.Split(ev.Name, "/")[events.EvIndex])
+// 				if err != nil {
+// 					log.Printf("WARNING: Scraper Query Monitor got malformed request %s\n", ev.Name)
+// 					continue
+// 				}
+// 				switch s.Scrape[dev].ValueType {
+// 				case "float":
+// 					val = s.Scrape[dev].savedFloat[ind]
+// 				case "integer":
+// 					val = s.Scrape[dev].savedInteger[ind]
+// 				case "string":
+// 					val = s.Scrape[dev].savedString[ind]
+// 				}
+// 				s.mutex.RUnlock()
+// 				ev.Value.(chan interface{}) <- val
+// 			default:
+// 				log.Printf("WARNING: Scraper received unknown query type %s\n", ev.Name)
+// 			}
+// 		}
+// 	}
+// }

@@ -47,7 +47,6 @@ const (
 // The Tuya type encapsulates the Tuya IoT Integration
 type Tuya struct {
 	conf           confT
-	evChan         chan events.EventT
 	mqttChan       chan mqtt.AghastMsgT
 	stopChans      []chan bool // used for stopping Goroutines
 	mq             mqtt.MQTT
@@ -130,14 +129,8 @@ func (t *Tuya) LoadConfig(confdir string) error {
 	return nil
 }
 
-// ProvidesDeviceTypes returns a slice of device types that this Integration supplies.
-func (t *Tuya) ProvidesDeviceTypes() []string {
-	return []string{"Lamp", "Socket"}
-}
-
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (t *Tuya) Start(evChan chan events.EventT, mq mqtt.MQTT) {
-	t.evChan = evChan
+func (t *Tuya) Start(mq mqtt.MQTT) {
 	t.mqttChan = mq.PublishChan
 	t.mq = mq
 	var server string

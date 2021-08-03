@@ -39,22 +39,10 @@ We will describe each section below.
 
 ### Event
 Automation processing is triggered by the arrival of an MQTT message we refer to as an 'event'.  
-The  `Topic` line identifies the triggering message.
+The `Topic` line identifies the triggering message.
 
 ### Condition
 You may optionally specify a Condition that must be satisfied for the Automation to proceed...
-
-Old...
-```
-[Condition]
-  Integration = "PiMqttGpio"
-  Name = "MusicRoomTemp"
-  Is = "<"                # one of: "=", "!=", "<", ">", 
-  Value = 17.0
-```
-
-New...
-
 
 This is the simplest case, the target responds with a single, raw value on the same topic...
 ```

@@ -29,7 +29,6 @@ import (
 	"time"
 
 	"github.com/SMerrony/aghast/config"
-	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 	"github.com/pelletier/go-toml"
 )
@@ -75,7 +74,7 @@ func (d *DataLogger) LoadConfig(confdir string) error {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (d *DataLogger) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+func (d *DataLogger) Start(mq mqtt.MQTT) {
 	d.mq = mq
 	for _, l := range d.Logger {
 		go d.logger(l)

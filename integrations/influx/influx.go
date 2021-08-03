@@ -31,7 +31,6 @@ import (
 	"github.com/pelletier/go-toml"
 
 	"github.com/SMerrony/aghast/config"
-	"github.com/SMerrony/aghast/events"
 	"github.com/SMerrony/aghast/mqtt"
 )
 
@@ -76,7 +75,7 @@ func (i *Influx) LoadConfig(confdir string) error {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (i *Influx) Start(evChan chan events.EventT, mq mqtt.MQTT) {
+func (i *Influx) Start(mq mqtt.MQTT) {
 	i.mutex.Lock()
 	i.mq = mq
 	i.client = influxdb2.NewClient(i.URL, i.Token)
