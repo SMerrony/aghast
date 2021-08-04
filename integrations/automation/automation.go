@@ -27,6 +27,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/SMerrony/aghast/config"
 	"github.com/SMerrony/aghast/mqtt"
@@ -34,9 +35,10 @@ import (
 )
 
 const (
-	automationsSubDir = "/automation"
-	subscribeName     = "AutomationManager"
-	mqttPrefix        = "aghast/automation/"
+	automationsSubDir         = "/automation"
+	subscribeName             = "AutomationManager"
+	mqttPrefix                = "aghast/automation/"
+	conditionQueryTimeoutSecs = 5
 )
 
 // The Automation type encapsulates Automation
@@ -172,7 +174,6 @@ func (a *Automation) ProvidesDeviceTypes() []string {
 }
 
 // Start launches a Goroutine for each Automation, LoadConfig() should have been called beforehand.
-// FIXME We should just subscribe to each event, not launch a Goroutine for each one!
 func (a *Automation) Start(mq mqtt.MQTT) {
 	a.mq = mq
 	a.stopChans = make(map[string]chan bool)
@@ -217,13 +218,19 @@ func (a *Automation) testCondition(cond conditionT) bool {
 	}
 
 	var (
+		resp       mqtt.GeneralMsgT
 		respAsBool bool
 		respAsF64  float64
 		respAsI64  int64
 		respAsStr  string
 	)
 
-	resp := <-respChan // TODO timeout needed
+	select {
+	case resp = <-respChan:
+	case <-time.After(conditionQueryTimeoutSecs * time.Second):
+		log.Printf("WARNING: Automation (Condition) - MQTT query timed out on topic %s\n", cond.QueryTopic)
+		return false
+	}
 
 	// we expect either a simple value, or a JSON response in which case a "Key" should have been specified
 	if cond.Key == "" {
@@ -242,12 +249,12 @@ func (a *Automation) testCondition(cond conditionT) bool {
 		err := json.Unmarshal([]byte(resp.Payload.([]uint8)), &jsonMap)
 		if err != nil {
 			log.Printf("ERROR: Automation (Condition) - Could not understand JSON %s\n", resp.Payload.(string))
-			return false // TODO ???
+			return false
 		}
 		v, found := jsonMap[cond.Key]
 		if !found {
 			log.Printf("ERROR: Automation (Condition) - Could find Key in JSON %s\n", resp.Payload.(string))
-			return false // TODO ???
+			return false
 		}
 
 		switch v.(type) {
