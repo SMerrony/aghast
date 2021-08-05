@@ -91,7 +91,7 @@ func (a *Automation) LoadConfig(confDir string) error {
 	}
 	a.automationsByName = make(map[string]int)
 	for _, config := range confs {
-		log.Printf("DEBUG: Automation manager loading config: %s\n", config.Name())
+		log.Printf("INFO: Automation manager loading config: %s\n", config.Name())
 		var newAuto automationT
 		newAuto.actions = make(map[string]actionT)
 		conf, err := toml.LoadFile(confDir + automationsSubDir + "/" + config.Name())
@@ -102,6 +102,10 @@ func (a *Automation) LoadConfig(confDir string) error {
 		newAuto.Name = conf.Get("Name").(string)
 		newAuto.Description = conf.Get("Description").(string)
 		newAuto.Enabled = conf.Get("Enabled").(bool)
+		if !newAuto.Enabled {
+			log.Printf("INFO: ... Disabled in configuration")
+			continue // ignore disabled automations
+		}
 		newAuto.confFilename = config.Name()
 		log.Printf("DEBUG: ... %s, %s\n", newAuto.Name, newAuto.Description)
 		if conf.Get("Event.Topic") != nil {

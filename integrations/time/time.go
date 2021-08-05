@@ -44,7 +44,7 @@ const (
 
 // The Time Integration produces time-based events for other Integrations to use.
 type Time struct {
-	timeMu              sync.RWMutex
+	mutex               sync.RWMutex
 	mq                  mqtt.MQTT
 	Latitude, Longitude float64
 	Alert               []timeEventT            `toml:"Event"`
@@ -61,8 +61,8 @@ type timeEventT struct {
 
 // LoadConfig is required to satisfy the Integration interface.
 func (t *Time) LoadConfig(confdir string) error {
-	t.timeMu.Lock()
-	defer t.timeMu.Unlock()
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 
 	confBytes, err := config.PreprocessTOML(confdir, configFilename)
 	if err != nil {
@@ -142,12 +142,12 @@ func (t *Time) Start(mq mqtt.MQTT) {
 	go t.timeEvents()
 }
 
-func (t *Time) addStopChan() (ix int) {
-	t.timeMu.Lock()
-	t.stopChans = append(t.stopChans, make(chan bool))
-	ix = len(t.stopChans) - 1
-	t.timeMu.Unlock()
-	return ix
+func (t *Time) addStopChan() chan bool {
+	newChan := make(chan bool)
+	t.mutex.Lock()
+	t.stopChans = append(t.stopChans, newChan)
+	t.mutex.Unlock()
+	return newChan
 }
 
 // Stop terminates the Integration and all Goroutines it contains
@@ -159,10 +159,7 @@ func (t *Time) Stop() {
 }
 
 func (t *Time) timeEvents() {
-	sc := t.addStopChan()
-	t.timeMu.RLock()
-	stopChan := t.stopChans[sc]
-	t.timeMu.RUnlock()
+	stopChan := t.addStopChan()
 	secs := time.NewTicker(time.Second)
 	for {
 		select {
@@ -189,10 +186,7 @@ func (t *Time) tickers() {
 	lastMinute := time.Now().Minute()
 	lastHour := time.Now().Hour()
 	lastDay := time.Now().Day()
-	sc := t.addStopChan()
-	t.timeMu.RLock()
-	stopChan := t.stopChans[sc]
-	t.timeMu.RUnlock()
+	stopChan := t.addStopChan()
 	secs := time.NewTicker(time.Second)
 	for {
 		select {
