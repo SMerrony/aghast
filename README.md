@@ -14,7 +14,7 @@ We believe that end-users of HA systems are generally not interested in the nuts
 * An MQTT-Connected dashboard - Node-Red works well and example flows are included
 
 ## Integrations
-Integrations provide support for interacting with real-world or virtual resources, eg. Wifi lights, web scrapers, HVAC systems.  Most interaction is via MQTT.
+Integrations provide support for interacting with real-world or virtual resources, eg. Wifi lights, web scrapers, HVAC systems.  All interaction is via MQTT.
 
 Currently available Integrations...
 | Integration | Description                  | Documentation |
@@ -24,20 +24,19 @@ Currently available Integrations...
 | DataLogger  | Log MQTT Data to CSV files       | [DataLogger](docs/DataLogger.md) |
 | ~~Daikin~~  | ~~HVAC Control and Monitoring~~  | *Use [daikin2mqtt](https://github.com/SMerrony/daikin2mqtt) instead* |
 | HostChecker | Monitor Device availability      | [HostChecker](docs/HostChecker.md) |
-| Influx      | Log Data to InfluxDB             | [Influx](docs/Influx.md) |
+| Influx      | Log MQTT Data to InfluxDB        | [Influx](docs/Influx.md) |
 | MqttCache   | Retain transient MQTT messages   | [MqttCache](docs/MqttCache.md) |
 | MqttSender  | Send MQTT messages regularly     | [MqttSender](docs/MqttSender.md)
 | ~~PiMqttGpio~~  | ~~Capture pi-mqtt-gpio data~~ | *Not required with new inbuilt MQTT functionality* |
-| Postgres    | Log Data to PostgreSQL DB        | [Postgres](docs/Postgres.md) |
-| Scraper     | Web Scraping                     | [Scraper](docs/Scraper.md) |
+| Postgres    | Log MQTT Data to PostgreSQL DB   | [Postgres](docs/Postgres.md) |
+| Scraper     | Web Scraping to MQTT             | [Scraper](docs/Scraper.md) |
 | Tuya        | Tuya WiFi lights, ZigBee Sockets | Deprecated [](docs/) |
 | ~~Zigbee2MQTT~~ | ~~Zigbee2MQTT sockets...~~   | *Not required with new inbuilt MQTT functionality* |
 
 The Time Integration must be enabled for AGHAST to start, you will also probably need to
 enable Automation and at least one other Integration in order to do anything useful.
 
-The Tuya Integration is a bit of a hack.  But... it can be used to integrated LIDL SmartHome ZigBee 
-(and other ZigBee stuff) if they are first added to the TuyaSmart app.
+The Tuya Integration is a bit of a hack.  But... it can be used to integrated LIDL SmartHome ZigBee (and other ZigBee stuff) if they are first added to the TuyaSmart app.
 
 ## Configuration
 
@@ -49,6 +48,8 @@ Postcode = "!!SECRET(postcode)"
 MqttBroker = "!!CONSTANT(mqttBroker)"  # Hostname or IP of MQTT Broker
 MqttPort = 1883               # MQTT Broker port
 MqttClientID = "aghast"       # MQTT Client ID
+MqttUsername = ""
+MqttPassword = ""
 MqttBaseTopic = "aghast"      # First element of topic for all messages we send
 
 ControlPort = 46445           # HTTP port for back-end admin control
@@ -71,7 +72,7 @@ Integrations = [
 Every Integration **must** have an associated `<Integration>.toml` configuration file or `<Integration>` subdirectory in the same directory,
 eg. `time.toml`, `datalogger.toml`, `automation`, etc.
 
-Even if no special configuration is required for an enabled Integration, an empty `<Integration>.toml` configuration file or `<Integration>` subdirectory must exist.
+A configuration is required for any enabled Integration, an empty `<Integration>.toml` configuration file or `<Integration>` subdirectory must exist.
 
 ### Secrets and Constants
 
@@ -91,8 +92,10 @@ The AGHAST server may be started from the command line like this...
 
 The `-configdir` argument is compulsory and must refer to a directory containing the configuration files described above.
 
-AGHAST is largely stateless (unless Integrations explicitly hold some state), it may be started and stopped without
-losing any data.  There is no intrinsic requirement for a database for the AGHAST core system.
+AGHAST is largely stateless (unless Integrations explicitly hold some state), it may be started and stopped withoutlosing any data.  
+There is no intrinsic requirement for a database for the AGHAST core system.
+
+A very simple systemd `.service` file is provided in the `examples` directory - you will at least need to alter the `ExecStart=` line to suit your circumstances.
 
 ## MQTT Aide-Memoire
 From time-to-time you may wish to manually purge any retained MQTT messages...

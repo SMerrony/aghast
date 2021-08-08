@@ -1,8 +1,11 @@
 # Automation
 
-Automations are used to manipulate the Controls that various Integrations may provide.
+Automations are used to send MQTT messages when certain events occur.
 
 It is expected that Automation facilities will be signficantly expanded, so this page will be updated accordingly.
+
+An Automation may cause one or more Actions to be performed, optionally a Condition
+may be checked before running the Actions.
 
 ## Configuration
 
@@ -16,7 +19,7 @@ Description = "Main Downstairs Heaters On"
 Enabled = true
 
 [Event]
-  Topic = "aghast/time/events/NightOffPeakStarts"
+  Topic = "aghast/time/events/MorningHeatingOn"
 
 [Action.1]
   Topic = "daikin2mqtt/Steves_Room/set/controls"
@@ -89,9 +92,9 @@ One or more Actions must be attached to an Event to form an Automation.
 
 The label `[Action.<label>]` in the Action header is used to sort the actions alphanumerically.
 
-To be usable by Automations, an Integration must provide an (AGHAST-internal) `Control` device type; this will receive Control settings and apply them to physical devices.
+To be usable by Automations, an Integration must accept MQTT 'commands'.
 
-The first line of an Action specifies the device to be controlled...
+The first line of an Action specifies the MQTT device to be controlled...
  * Topic - the MQTT address receiving the Control
 
 Then follow an `Execute` section with one or more lines containing Control instructions...
