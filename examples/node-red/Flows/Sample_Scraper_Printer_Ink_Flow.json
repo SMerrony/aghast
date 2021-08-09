@@ -1,0 +1,322 @@
+[
+    {
+        "id": "ff073920.90b4b8",
+        "type": "mqtt in",
+        "z": "7e32efb6.7318a",
+        "name": "",
+        "topic": "aghast/scraper/BrotherA3/Black",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 900,
+        "wires": [
+            [
+                "91041020.6fc76"
+            ]
+        ]
+    },
+    {
+        "id": "8152b551.297b48",
+        "type": "mqtt in",
+        "z": "7e32efb6.7318a",
+        "name": "",
+        "topic": "aghast/scraper/BrotherA3/Yellow",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 960,
+        "wires": [
+            [
+                "3bc10c95.aba7b4"
+            ]
+        ]
+    },
+    {
+        "id": "bc5a0184.630bf",
+        "type": "mqtt in",
+        "z": "7e32efb6.7318a",
+        "name": "",
+        "topic": "aghast/scraper/BrotherA3/Magenta",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 200,
+        "y": 1080,
+        "wires": [
+            [
+                "1cdbbca3.3fd713"
+            ]
+        ]
+    },
+    {
+        "id": "1abf6050.54d5",
+        "type": "mqtt in",
+        "z": "7e32efb6.7318a",
+        "name": "",
+        "topic": "aghast/scraper/BrotherA3/Cyan",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 190,
+        "y": 1020,
+        "wires": [
+            [
+                "7634cfba.6cd7f"
+            ]
+        ]
+    },
+    {
+        "id": "726949a9.a68cd8",
+        "type": "ui_gauge",
+        "z": "7e32efb6.7318a",
+        "name": "",
+        "group": "7545f21f.64fe6c",
+        "order": 1,
+        "width": "2",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Black",
+        "label": "%",
+        "format": "{{value}} ",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#000000",
+            "#000000",
+            "#000000"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 570,
+        "y": 900,
+        "wires": []
+    },
+    {
+        "id": "95aae1fb.644df",
+        "type": "ui_gauge",
+        "z": "7e32efb6.7318a",
+        "name": "",
+        "group": "7545f21f.64fe6c",
+        "order": 4,
+        "width": "2",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Yellow",
+        "label": "%",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#ffff00",
+            "#ffff00",
+            "#ffff00"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 570,
+        "y": 960,
+        "wires": []
+    },
+    {
+        "id": "61b2a50d.814a8c",
+        "type": "ui_gauge",
+        "z": "7e32efb6.7318a",
+        "name": "",
+        "group": "7545f21f.64fe6c",
+        "order": 2,
+        "width": "2",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Cyan",
+        "label": "%",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#00ffff",
+            "#00ffff",
+            "#00ffff"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 570,
+        "y": 1020,
+        "wires": []
+    },
+    {
+        "id": "e0b69029.7ca7",
+        "type": "ui_gauge",
+        "z": "7e32efb6.7318a",
+        "name": "",
+        "group": "7545f21f.64fe6c",
+        "order": 3,
+        "width": "2",
+        "height": "2",
+        "gtype": "gage",
+        "title": "Magenta",
+        "label": "%",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#ff00ff",
+            "#ff00ff",
+            "#ff00ff"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 580,
+        "y": 1080,
+        "wires": []
+    },
+    {
+        "id": "91041020.6fc76",
+        "type": "change",
+        "z": "7e32efb6.7318a",
+        "name": "toPct",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round($number(payload) * 1.88)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 900,
+        "wires": [
+            [
+                "726949a9.a68cd8"
+            ]
+        ]
+    },
+    {
+        "id": "3bc10c95.aba7b4",
+        "type": "change",
+        "z": "7e32efb6.7318a",
+        "name": "toPct",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round($number(payload) * 1.88)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 960,
+        "wires": [
+            [
+                "95aae1fb.644df"
+            ]
+        ]
+    },
+    {
+        "id": "7634cfba.6cd7f",
+        "type": "change",
+        "z": "7e32efb6.7318a",
+        "name": "toPct",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round($number(payload) * 1.88)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 1020,
+        "wires": [
+            [
+                "61b2a50d.814a8c"
+            ]
+        ]
+    },
+    {
+        "id": "1cdbbca3.3fd713",
+        "type": "change",
+        "z": "7e32efb6.7318a",
+        "name": "toPct",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round($number(payload) * 1.88)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 1080,
+        "wires": [
+            [
+                "e0b69029.7ca7"
+            ]
+        ]
+    },
+    {
+        "id": "fb4e4d64.1c3728",
+        "type": "mqtt-broker",
+        "name": "Local MQTT Broker",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "",
+        "usetls": false,
+        "compatmode": false,
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": ""
+    },
+    {
+        "id": "7545f21f.64fe6c",
+        "type": "ui_group",
+        "name": "Brother A3",
+        "tab": "83606bf6.b32388",
+        "order": 3,
+        "disp": true,
+        "width": "4",
+        "collapse": false
+    },
+    {
+        "id": "83606bf6.b32388",
+        "type": "ui_tab",
+        "name": "Steve",
+        "icon": "dashboard",
+        "order": 8,
+        "disabled": false,
+        "hidden": false
+    }
+]

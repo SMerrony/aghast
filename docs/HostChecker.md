@@ -37,8 +37,12 @@ an integer - the number of milliseconds the host took to respond.
 
 The maximum latency reported is 2000ms; after this period the check times out and the host is considered unresponsive/unavailable.
 
-### Querying Host Availability via MQTT
+See the [HostChecker](../examples/node-red/Flows/Sample_HostChecker_Flow.json) sample Node-Red flow for an example.
+
+### Actively Querying Host Availability via MQTT
 Send a `get` request to `aghast/hostchecker/get/<Name>` - where `<Name>` is what you specified in the HostChecker
 configuration.
 
 A `state` response will be sent to `aghast/hostchecker/<Name>/state` with a value of either "true" or "false".
+
+
