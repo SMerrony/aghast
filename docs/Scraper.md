@@ -29,4 +29,4 @@ The scraped values will be published via MQTT with this topic: `aghast/scraper/B
  * Subtopics - a list, corresponding to the indices, giving the final part of the MQTT topic for each item
 
 ## Usage
-See the Printers example Node-Red flow for an example of presenting the scraped data.
+See the  [Printer_Ink_Flow](../examples/node-red/Flows/Sample_Scraper_Printer_Ink_Flow.json) example Node-Red flow for an example of presenting the scraped data.

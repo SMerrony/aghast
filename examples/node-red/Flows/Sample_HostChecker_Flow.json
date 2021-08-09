@@ -1,0 +1,378 @@
+[
+    {
+        "id": "f4eab5d1.0657a",
+        "type": "mqtt in",
+        "z": "f4c72f16.69cdb",
+        "name": "",
+        "topic": "aghast/hostchecker/MainRouter/latency",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 230,
+        "y": 80,
+        "wires": [
+            [
+                "7c0b8698.dc505",
+                "fe8221af.3cd1d8"
+            ]
+        ]
+    },
+    {
+        "id": "7c0b8698.dc505",
+        "type": "ui_gauge",
+        "z": "f4c72f16.69cdb",
+        "name": "",
+        "group": "b114690f.05b7c",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "gtype": "gage",
+        "title": "4G Router",
+        "label": "ms",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 550,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "2a039c3f.05ecac",
+        "type": "mqtt in",
+        "z": "f4c72f16.69cdb",
+        "name": "",
+        "topic": "aghast/hostchecker/NAS/latency",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 210,
+        "y": 180,
+        "wires": [
+            [
+                "667488b.f73ddf8",
+                "b2b3b4b9.4161f8"
+            ]
+        ]
+    },
+    {
+        "id": "667488b.f73ddf8",
+        "type": "ui_gauge",
+        "z": "f4c72f16.69cdb",
+        "name": "",
+        "group": "b114690f.05b7c",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "gtype": "gage",
+        "title": "NAS",
+        "label": "ms",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 530,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "b3d54690.b94d9",
+        "type": "mqtt in",
+        "z": "f4c72f16.69cdb",
+        "name": "",
+        "topic": "aghast/hostchecker/VoipHub/latency",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 220,
+        "y": 280,
+        "wires": [
+            [
+                "d239fd3.7f42d",
+                "c24a955e.6bdda8"
+            ]
+        ]
+    },
+    {
+        "id": "d239fd3.7f42d",
+        "type": "ui_gauge",
+        "z": "f4c72f16.69cdb",
+        "name": "",
+        "group": "b114690f.05b7c",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "gtype": "gage",
+        "title": "VOIP Hub",
+        "label": "ms",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 540,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "d152703c.d9d1a",
+        "type": "ui_chart",
+        "z": "f4c72f16.69cdb",
+        "name": "",
+        "group": "36b2f482.0e502c",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "label": "",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "x": 790,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "fe8221af.3cd1d8",
+        "type": "change",
+        "z": "f4c72f16.69cdb",
+        "name": "Rename 1",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "4G",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 550,
+        "y": 120,
+        "wires": [
+            [
+                "d152703c.d9d1a"
+            ]
+        ]
+    },
+    {
+        "id": "b2b3b4b9.4161f8",
+        "type": "change",
+        "z": "f4c72f16.69cdb",
+        "name": "Rename 1",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "NAS",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 550,
+        "y": 220,
+        "wires": [
+            [
+                "d152703c.d9d1a"
+            ]
+        ]
+    },
+    {
+        "id": "c24a955e.6bdda8",
+        "type": "change",
+        "z": "f4c72f16.69cdb",
+        "name": "Rename 1",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "VOIP",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 550,
+        "y": 320,
+        "wires": [
+            [
+                "d152703c.d9d1a"
+            ]
+        ]
+    },
+    {
+        "id": "c5010dc6.7dfb08",
+        "type": "mqtt in",
+        "z": "f4c72f16.69cdb",
+        "name": "",
+        "topic": "aghast/hostchecker/PiHole/latency",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "fb4e4d64.1c3728",
+        "x": 220,
+        "y": 360,
+        "wires": [
+            [
+                "70867da1.76015c",
+                "e858ad83.15ae58"
+            ]
+        ]
+    },
+    {
+        "id": "70867da1.76015c",
+        "type": "ui_gauge",
+        "z": "f4c72f16.69cdb",
+        "name": "",
+        "group": "b114690f.05b7c",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "gtype": "gage",
+        "title": "Pi Hole",
+        "label": "ms",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "x": 540,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "e858ad83.15ae58",
+        "type": "change",
+        "z": "f4c72f16.69cdb",
+        "name": "Rename 1",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "Pi Hole",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 550,
+        "y": 400,
+        "wires": [
+            [
+                "d152703c.d9d1a"
+            ]
+        ]
+    },
+    {
+        "id": "fb4e4d64.1c3728",
+        "type": "mqtt-broker",
+        "name": "Local MQTT Broker",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "",
+        "usetls": false,
+        "compatmode": false,
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": ""
+    },
+    {
+        "id": "b114690f.05b7c",
+        "type": "ui_group",
+        "name": "Critical Hosts",
+        "tab": "53076947.70088",
+        "order": 1,
+        "disp": true,
+        "width": "4",
+        "collapse": false
+    },
+    {
+        "id": "36b2f482.0e502c",
+        "type": "ui_group",
+        "name": "Latency History",
+        "tab": "53076947.70088",
+        "order": 4,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "53076947.70088",
+        "type": "ui_tab",
+        "name": "Network",
+        "icon": "dashboard",
+        "order": 4,
+        "disabled": false,
+        "hidden": false
+    }
+]
