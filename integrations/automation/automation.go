@@ -207,14 +207,16 @@ func (a *Automation) Stop() {
 }
 
 func (a *Automation) testCondition(cond conditionT) bool {
-	tempMQTT := mqtt.TempConnection(a.mq)
+	//tempMQTT := mqtt.TempConnection(a.mq)
 	var respChan chan mqtt.GeneralMsgT
 	if cond.ReplyTopic == "" {
-		respChan = tempMQTT.SubscribeToTopic(cond.QueryTopic)
+		respChan = a.mq.SubscribeToTopic(cond.QueryTopic)
+		defer a.mq.UnsubscribeFromTopic(cond.QueryTopic)
 	} else {
-		respChan = tempMQTT.SubscribeToTopic(cond.ReplyTopic)
+		respChan = a.mq.SubscribeToTopic(cond.ReplyTopic)
+		defer a.mq.UnsubscribeFromTopic(cond.ReplyTopic)
 	}
-	tempMQTT.ThirdPartyChan <- mqtt.GeneralMsgT{
+	a.mq.ThirdPartyChan <- mqtt.GeneralMsgT{
 		Topic:    cond.QueryTopic,
 		Qos:      0,
 		Retained: false,
@@ -325,7 +327,11 @@ func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
 			return
 		case <-mqChan:
 			// log.Printf("DEBUG: Automation Manager received Event %s\n", auto.Event.Name)
-			if !auto.hasCondition || (auto.hasCondition && a.testCondition(auto.condition)) {
+			doit := true
+			if auto.hasCondition {
+				doit = a.testCondition(auto.condition)
+			}
+			if doit {
 				log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
 				for _, k := range auto.sortedActionKeys {
 					ac := auto.actions[k]
