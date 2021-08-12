@@ -29,6 +29,7 @@ Currently available Integrations...
 | ~~Daikin~~  | ~~HVAC Control and Monitoring~~  | *Use [daikin2mqtt](https://github.com/SMerrony/daikin2mqtt) instead* |
 | HostChecker | Monitor Device availability      | [HostChecker](docs/HostChecker.md) |
 | Influx      | Log MQTT Data to InfluxDB        | [Influx](docs/Influx.md) |
+| Mqtt2smtp   | MQTT->Email Gateway              | [Mqtt2smtp](docs/Mqtt2smtp.md) |
 | MqttCache   | Retain transient MQTT messages   | [MqttCache](docs/MqttCache.md) |
 | MqttSender  | Send MQTT messages regularly     | [MqttSender](docs/MqttSender.md)
 | ~~PiMqttGpio~~ | ~~Capture pi-mqtt-gpio data~~ | *Not required with new inbuilt MQTT functionality* |
@@ -40,7 +41,7 @@ Currently available Integrations...
 The Time Integration must be enabled for AGHAST to start, you will also probably need to
 enable Automation and at least one other Integration in order to do anything useful.
 
-The Tuya Integration is a bit of a hack.  But... it can be used to integrated LIDL SmartHome ZigBee (and other ZigBee stuff) if they are first added to the TuyaSmart app; __it's better__ to use [zigbee2mqtt](https://zigbee2mqtt.io) with a supported USB dongle or hub.
+The Tuya Integration is a bit of a hack.  But... it can be used to integrate LIDL SmartHome ZigBee (and other ZigBee stuff) if they are first added to the TuyaSmart app. __However, it's much better__ to use [zigbee2mqtt](https://zigbee2mqtt.io) with a supported USB dongle or hub.
 
 ## Configuration
 
@@ -65,6 +66,7 @@ Integrations = [
 #  "datalogger",  # Commented out, will not be enabled
   "hostchecker",
   "influx",
+  "mqtt2smtp",
   "mqttcache",
   "mqttsender",
   "pimqttgpio",
