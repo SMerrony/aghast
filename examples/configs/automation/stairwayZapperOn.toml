@@ -8,4 +8,4 @@ Enabled = true
 
 [Action.1]
   Topic = "zigbee2mqtt/Stairway_Socket/set"
-  Execute = [ { Control = "state", Setting = "ON" } ]
+  Execute = [ { Key = "state", Value = "ON" } ]

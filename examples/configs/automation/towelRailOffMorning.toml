@@ -7,4 +7,4 @@ Enabled = true
 
 [Action.1]
   Topic = "zigbee2mqtt/Towel_Rail/set"
-  Execute = [ { Control = "state", Setting = "OFF" } ]
+  Execute = [ { Key = "state", Value = "OFF" } ]

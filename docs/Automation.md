@@ -23,15 +23,15 @@ Enabled = true
 
 [Action.1]
   Topic = "daikin2mqtt/Steves_Room/set/controls"
-  Execute = [ { Control = "set_temp", Setting = 21.0 },
-              { Control = "mode",        Setting = "HEAT" },
-              { Control = "power",       Setting = true } ]
+  Execute = [ { Key = "set_temp", Value = 21.0 },
+              { Key = "mode",     Value = "HEAT" },
+              { Key = "power",    Value = true } ]
 
 [Action.2]
   Topic = "daikin2mqtt/Living_Room/set/controls"
-  Execute = [ { Control = "set_temp",    Setting = 19.0 },
-              { Control = "mode",        Setting = "HEAT" },
-              { Control = "power",       Setting = true } ]  
+  Execute = [ { Key = "set_temp", Value = 19.0 },
+              { Key = "mode",     Value = "HEAT" },
+              { Key = "power",    Value = true } ]  
 ```
 We will describe each section below.
 
@@ -99,7 +99,7 @@ The first line of an Action specifies the MQTT device to be controlled...
 
 Then follow an `Execute` section with one or more lines containing Control instructions...
  * Execute [ ] - containing by one or more Control-Setting pairs enclosed in { }s
- * Control - the Control provided by the Integration
- * Setting - a value to set the Control
+ * Key - a JSON key understood by the receiver
+ * Value - a value to set the for the given Key
 
 Although slightly cumbersome for the simplest case, this syntax allows whole groups of Controls for a specific Device to be set with a short script.

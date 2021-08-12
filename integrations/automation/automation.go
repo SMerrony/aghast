@@ -75,9 +75,9 @@ type conditionT struct {
 }
 
 type actionT struct {
-	Topic    string
-	controls []string
-	settings []interface{}
+	Topic  string
+	keys   []string
+	values []interface{}
 }
 
 // LoadConfig loads and stores the configuration for this Integration.
@@ -107,7 +107,7 @@ func (a *Automation) LoadConfig(confDir string) error {
 			continue // ignore disabled automations
 		}
 		newAuto.confFilename = config.Name()
-		log.Printf("DEBUG: ... %s, %s\n", newAuto.Name, newAuto.Description)
+		// log.Printf("DEBUG: ... %s, %s\n", newAuto.Name, newAuto.Description)
 		if conf.Get("Event.Topic") != nil {
 			newAuto.mqttTopic = conf.Get("Event.Topic").(string)
 		} else {
@@ -153,8 +153,8 @@ func (a *Automation) LoadConfig(confDir string) error {
 			executes := details["Execute"].([]interface{})
 			for _, ac := range executes {
 				cs := ac.(map[string]interface{})
-				act.controls = append(act.controls, cs["Control"].(string))
-				act.settings = append(act.settings, cs["Setting"]) // not cast
+				act.keys = append(act.keys, cs["Key"].(string))
+				act.values = append(act.values, cs["Value"]) // not cast
 			}
 			newAuto.actions[order] = act
 		}
@@ -164,7 +164,7 @@ func (a *Automation) LoadConfig(confDir string) error {
 		}
 		sort.Strings(newAuto.sortedActionKeys)
 		a.automations = append(a.automations, newAuto)
-		log.Printf("DEBUG: ... %v\n", newAuto)
+		// log.Printf("DEBUG: ... %v\n", newAuto)
 	}
 	for ix, au := range a.automations {
 		a.automationsByName[au.Name] = ix
@@ -336,26 +336,26 @@ func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
 				for _, k := range auto.sortedActionKeys {
 					ac := auto.actions[k]
 					json := "{"
-					for i := 0; i < len(ac.controls); i++ {
+					for i := 0; i < len(ac.keys); i++ {
 						if i > 0 {
 							json = json + ", "
 						}
-						json += "\"" + ac.controls[i] + "\":"
-						switch ac.settings[i].(type) { // these are the legal TOML types
+						json += "\"" + ac.keys[i] + "\":"
+						switch ac.values[i].(type) { // these are the legal TOML types
 						case string:
-							json += "\"" + ac.settings[i].(string) + "\""
+							json += "\"" + ac.values[i].(string) + "\""
 						case bool:
-							if ac.settings[i].(bool) {
+							if ac.values[i].(bool) {
 								json += "true"
 							} else {
 								json += "false"
 							}
 						case int:
-							json += strconv.Itoa(ac.settings[i].(int))
+							json += strconv.Itoa(ac.values[i].(int))
 						case int64:
-							json += strconv.Itoa(int(ac.settings[i].(int64)))
+							json += strconv.Itoa(int(ac.values[i].(int64)))
 						case float64:
-							json += fmt.Sprintf("%f", ac.settings[i].(float64))
+							json += fmt.Sprintf("%f", ac.values[i].(float64))
 						default:
 							log.Printf("WARNING: Automation %s contains invalid Setting - ignoring\n", auto.Name)
 						}

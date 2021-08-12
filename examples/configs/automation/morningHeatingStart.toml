@@ -7,20 +7,20 @@ Enabled = true
 
 [Action.1]
   Topic = "daikin2mqtt/Hall/set/controls"
-  Execute = [ { Control = "set_temp",    Setting = 23.0 },
-              { Control = "mode",        Setting = "Heat" },
-              { Control = "power",       Setting = true } ]
+  Execute = [ { Key = "set_temp",    Value = 23.0 },
+              { Key = "mode",        Value = "Heat" },
+              { Key = "power",       Value = true } ]
 
 # [Action.2]
 #   Integration = "Daikin"
 #   DeviceLabel = "Living Room"
-#   Execute = [ { Control = "tset_temp", Setting = 18.0 },
-#               { Control = "mode",        Setting = "Heat" },
-#               { Control = "power",       Setting = true } ]  
+#   Execute = [ { Key = "tset_temp", Value = 18.0 },
+#               { Key = "mode",        Value = "Heat" },
+#               { Key = "power",       Value = true } ]  
 
 [Action.3]
   Topic = "daikin2mqtt/Music_Room/set/controls"
-  Execute = [ { Control = "set_temp",    Setting = 20.0 },
-              { Control = "mode",        Setting = "Heat" },
-              { Control = "power",       Setting = true } ]  
+  Execute = [ { Key = "set_temp",    Value = 20.0 },
+              { Key = "mode",        Value = "Heat" },
+              { Key = "power",       Value = true } ]  
 

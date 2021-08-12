@@ -7,24 +7,24 @@ Enabled = true
 
 [Action.1]
   Topic = "daikin2mqtt/Steve_Office/set/controls"
-  Execute = [ { Control = "set_temp",    Setting = 18.0 },
-              { Control = "mode",        Setting = "Heat" },
-              { Control = "power",       Setting = true } ]
+  Execute = [ { Key = "set_temp",    Value = 18.0 },
+              { Key = "mode",        Value = "Heat" },
+              { Key = "power",       Value = true } ]
 [Action.2]
   Topic = "daikin2mqtt/Paul_Studio/set/controls"
-  Execute = [ { Control = "set_temp",    Setting = 18.0 },
-              { Control = "mode",        Setting = "Heat" },
-              { Control = "power",       Setting = true } ]
+  Execute = [ { Key = "set_temp",    Value = 18.0 },
+              { Key = "mode",        Value = "Heat" },
+              { Key = "power",       Value = true } ]
 
 [Action.3]
   Topic = "daikin2mqtt/Master_Bedroom/set/controls"
-  Execute = [ { Control = "set_temp",    Setting = 18.0 },
-              { Control = "mode",        Setting = "Heat" },
-              { Control = "fan",         Setting = "3" },
-              { Control = "power",       Setting = true } ]
+  Execute = [ { Key = "set_temp",    Value = 18.0 },
+              { Key = "mode",        Value = "Heat" },
+              { Key = "fan",         Value = "3" },
+              { Key = "power",       Value = true } ]
 
 [Action.4]
   Topic = "daikin2mqtt/Dining_Room/set/controls"
-  Execute = [ { Control = "set_temp",    Setting = 18.0 },
-              { Control = "mode",        Setting = "Heat" },
-              { Control = "power",       Setting = true } ]
+  Execute = [ { Key = "set_temp",    Value = 18.0 },
+              { Key = "mode",        Value = "Heat" },
+              { Key = "power",       Value = true } ]
