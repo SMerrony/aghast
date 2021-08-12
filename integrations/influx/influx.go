@@ -46,7 +46,7 @@ type Influx struct {
 	Logger                  []loggerT
 	mutex                   sync.RWMutex
 	stopChans               []chan bool // used for stopping Goroutines
-	mq                      mqtt.MQTT
+	mq                      *mqtt.MQTT
 }
 
 type loggerT struct {
@@ -75,7 +75,7 @@ func (i *Influx) LoadConfig(confdir string) error {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (i *Influx) Start(mq mqtt.MQTT) {
+func (i *Influx) Start(mq *mqtt.MQTT) {
 	i.mutex.Lock()
 	i.mq = mq
 	i.client = influxdb2.NewClient(i.URL, i.Token)

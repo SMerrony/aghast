@@ -32,6 +32,7 @@ import (
 	"github.com/SMerrony/aghast/integrations/datalogger"
 	"github.com/SMerrony/aghast/integrations/hostchecker"
 	"github.com/SMerrony/aghast/integrations/influx"
+	"github.com/SMerrony/aghast/integrations/mqtt2smtp"
 	"github.com/SMerrony/aghast/integrations/mqttcache"
 	"github.com/SMerrony/aghast/integrations/mqttsender"
 	"github.com/SMerrony/aghast/integrations/postgres"
@@ -48,7 +49,7 @@ type Integration interface {
 	LoadConfig(string) error
 
 	// Start func begins running the Integration GoRoutines and should return quickly
-	Start(mqtt.MQTT)
+	Start(*mqtt.MQTT)
 
 	// Stop terminates the Integration and all Goroutines it contains
 	Stop()
@@ -68,6 +69,8 @@ func newIntegration(iName string) {
 		integs[iName] = new(hostchecker.HostChecker)
 	case "influx":
 		integs[iName] = new(influx.Influx)
+	case "mqtt2smtp":
+		integs[iName] = new(mqtt2smtp.Mqtt2smtp)
 	case "mqttcache":
 		integs[iName] = new(mqttcache.MqttCache)
 	case "mqttsender":
@@ -94,7 +97,7 @@ func StartIntegrations(conf config.MainConfigT, mqtt mqtt.MQTT) {
 		if err := integs[i].LoadConfig(conf.ConfigDir); err != nil {
 			log.Fatalf("ERROR: %s Integration could not load its configuration", i)
 		}
-		go integs[i].Start(mqtt)
+		go integs[i].Start(&mqtt)
 	}
 
 	go dailyTimeRestart()
@@ -180,7 +183,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		if err := integs[i].LoadConfig(mainConfig.ConfigDir); err != nil {
 			log.Fatalf("ERROR: %s Integration could not reload its configuration", i)
 		}
-		go integs[i].Start(mq)
+		go integs[i].Start(&mq)
 	}
 	t, err := template.New("root").Parse(homeTemplateMain)
 	if err != nil {
@@ -215,7 +218,7 @@ func dailyTimeRestart() {
 		if err := integs["time"].LoadConfig(mainConfig.ConfigDir); err != nil {
 			log.Fatalln("ERROR: Time Integration could not reload its configuration")
 		}
-		go integs["time"].Start(mq)
+		go integs["time"].Start(&mq)
 		<-daily.C
 	}
 

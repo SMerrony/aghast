@@ -24,6 +24,7 @@ package mqtt
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -39,11 +40,13 @@ const (
 type MQTT struct {
 	PublishChan    chan AghastMsgT
 	ThirdPartyChan chan GeneralMsgT
+	mutex          sync.RWMutex
 	client         mqtt.Client
 	options        *mqtt.ClientOptions
 	connectHandler mqtt.OnConnectHandler
 	connLostHander mqtt.ConnectionLostHandler
 	// pubHandler     mqtt.MessageHandler
+	subs      map[string][]chan GeneralMsgT
 	broker    string
 	port      int
 	username  string
@@ -92,6 +95,8 @@ func (m *MQTT) Disconnect() {
 }
 
 func (m *MQTT) Start(broker string, port int, username string, password string, clientID string, baseTopic string) chan AghastMsgT {
+	m.mutex.Lock()
+	m.subs = make(map[string][]chan GeneralMsgT)
 	m.broker = broker
 	m.port = port
 	m.username = username
@@ -121,9 +126,11 @@ func (m *MQTT) Start(broker string, port int, username string, password string, 
 	}
 
 	m.PublishChan = make(chan AghastMsgT, mqttOutboundQueueLen)
-	go m.aghastPublish()
-
 	m.ThirdPartyChan = make(chan GeneralMsgT, mqttOutboundQueueLen)
+
+	m.mutex.Unlock()
+
+	go m.aghastPublish()
 	go m.thirdPartyPublish()
 
 	msg := AghastMsgT{
@@ -154,14 +161,38 @@ func (m *MQTT) thirdPartyPublish() {
 	}
 }
 
-// SubscribeToTopic returns a channel which will receive any MQTT messages published to the topic
-func (m *MQTT) SubscribeToTopic(topic string) (c chan GeneralMsgT) {
-	c = make(chan GeneralMsgT, mqttInboundQueueLen)
+func (m *MQTT) fanOut(topic string) {
 	m.client.Subscribe(topic, 1, func(client mqtt.Client, msg mqtt.Message) {
 		cMsg := GeneralMsgT{msg.Topic(), msg.Qos(), msg.Retained(), msg.Payload()}
-		c <- cMsg
-		// log.Printf("DEBUG: MQTT subscription got topic: %s,  msg: %v\n", msg.Topic(), msg.Payload())
+		m.mutex.RLock()
+		log.Printf("DEBUG: mqtt.fanout got a message on %s\n", msg.Topic())
+		for _, subChans := range m.subs[topic] {
+			subChans <- cMsg
+			log.Println("DEBUG: ... mqtt.fanout forwarding message")
+		}
+		log.Println("DEBUG: ... mqtt.fanout done for this message")
+		m.mutex.RUnlock()
 	})
+}
+
+// SubscribeToTopic returns a channel which will receive any MQTT messages published to the topic
+func (m *MQTT) SubscribeToTopic(topic string) chan GeneralMsgT {
+	c := make(chan GeneralMsgT, mqttInboundQueueLen)
+	m.mutex.RLock()
+	_, already := m.subs[topic]
+	m.mutex.RUnlock()
+	if !already {
+		m.client.Subscribe(topic, 1, func(client mqtt.Client, msg mqtt.Message) {
+			cMsg := GeneralMsgT{msg.Topic(), msg.Qos(), msg.Retained(), msg.Payload()}
+			c <- cMsg
+			// log.Printf("DEBUG: MQTT subscription got topic: %s,  msg: %v\n", msg.Topic(), msg.Payload())
+		})
+		go m.fanOut(topic)
+	}
+	m.mutex.Lock()
+	m.subs[topic] = append(m.subs[topic], c)
+	m.mutex.Unlock()
+
 	return c
 }
 

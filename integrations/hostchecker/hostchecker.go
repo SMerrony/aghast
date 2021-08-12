@@ -38,7 +38,7 @@ type HostChecker struct {
 	Checker        []hostCheckerT
 	checkersByName map[string]int
 	stopChans      []chan bool // used for stopping Goroutines
-	mq             mqtt.MQTT
+	mq             *mqtt.MQTT
 }
 
 type hostCheckerT struct {
@@ -87,7 +87,7 @@ func (h *HostChecker) LoadConfig(confdir string) error {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (h *HostChecker) Start(mq mqtt.MQTT) {
+func (h *HostChecker) Start(mq *mqtt.MQTT) {
 	h.mutex.Lock()
 	h.mqttChan = mq.PublishChan
 	h.mq = mq

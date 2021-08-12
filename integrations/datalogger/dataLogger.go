@@ -44,7 +44,7 @@ type DataLogger struct {
 	LogDir    string
 	Logger    []loggerT
 	stopChans []chan bool // used for stopping Goroutines
-	mq        mqtt.MQTT
+	mq        *mqtt.MQTT
 }
 
 type loggerT struct {
@@ -74,7 +74,7 @@ func (d *DataLogger) LoadConfig(confdir string) error {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (d *DataLogger) Start(mq mqtt.MQTT) {
+func (d *DataLogger) Start(mq *mqtt.MQTT) {
 	d.mq = mq
 	for _, l := range d.Logger {
 		go d.logger(l)

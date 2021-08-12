@@ -39,7 +39,7 @@ type MqttSender struct {
 	Sender    []senderT
 	mutex     sync.RWMutex
 	stopChans []chan bool
-	mq        mqtt.MQTT
+	mq        *mqtt.MQTT
 }
 
 type senderT struct {
@@ -83,7 +83,7 @@ func (m *MqttSender) LoadConfig(confdir string) error {
 }
 
 // Start func begins running the Integration GoRoutines and should return quickly
-func (m *MqttSender) Start(mq mqtt.MQTT) {
+func (m *MqttSender) Start(mq *mqtt.MQTT) {
 	m.mq = mq
 	go m.sender()
 }

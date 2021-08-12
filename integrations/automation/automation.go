@@ -46,7 +46,7 @@ type Automation struct {
 	confDir           string
 	automations       []automationT
 	automationsByName map[string]int
-	mq                mqtt.MQTT
+	mq                *mqtt.MQTT
 	stopChans         map[string]chan bool
 }
 
@@ -178,7 +178,7 @@ func (a *Automation) ProvidesDeviceTypes() []string {
 }
 
 // Start launches a Goroutine for each Automation, LoadConfig() should have been called beforehand.
-func (a *Automation) Start(mq mqtt.MQTT) {
+func (a *Automation) Start(mq *mqtt.MQTT) {
 	a.mq = mq
 	a.stopChans = make(map[string]chan bool)
 	// for each automation, subscribe to its Event

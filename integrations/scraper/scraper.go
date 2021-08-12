@@ -41,7 +41,7 @@ const (
 
 // The Scraper type encapsulates the web scraper Integration.
 type Scraper struct {
-	mq             mqtt.MQTT
+	mq             *mqtt.MQTT
 	mutex          sync.RWMutex
 	Scrape         []scraperT
 	scrapersByName map[string]int
@@ -103,7 +103,7 @@ func (s *Scraper) LoadConfig(confdir string) error {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (s *Scraper) Start(mq mqtt.MQTT) {
+func (s *Scraper) Start(mq *mqtt.MQTT) {
 	s.mq = mq
 	for _, sc := range s.Scrape {
 		go s.runScraper(sc)

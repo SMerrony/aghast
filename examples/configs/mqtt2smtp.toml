@@ -1,0 +1,6 @@
+# sample configuration for the mqtt2smtp Integration
+
+SmtpHost = "smtp.gmail.com"
+SmtpPort = "587"                        # need quotes here
+SmtpUser = "!!SECRET(smtpUser)"
+SmtpPassword = "!!SECRET(smtpPassword)"

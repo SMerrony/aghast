@@ -44,7 +44,7 @@ type MqttCache struct {
 	mutex            sync.RWMutex
 	stopChans        []chan bool
 	allMsgs, allReqs chan mqtt.GeneralMsgT
-	mq               mqtt.MQTT
+	mq               *mqtt.MQTT
 }
 
 type cacheT struct {
@@ -75,7 +75,7 @@ func (m *MqttCache) LoadConfig(confdir string) error {
 }
 
 // Start func begins running the Integration GoRoutines and should return quickly
-func (m *MqttCache) Start(mq mqtt.MQTT) {
+func (m *MqttCache) Start(mq *mqtt.MQTT) {
 	m.mq = mq
 	// subscribe to all buffer sources and funnel the messages into a single chan
 	m.allMsgs = make(chan mqtt.GeneralMsgT)

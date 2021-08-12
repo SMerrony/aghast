@@ -15,11 +15,12 @@ Integrations = [
   "time",         # the Time integration MUST be enabled
   "automation",
 #  "datalogger",  # as it's commented here, it won't be started
-  "hostchecker",
+#  "hostchecker",
 #  "influx",
-  "mqttcache",
-  "mqttsender",
-  "postgres",
-  "scraper",
+  "mqtt2smtp",
+#  "mqttcache",
+#  "mqttsender",
+#  "postgres",
+#  "scraper",
 #  "tuya",
 ]

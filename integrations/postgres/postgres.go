@@ -50,7 +50,7 @@ type Postgres struct {
 	mutex      sync.RWMutex
 	stopChans  []chan bool // used for stopping Goroutines
 	dbpool     *pgxpool.Pool
-	mq         mqtt.MQTT
+	mq         *mqtt.MQTT
 }
 
 type loggerT struct {
@@ -79,7 +79,7 @@ func (p *Postgres) LoadConfig(confdir string) error {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (p *Postgres) Start(mq mqtt.MQTT) {
+func (p *Postgres) Start(mq *mqtt.MQTT) {
 	p.mutex.Lock()
 	p.mq = mq
 	var err error

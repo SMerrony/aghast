@@ -49,7 +49,7 @@ type Tuya struct {
 	conf           confT
 	mqttChan       chan mqtt.AghastMsgT
 	stopChans      []chan bool // used for stopping Goroutines
-	mq             mqtt.MQTT
+	mq             *mqtt.MQTT
 	tuyaMu         sync.RWMutex
 	lampsByLabel   map[string]int
 	socketsByLabel map[string]int
@@ -130,7 +130,7 @@ func (t *Tuya) LoadConfig(confdir string) error {
 }
 
 // Start launches the Integration, LoadConfig() should have been called beforehand.
-func (t *Tuya) Start(mq mqtt.MQTT) {
+func (t *Tuya) Start(mq *mqtt.MQTT) {
 	t.mqttChan = mq.PublishChan
 	t.mq = mq
 	var server string

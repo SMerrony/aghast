@@ -45,7 +45,7 @@ const (
 // The Time Integration produces time-based events for other Integrations to use.
 type Time struct {
 	mutex               sync.RWMutex
-	mq                  mqtt.MQTT
+	mq                  *mqtt.MQTT
 	Latitude, Longitude float64
 	Alert               []timeEventT            `toml:"Event"`
 	alertsByTime        map[string][]timeEventT // indexed by "hh:mm:ss"
@@ -136,7 +136,7 @@ func getHhmmssFromString(Hhmmss string) (hh, mm, ss int, e error) {
 }
 
 // Start any services this Integration provides.
-func (t *Time) Start(mq mqtt.MQTT) {
+func (t *Time) Start(mq *mqtt.MQTT) {
 	t.mq = mq
 	go t.tickers()
 	go t.timeEvents()

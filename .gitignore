@@ -19,3 +19,4 @@ aghastServer
 
 # Private stuff
 secrets.toml
+examples/configs/automation/emailTest.toml
