@@ -76,14 +76,18 @@ func (m *MqttCache) LoadConfig(confdir string) error {
 
 // Start func begins running the Integration GoRoutines and should return quickly
 func (m *MqttCache) Start(mq *mqtt.MQTT) {
+	m.mutex.Lock()
 	m.mq = mq
 	// subscribe to all buffer sources and funnel the messages into a single chan
 	m.allMsgs = make(chan mqtt.GeneralMsgT)
 	m.allReqs = make(chan mqtt.GeneralMsgT)
+	m.mutex.Unlock()
+	m.mutex.Lock()
 	for _, cache := range m.Cache {
 		m.mq.SubscribeToTopicUsingChan(cache.Topic, m.allMsgs)
 		m.mq.SubscribeToTopicUsingChan(getTopicPrefix+cache.Topic, m.allReqs)
 	}
+	m.mutex.Unlock()
 	go m.monitorMsgSources()
 	go m.monitorRequests()
 }
@@ -110,7 +114,7 @@ func (m *MqttCache) monitorMsgSources() {
 		case <-stopChan:
 			m.mutex.RLock()
 			for _, buff := range m.Cache {
-				m.mq.UnsubscribeFromTopic(buff.Topic)
+				m.mq.UnsubscribeFromTopic(buff.Topic, m.allMsgs)
 			}
 			m.mutex.RUnlock()
 			return
@@ -132,7 +136,7 @@ func (m *MqttCache) monitorRequests() {
 		select {
 		case <-stopChan:
 			for _, cache := range m.Cache {
-				m.mq.UnsubscribeFromTopic(getTopicPrefix + cache.Topic)
+				m.mq.UnsubscribeFromTopic(getTopicPrefix+cache.Topic, m.allReqs)
 			}
 			return
 		case req := <-m.allReqs:

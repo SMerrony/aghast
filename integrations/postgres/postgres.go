@@ -114,7 +114,7 @@ func (p *Postgres) addStopChan() chan bool {
 
 func (p *Postgres) logger(l loggerT) {
 	ch := p.mq.SubscribeToTopic(l.Topic)
-	defer p.mq.UnsubscribeFromTopic(l.Topic)
+	defer p.mq.UnsubscribeFromTopic(l.Topic, ch)
 
 	// lookup or create id value for this data name
 	sql := "SELECT id FROM names WHERE name = '" + l.Name + "'"

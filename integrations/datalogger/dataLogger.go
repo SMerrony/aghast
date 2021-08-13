@@ -109,7 +109,7 @@ func (d *DataLogger) logger(l loggerT) {
 	csvWriter := csv.NewWriter(file)
 
 	ch := d.mq.SubscribeToTopic(l.Topic)
-	defer d.mq.UnsubscribeFromTopic(l.Topic)
+	defer d.mq.UnsubscribeFromTopic(l.Topic, ch)
 
 	d.mutex.RUnlock()
 	unflushed := 0

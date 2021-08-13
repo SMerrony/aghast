@@ -64,7 +64,7 @@ func main() {
 	mq := mqtt.MQTT{}
 	mqttChan := mq.Start(conf.MqttBroker, conf.MqttPort, conf.MqttUsername, conf.MqttPassword, conf.MqttClientID, conf.MqttBaseTopic)
 
-	server.StartIntegrations(conf, mq)
+	server.StartIntegrations(conf, &mq)
 
 	mqttChan <- mqtt.AghastMsgT{
 		Subtopic: "/status",

@@ -104,7 +104,7 @@ func (i *Influx) addStopChan() chan bool {
 
 func (i *Influx) logger(l loggerT) {
 	ch := i.mq.SubscribeToTopic(l.Topic)
-	defer i.mq.UnsubscribeFromTopic(l.Topic)
+	defer i.mq.UnsubscribeFromTopic(l.Topic, ch)
 
 	stopChan := i.addStopChan()
 

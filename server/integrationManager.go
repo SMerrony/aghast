@@ -57,7 +57,7 @@ type Integration interface {
 
 var integs = make(map[string]Integration)
 var mainConfig config.MainConfigT
-var mq mqtt.MQTT
+var mq *mqtt.MQTT
 
 func newIntegration(iName string) {
 	switch iName {
@@ -89,7 +89,7 @@ func newIntegration(iName string) {
 }
 
 // StartIntegrations asks each enabled Integration to configure itself, then starts them.
-func StartIntegrations(conf config.MainConfigT, mqtt mqtt.MQTT) {
+func StartIntegrations(conf config.MainConfigT, mqtt *mqtt.MQTT) {
 	mainConfig = conf
 	mq = mqtt
 	for _, i := range conf.Integrations {
@@ -97,7 +97,7 @@ func StartIntegrations(conf config.MainConfigT, mqtt mqtt.MQTT) {
 		if err := integs[i].LoadConfig(conf.ConfigDir); err != nil {
 			log.Fatalf("ERROR: %s Integration could not load its configuration", i)
 		}
-		go integs[i].Start(&mqtt)
+		go integs[i].Start(mqtt)
 	}
 
 	go dailyTimeRestart()
@@ -183,7 +183,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		if err := integs[i].LoadConfig(mainConfig.ConfigDir); err != nil {
 			log.Fatalf("ERROR: %s Integration could not reload its configuration", i)
 		}
-		go integs[i].Start(&mq)
+		go integs[i].Start(mq)
 	}
 	t, err := template.New("root").Parse(homeTemplateMain)
 	if err != nil {
@@ -218,7 +218,7 @@ func dailyTimeRestart() {
 		if err := integs["time"].LoadConfig(mainConfig.ConfigDir); err != nil {
 			log.Fatalln("ERROR: Time Integration could not reload its configuration")
 		}
-		go integs["time"].Start(&mq)
+		go integs["time"].Start(mq)
 		<-daily.C
 	}
 

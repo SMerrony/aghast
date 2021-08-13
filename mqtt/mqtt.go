@@ -203,9 +203,36 @@ func (m *MQTT) SubscribeToTopicUsingChan(topic string, c chan GeneralMsgT) {
 	m.subscribeAndMap(c, topic)
 }
 
+func removeChan(chans []chan GeneralMsgT, i int) []chan GeneralMsgT {
+	chans[i] = chans[len(chans)-1]
+	return chans[:len(chans)-1]
+}
+
 // FIXME UnsubscribeFromTopic needs to take a chan as another parm and use it to correctly
 // remove the right subbed chan from the sub map
 // UnsubscribeFromTopic does what you'd expect
-func (m *MQTT) UnsubscribeFromTopic(topic string) {
-	m.client.Unsubscribe(topic)
+func (m *MQTT) UnsubscribeFromTopic(topic string, ch chan GeneralMsgT) {
+	m.mutex.RLock()
+	subs, found := m.subs[topic]
+	m.mutex.RUnlock()
+	if !found {
+		log.Printf("WARNING: MQTT - UnsubscribeFromTopic called for non-subscribed topic: %s\n", topic)
+		return
+	}
+	for ix, subbedChan := range subs {
+		if subbedChan == ch {
+			m.mutex.Lock()
+			if len(subs) == 1 {
+				// this is the only subscriber, so unsubscribe
+				m.client.Unsubscribe(topic)
+				m.subs[topic] = nil
+			} else {
+				// there are other subscribers, so just remove from the fan-out list
+				m.subs[topic] = removeChan(subs, ix)
+			}
+			m.mutex.Unlock()
+			return
+		}
+	}
+	log.Printf("WARNING: MQTT - UnsubscribeFromTopic did not find matching channel for topic: %s, this should not happen!\n", topic)
 }

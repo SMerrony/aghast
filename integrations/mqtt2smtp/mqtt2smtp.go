@@ -80,7 +80,7 @@ func (m *Mqtt2smtp) sender() {
 	for {
 		select {
 		case <-m.stopChan:
-			m.mq.UnsubscribeFromTopic(sendTopic)
+			m.mq.UnsubscribeFromTopic(sendTopic, ch)
 			return
 		case msg := <-ch:
 			jsonMap := make(map[string]interface{})

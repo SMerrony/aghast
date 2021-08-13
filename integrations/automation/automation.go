@@ -172,11 +172,6 @@ func (a *Automation) LoadConfig(confDir string) error {
 	return nil
 }
 
-// ProvidesDeviceTypes returns a slice of device types that this Integration supplies.
-func (a *Automation) ProvidesDeviceTypes() []string {
-	return []string{"Automation"}
-}
-
 // Start launches a Goroutine for each Automation, LoadConfig() should have been called beforehand.
 func (a *Automation) Start(mq *mqtt.MQTT) {
 	a.mq = mq
@@ -211,10 +206,10 @@ func (a *Automation) testCondition(cond conditionT) bool {
 	var respChan chan mqtt.GeneralMsgT
 	if cond.ReplyTopic == "" {
 		respChan = a.mq.SubscribeToTopic(cond.QueryTopic)
-		defer a.mq.UnsubscribeFromTopic(cond.QueryTopic)
+		defer a.mq.UnsubscribeFromTopic(cond.QueryTopic, respChan)
 	} else {
 		respChan = a.mq.SubscribeToTopic(cond.ReplyTopic)
-		defer a.mq.UnsubscribeFromTopic(cond.ReplyTopic)
+		defer a.mq.UnsubscribeFromTopic(cond.ReplyTopic, respChan)
 	}
 	a.mq.ThirdPartyChan <- mqtt.GeneralMsgT{
 		Topic:    cond.QueryTopic,
