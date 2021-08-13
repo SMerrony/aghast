@@ -175,45 +175,37 @@ func (m *MQTT) fanOut(topic string) {
 	})
 }
 
-// SubscribeToTopic returns a channel which will receive any MQTT messages published to the topic
-func (m *MQTT) SubscribeToTopic(topic string) chan GeneralMsgT {
-	c := make(chan GeneralMsgT, mqttInboundQueueLen)
+func (m *MQTT) subscribeAndMap(ch chan GeneralMsgT, topic string) {
 	m.mutex.RLock()
 	_, already := m.subs[topic]
 	m.mutex.RUnlock()
 	if !already {
 		m.client.Subscribe(topic, 1, func(client mqtt.Client, msg mqtt.Message) {
 			cMsg := GeneralMsgT{msg.Topic(), msg.Qos(), msg.Retained(), msg.Payload()}
-			c <- cMsg
-			// log.Printf("DEBUG: MQTT subscription got topic: %s,  msg: %v\n", msg.Topic(), msg.Payload())
+			ch <- cMsg
 		})
 		go m.fanOut(topic)
 	}
 	m.mutex.Lock()
-	m.subs[topic] = append(m.subs[topic], c)
+	m.subs[topic] = append(m.subs[topic], ch)
 	m.mutex.Unlock()
+}
 
+// SubscribeToTopic returns a channel which will receive any MQTT messages published to the topic
+func (m *MQTT) SubscribeToTopic(topic string) chan GeneralMsgT {
+	c := make(chan GeneralMsgT, mqttInboundQueueLen)
+	m.subscribeAndMap(c, topic)
 	return c
 }
 
-// SubscribeToTopicUsingChan uses the providedchan to receive any MQTT messages published to the topic
+// SubscribeToTopicUsingChan uses the provided chan to receive any MQTT messages published to the topic
 func (m *MQTT) SubscribeToTopicUsingChan(topic string, c chan GeneralMsgT) {
-	m.client.Subscribe(topic, 1, func(client mqtt.Client, msg mqtt.Message) {
-		cMsg := GeneralMsgT{msg.Topic(), msg.Qos(), msg.Retained(), msg.Payload()}
-		c <- cMsg
-		// log.Printf("DEBUG: MQTT subscription got topic: %s,  msg: %v\n", msg.Topic(), msg.Payload())
-	})
+	m.subscribeAndMap(c, topic)
 }
 
+// FIXME UnsubscribeFromTopic needs to take a chan as another parm and use it to correctly
+// remove the right subbed chan from the sub map
 // UnsubscribeFromTopic does what you'd expect
 func (m *MQTT) UnsubscribeFromTopic(topic string) {
 	m.client.Unsubscribe(topic)
 }
-
-// testing...
-// func sub(client mqtt.Client) {
-// 	topic := "topic/test"
-// 	token := client.Subscribe(topic, 1, nil)
-// 	token.Wait()
-// 	fmt.Printf("Subscribed to topic: %s", topic)
-// }
