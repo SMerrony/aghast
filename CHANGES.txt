@@ -1,12 +1,12 @@
 CHANGES file for AGHAST Server
 ==============================
 
-AGHAST v0.3.0 (released 2021-XX-XX)
+AGHAST v0.3.0 (released 2021-08-14)
 - WARNING: There are breaking changes to the Automation configuration files in this release.
 - Major Changes: Automation Events fields renamed to 'Key' and 'Value'.
+                 Unnecessary [Event] section in Automation TOML files removed.
 - New Features:  mqtt2smtp MQTT-to-Email Integration added.
 - Bug Fixes:     Issue #14 (Goroutine leak) and related bugs and races were fixed.
-                 Unnecessary [Event] section in Automation TOML files removed.
   
 AGHAST v0.2.0 (released 2021-08-09)
 - WARNING: There are breaking changes to the Automation configuration files in this release.
@@ -15,7 +15,6 @@ AGHAST v0.2.0 (released 2021-08-09)
                  Several no-longer-needed Integrations have been removed.
                  The Daikin Integration has been spun off into its own project 'daikin2mqtt' on Github.
 - New Features:  MqttCache and MqttSender Integrations.
-
 
 AGHAST v0.1.0 (not explicitly released)
 - Integrations include Daikin, Influx PiMqttGpio, Postgres, Scraper, Tuya, zigbee2mqtt.
