@@ -1,6 +1,6 @@
 # The mqtt2smtp Integration
 ## Description and Purpose
-Provides a simple MQTT-to-Email gateway.
+Provides a simple MQTT-to-Email gateway for raising alerts etc.
 
 The integration waits for JSON-encoded messages to arrive on the `aghast/mqtt2smtp/send` topic
 then tries to send them via the configured email (SMTP) server.

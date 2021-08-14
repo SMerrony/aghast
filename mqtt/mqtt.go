@@ -70,25 +70,6 @@ type GeneralMsgT struct {
 	Payload  interface{}
 }
 
-// // TempConnection returns a new instance of MQTT for single-shot usage,
-// // mainly to ensure that subscription and unsubscriptions do not interfere with other execution flows.
-// func TempConnection(existingMQTT MQTT) *MQTT {
-// 	var m MQTT
-// 	m.options = mqtt.NewClientOptions()
-// 	m.options.AddBroker(fmt.Sprintf("tcp://%s:%d", existingMQTT.broker, existingMQTT.port))
-// 	if existingMQTT.username != "" {
-// 		m.options.SetUsername(existingMQTT.username)
-// 		m.options.SetPassword(existingMQTT.password)
-// 	}
-// 	m.client = mqtt.NewClient(m.options)
-// 	if token := m.client.Connect(); token.Wait() && token.Error() != nil {
-// 		panic(token.Error())
-// 	}
-// 	m.ThirdPartyChan = make(chan GeneralMsgT, mqttOutboundQueueLen)
-// 	go m.thirdPartyPublish()
-// 	return &m
-// }
-
 // Disconnect from the MQTT Broker after 100ms
 func (m *MQTT) Disconnect() {
 	m.client.Disconnect(100)
@@ -165,12 +146,12 @@ func (m *MQTT) fanOut(topic string) {
 	m.client.Subscribe(topic, 1, func(client mqtt.Client, msg mqtt.Message) {
 		cMsg := GeneralMsgT{msg.Topic(), msg.Qos(), msg.Retained(), msg.Payload()}
 		m.mutex.RLock()
-		log.Printf("DEBUG: mqtt.fanout got a message on %s\n", msg.Topic())
+		// log.Printf("DEBUG: mqtt.fanout got a message on %s\n", msg.Topic())
 		for _, subChans := range m.subs[topic] {
 			subChans <- cMsg
-			log.Println("DEBUG: ... mqtt.fanout forwarding message")
+			// log.Println("DEBUG: ... mqtt.fanout forwarding message")
 		}
-		log.Println("DEBUG: ... mqtt.fanout done for this message")
+		// log.Println("DEBUG: ... mqtt.fanout done for this message")
 		m.mutex.RUnlock()
 	})
 }
@@ -208,9 +189,8 @@ func removeChan(chans []chan GeneralMsgT, i int) []chan GeneralMsgT {
 	return chans[:len(chans)-1]
 }
 
-// FIXME UnsubscribeFromTopic needs to take a chan as another parm and use it to correctly
-// remove the right subbed chan from the sub map
-// UnsubscribeFromTopic does what you'd expect
+// UnsubscribeFromTopic taked a chan as another parm and use it to correctly
+// remove the right subbed chan from the subscription map
 func (m *MQTT) UnsubscribeFromTopic(topic string, ch chan GeneralMsgT) {
 	m.mutex.RLock()
 	subs, found := m.subs[topic]

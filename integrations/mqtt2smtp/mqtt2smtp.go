@@ -105,13 +105,14 @@ func (m *Mqtt2smtp) sender() {
 				continue
 			}
 			message := "Subject: " + subject.(string) + "\n\n" + body.(string)
-			log.Printf("DEBUG: mqtt2smtp User: %s, Password: %s\n", m.SmtpUser, m.SmtpPassword)
+			// log.Printf("DEBUG: mqtt2smtp User: %s, Password: %s\n", m.SmtpUser, m.SmtpPassword)
 			auth := smtp.PlainAuth("", m.SmtpUser, m.SmtpPassword, m.SmtpHost)
 			err = smtp.SendMail(m.SmtpHost+":"+m.SmtpPort, auth, m.SmtpUser, []string{dest.(string)}, []byte(message))
 			if err != nil {
 				log.Printf("ERROR: Could not send email due to %s\n", err)
 				continue
 			}
+			log.Printf("INFO: mqtt2smtp - Sent mail to %s\n", dest.(string))
 		}
 	}
 }
