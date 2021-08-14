@@ -56,7 +56,7 @@ type automationT struct {
 	Name             string
 	Description      string
 	Enabled          bool
-	mqttTopic        string
+	EventTopic       string
 	hasCondition     bool
 	condition        conditionT
 	actions          map[string]actionT
@@ -108,10 +108,10 @@ func (a *Automation) LoadConfig(confDir string) error {
 		}
 		newAuto.confFilename = config.Name()
 		// log.Printf("DEBUG: ... %s, %s\n", newAuto.Name, newAuto.Description)
-		if conf.Get("Event.Topic") != nil {
-			newAuto.mqttTopic = conf.Get("Event.Topic").(string)
+		if conf.Get("EventTopic") != nil {
+			newAuto.EventTopic = conf.Get("EventTopic").(string)
 		} else {
-			log.Printf("WARNING: Automations - no Event specified for %s, ignoring it\n", newAuto.Name)
+			log.Printf("WARNING: Automations - no Event Topic specified for %s, ignoring it\n", newAuto.Name)
 			continue
 		}
 		if conf.Get("Condition") != nil {
@@ -314,7 +314,7 @@ func (a *Automation) testCondition(cond conditionT) bool {
 }
 
 func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
-	mqChan := a.mq.SubscribeToTopic(auto.mqttTopic)
+	mqChan := a.mq.SubscribeToTopic(auto.EventTopic)
 	for {
 		select {
 		case <-stopChan:

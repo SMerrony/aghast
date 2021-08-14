@@ -20,7 +20,7 @@ Integrations = [
   "mqtt2smtp",
   "mqttcache",
   "mqttsender",
-#  "postgres",
+  "postgres",
   "scraper",
 #  "tuya",
 ]

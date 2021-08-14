@@ -2,8 +2,7 @@ Name = "TowelRailOffLunch"
 Description = "Turn Towel-Rail off for lunchtime off-peak"
 Enabled = true
 
-[Event]
-  Topic = "aghast/time/events/LunchtimeOffPeakEnds"
+EventTopic = "aghast/time/events/LunchtimeOffPeakEnds"
 
 [Action.1]
   Topic = "zigbee2mqtt/Towel_Rail/set"

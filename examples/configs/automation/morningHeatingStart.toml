@@ -1,9 +1,8 @@
 Name = "MorningHeatingStart"
 Description = "Main Downstairs Heaters On"
-Enabled = true
+Enabled = false
 
-[Event]
-  Topic = "aghast/time/events/MorningHeatingOn"
+EventTopic = "aghast/time/events/MorningHeatingOn"
 
 [Action.1]
   Topic = "daikin2mqtt/Hall/set/controls"

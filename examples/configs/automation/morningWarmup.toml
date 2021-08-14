@@ -1,9 +1,8 @@
 Name = "MorningeWarmup"
 Description = "Warm upstairs"
-Enabled = true
+Enabled = false
 
-[Event]
-  Topic = "aghast/time/events/MorningPrewarming"
+EventTopic = "aghast/time/events/MorningPrewarming"
 
 [Action.1]
   Topic = "daikin2mqtt/Steve_Office/set/controls"

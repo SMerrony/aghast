@@ -2,8 +2,7 @@ Name = "SocketTest"
 Description = "Test Zigbee2MQTT"
 Enabled = true
 
-[Event]
-  Topic = "aghast/time/tickers/minutes"
+EventTopic = "aghast/time/tickers/minutes"
 
 # [Condition]
 #   QueryTopic = "zigbee2mqtt/Office_Socket/get"
