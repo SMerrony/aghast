@@ -14,23 +14,21 @@ They must be located in an `automation` directory inside your main configuration
 
 Here is an example Automation that turns on a couple of HVAC units every morning...
 ```
-Name = "MorningHeatingStart"
+Name        = "MorningHeatingStart"
 Description = "Main Downstairs Heaters On"
-Enabled = true
-EventTopic = "aghast/time/events/MorningHeatingOn"
+Enabled     = true
+EventTopic  = "aghast/time/events/MorningHeatingOn"
 
 [Action.1]
-  Topic = "daikin2mqtt/Steves_Room/set/controls"
-  Execute = [ { Key = "set_temp", Value = 21.0 },
-              { Key = "mode",     Value = "HEAT" },
-              { Key = "power",    Value = true } ]
+  Topic     = "daikin2mqtt/Steves_Room/set/controls"
+  Payload   = '{"set_temp": 21.0, "mode": "HEAT", "power": true}'
 
 [Action.2]
-  Topic = "daikin2mqtt/Living_Room/set/controls"
-  Execute = [ { Key = "set_temp", Value = 19.0 },
-              { Key = "mode",     Value = "HEAT" },
-              { Key = "power",    Value = true } ]  
+  Topic     = "daikin2mqtt/Living_Room/set/controls"
+  Payload   = '{"set_temp": 19.0, "mode": "HEAT", "power": true}'            
 ```
+
+
 We will describe each section below.
 
 ### Preamble
@@ -50,8 +48,8 @@ This is the simplest case, the target responds with a single, raw value on the s
 ```
 [Condition]
   QueryTopic = "pizero02/gpio/sensor/dht22_humidity"  # No payload or key is required for this query
-  Is = ">"                                            # comparison - one of: "=", "!=", "<", ">", 
-  Value = 50.0
+  Is         = ">"                                    # comparison - one of: "=", "!=", "<", ">", 
+  Value      = 50.0
 ```
 
 This target responds with a JSON payload, we need to specify what key to examine...
@@ -59,9 +57,9 @@ This target responds with a JSON payload, we need to specify what key to examine
 [Condition]
   QueryTopic = "daikin2mqtt/Living_Room/get/sensors"  # No payload is required for this query
   ReplyTopic = "daikin2mqtt/Living_Room/sensors"      # The reply topic is different
-  Key = "ext_temp"
-  Is = "<"
-  Value = 17.0
+  Key        = "ext_temp"
+  Is         = "<"
+  Value      = 17.0
 ```
 
 This target needs a custom payload for the query, and returns JSON...
@@ -69,10 +67,10 @@ This target needs a custom payload for the query, and returns JSON...
 [Condition]
   QueryTopic = "zigbee2mqtt/Office_Socket/get"
   ReplyTopic = "zigbee2mqtt/Office_Socket"
-  Payload = "{\"state\": \"\"}"
-  Key = "state"
-  Is = "="
-  Value = "ON"
+  Payload    = '{"state": ""}'
+  Key        = "state"
+  Is         = "="
+  Value      = "ON"
 ```
 
 
@@ -96,9 +94,16 @@ To be usable by Automations, an Integration must accept MQTT 'commands'.
 The first line of an Action specifies the MQTT device to be controlled...
  * Topic - the MQTT address receiving the Control
 
+Then follows a `Payload` section containing the MQTT payload to be sent.
+
+The `Payload` can be either a simple value, or a JSON string.
+
+JSON payloads will need to be enclosed either in single-quotes, or be multi-line strings enclosed
+in triple-quotes.
+
+
 Then follow an `Execute` section with one or more lines containing Control instructions...
  * Execute [ ] - containing by one or more Control-Setting pairs enclosed in { }s
  * Key - a JSON key understood by the receiver
  * Value - a value to set the for the given Key
 
-Although slightly cumbersome for the simplest case, this syntax allows whole groups of Controls for a specific Device to be set with a short script.

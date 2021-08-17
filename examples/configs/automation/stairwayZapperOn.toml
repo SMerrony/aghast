@@ -1,11 +1,8 @@
-Name = "StairwayZapperOn"
+Name        = "StairwayZapperOn"
 Description = "Turn zapper on at night-time off-peak start"
-Enabled = true
-
-[Event]
-  Name = "Time/Events/TimedEvent/NightOffPeakStarts"
-  Topic = "aghast/time/events/NightOffPeakStarts"
+Enabled     = true
+EventTopic  = "aghast/time/events/NightOffPeakStarts"
 
 [Action.1]
-  Topic = "zigbee2mqtt/Stairway_Socket/set"
-  Execute = [ { Key = "state", Value = "ON" } ]
+  Topic   = "zigbee2mqtt/Stairway_Socket/set"
+  Payload = '{ "state": "ON" }'

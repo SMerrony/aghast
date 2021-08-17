@@ -21,11 +21,9 @@ package automation
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -75,9 +73,8 @@ type conditionT struct {
 }
 
 type actionT struct {
-	Topic  string
-	keys   []string
-	values []interface{}
+	Topic   string
+	Payload string
 }
 
 // LoadConfig loads and stores the configuration for this Integration.
@@ -150,12 +147,7 @@ func (a *Automation) LoadConfig(confDir string) error {
 			var act actionT
 			details := a.(map[string]interface{})
 			act.Topic = details["Topic"].(string)
-			executes := details["Execute"].([]interface{})
-			for _, ac := range executes {
-				cs := ac.(map[string]interface{})
-				act.keys = append(act.keys, cs["Key"].(string))
-				act.values = append(act.values, cs["Value"]) // not cast
-			}
+			act.Payload = details["Payload"].(string)
 			newAuto.actions[order] = act
 		}
 		newAuto.sortedActionKeys = make([]string, 0, len(newAuto.actions))
@@ -258,15 +250,15 @@ func (a *Automation) testCondition(cond conditionT) bool {
 			return false
 		}
 
-		switch v.(type) {
+		switch v := v.(type) {
 		case bool:
-			respAsBool = v.(bool)
+			respAsBool = v
 		case float64:
-			respAsF64 = v.(float64)
+			respAsF64 = v
 		case int64:
-			respAsI64 = v.(int64)
+			respAsI64 = v
 		case string:
-			respAsStr = v.(string)
+			respAsStr = v
 		}
 	}
 
@@ -330,39 +322,13 @@ func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
 				log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
 				for _, k := range auto.sortedActionKeys {
 					ac := auto.actions[k]
-					json := "{"
-					for i := 0; i < len(ac.keys); i++ {
-						if i > 0 {
-							json = json + ", "
-						}
-						json += "\"" + ac.keys[i] + "\":"
-						switch ac.values[i].(type) { // these are the legal TOML types
-						case string:
-							json += "\"" + ac.values[i].(string) + "\""
-						case bool:
-							if ac.values[i].(bool) {
-								json += "true"
-							} else {
-								json += "false"
-							}
-						case int:
-							json += strconv.Itoa(ac.values[i].(int))
-						case int64:
-							json += strconv.Itoa(int(ac.values[i].(int64)))
-						case float64:
-							json += fmt.Sprintf("%f", ac.values[i].(float64))
-						default:
-							log.Printf("WARNING: Automation %s contains invalid Setting - ignoring\n", auto.Name)
-						}
-					}
-					json += "}"
 					a.mq.ThirdPartyChan <- mqtt.GeneralMsgT{
 						Topic:    ac.Topic,
 						Qos:      0,
 						Retained: false,
-						Payload:  json,
+						Payload:  ac.Payload,
 					}
-					log.Printf("DEBUG: Automation Manager sent Event to %s with payload %s\n", ac.Topic, json)
+					log.Printf("DEBUG: Automation Manager sent Event to %s with payload %s\n", ac.Topic, ac.Payload)
 				}
 			} else {
 				log.Println("DEBUG: ... condition not met")

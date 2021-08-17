@@ -1,8 +1,7 @@
-Name = "SocketTest"
+Name        = "SocketTest"
 Description = "Test Zigbee2MQTT"
-Enabled = true
-
-EventTopic = "aghast/time/tickers/minutes"
+Enabled     = true
+EventTopic  = "aghast/time/tickers/minutes"
 
 # [Condition]
 #   QueryTopic = "zigbee2mqtt/Office_Socket/get"
@@ -15,11 +14,10 @@ EventTopic = "aghast/time/tickers/minutes"
 [Condition]
   QueryTopic = "daikin2mqtt/Steve_Office/get/controls"
   ReplyTopic = "daikin2mqtt/Steve_Office/controls"
-  Key = "mode"
-  Is = "="
-  Value = "COOL"
+  Key        = "mode"
+  Is         = "="
+  Value      = "COOL"
 
 [Action.1]
-  Topic = "zigbee2mqtt/Office_Socket/set"
-  Execute = [ { Key = "state", Value = "OFF" } ]
-
+  Topic   = "zigbee2mqtt/Office_Socket/set"
+  Payload = '{ "state": "OFF" }'

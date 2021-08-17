@@ -1,9 +1,8 @@
-Name = "TowelRailOnLunch"
+Name        = "TowelRailOnLunch"
 Description = "Turn Towel-Rail on for lunchtime off-peak"
-Enabled = true
-
-EventTopic = "aghast/time/events/LunchtimeOffPeakStarts"
+Enabled     = true
+EventTopic  = "aghast/time/events/LunchtimeOffPeakStarts"
 
 [Action.1]
-  Topic = "zigbee2mqtt/Towel_Rail/set"
-  Execute = [ { Key = "state", Value = "ON" } ]
+  Topic   = "zigbee2mqtt/Towel_Rail/set"
+  Payload = '{ "state": "ON" }'

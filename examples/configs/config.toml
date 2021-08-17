@@ -14,13 +14,13 @@ ControlPort = 46445           # HTTP port for back-end admin control
 Integrations = [
   "time",         # the Time integration MUST be enabled
   "automation",
-  "datalogger",  # as it's commented here, it won't be started
-  "hostchecker",
+#  "datalogger",  # as it's commented here, it won't be started
+#  "hostchecker",
 #  "influx",
   "mqtt2smtp",
-  "mqttcache",
-  "mqttsender",
-  "postgres",
-  "scraper",
+#  "mqttcache",
+#  "mqttsender",
+#  "postgres",
+#  "scraper",
 #  "tuya",
 ]

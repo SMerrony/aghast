@@ -1,25 +1,13 @@
 Name = "MorningHeatingStart"
 Description = "Main Downstairs Heaters On"
 Enabled = false
-
 EventTopic = "aghast/time/events/MorningHeatingOn"
 
 [Action.1]
-  Topic = "daikin2mqtt/Hall/set/controls"
-  Execute = [ { Key = "set_temp",    Value = 23.0 },
-              { Key = "mode",        Value = "Heat" },
-              { Key = "power",       Value = true } ]
+  Topic   = "daikin2mqtt/Hall/set/controls"
+  Payload = '{ "set_temp": 23.0, "mode": "Heat", "power": true }'
 
-# [Action.2]
-#   Integration = "Daikin"
-#   DeviceLabel = "Living Room"
-#   Execute = [ { Key = "tset_temp", Value = 18.0 },
-#               { Key = "mode",        Value = "Heat" },
-#               { Key = "power",       Value = true } ]  
 
 [Action.3]
   Topic = "daikin2mqtt/Music_Room/set/controls"
-  Execute = [ { Key = "set_temp",    Value = 20.0 },
-              { Key = "mode",        Value = "Heat" },
-              { Key = "power",       Value = true } ]  
-
+  Payload = '{ "set_temp": 20.0, "mode": "Heat", "power": true }'

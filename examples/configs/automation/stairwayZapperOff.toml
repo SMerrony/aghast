@@ -1,10 +1,8 @@
 Name = "StairwayZapperOff"
 Description = "Turn zapper off at sunrise"
 Enabled = true
-
 EventTopic = "aghast/time/events/Sunrise"
 
 [Action.1]
   Topic = "zigbee2mqtt/Stairway_Socket/set"
-  Execute = [ { Key = "state", Value = "OFF" } ]
-
+  Payload = '{ "state": "OFF" }'
