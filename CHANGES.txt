@@ -1,20 +1,20 @@
 CHANGES file for AGHAST Server
 ==============================
 
-AGHAST v0.4.0 (released 2021-08-XX) - Simpler Event Configuration
-- WARNING: There are breaking changes to the Automation configuration files in this release.
-           (Hopefully for the last time in a while.)
+AGHAST v0.4.0 (released 2021-08-18) - Simpler Event Configuration
+- WARNING:       There are breaking changes to the Automation configuration files in this release.
+                 (Hopefully for the last time in a while.)
 - Major Changes: Automation Events now simply send 'Payload' strings.
 
 AGHAST v0.3.0 (released 2021-08-14) - Email Messages
-- WARNING: There are breaking changes to the Automation configuration files in this release.
+- WARNING:       There are breaking changes to the Automation configuration files in this release.
 - Major Changes: Automation Events fields renamed to 'Key' and 'Value'.
                  Unnecessary [Event] section in Automation TOML files removed.
 - New Features:  mqtt2smtp MQTT-to-Email Integration added.
 - Bug Fixes:     Issue #14 (Goroutine leak) and related bugs and races were fixed.
   
 AGHAST v0.2.0 (released 2021-08-09) - MQTT or Bust
-- WARNING: There are breaking changes to the Automation configuration files in this release.
+- WARNING:       There are breaking changes to the Automation configuration files in this release.
 - Major Changes: The internal event system has been scrapped in favour of using an all-MQTT approach.
                  Automations are now triggered by MQTT messages.
                  Several no-longer-needed Integrations have been removed.

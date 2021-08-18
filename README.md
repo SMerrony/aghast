@@ -99,8 +99,7 @@ ConfigDir/                   # any name - passed to server at startup
   influx.toml
   automations/               # automations
   |  officeWarmup.toml
-  |  scripts/                # scripts shared by automations
-  |  |  turnAllLightsOff.toml
+  |  holidayLights.toml
   ...
 ```
 
