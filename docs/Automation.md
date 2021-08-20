@@ -7,6 +7,16 @@ It is expected that Automation facilities will be signficantly expanded, so this
 An Automation may cause one or more Actions to be performed, optionally a Condition
 may be checked before running the Actions.
 
+- [Automation](#automation)
+  - [Configuration](#configuration)
+    - [Preamble](#preamble)
+    - [Event](#event)
+    - [Condition](#condition)
+    - [Actions](#actions)
+  - [Examples](#examples)
+    - [1. A very simple automation](#1-a-very-simple-automation)
+    - [2. Using a value from the triggering event in a condition](#2-using-a-value-from-the-triggering-event-in-a-condition)
+
 ## Configuration
 
 Like everything else in AGHAST, Automations are defined in TOML files.
@@ -42,21 +52,30 @@ Automation processing is triggered by the arrival of an MQTT message we refer to
 The `EventTopic` line identifies the triggering message.
 
 ### Condition
-You may optionally specify a Condition that must be satisfied for the Automation to proceed...
+You may optionally specify a Condition that must be satisfied for the Automation to proceed. 
+Conditions may refer either to the payload that was delivered with the `EventTopic` message,
+or to a separate message received in response to a `QueryTopic` request.
 
-This is the simplest case, the target responds with a single, raw value on the same topic...
+The simplest case is therefore when we want to examine a simple value sent in the original payload...
 ```
 [Condition]
-  QueryTopic = "pizero02/gpio/sensor/dht22_humidity"  # No payload or key is required for this query
-  Is         = ">"                                    # comparison - one of: "=", "!=", "<", ">", 
+  Is    = ">"    # comparison - one of: "=", "!=", "<", ">", 
+  Value = 50.0
+```
+
+This is the next simplest case, we query something else and it responds with a single, raw value on the same topic...
+```
+[Condition]
+  QueryTopic = "pizero02/gpio/sensor/dht22_humidity" # No payload or key is required for this query
+  Is         = ">"
   Value      = 50.0
 ```
 
 This target responds with a JSON payload, we need to specify what key to examine...
 ```
 [Condition]
-  QueryTopic = "daikin2mqtt/Living_Room/get/sensors"  # No payload is required for this query
-  ReplyTopic = "daikin2mqtt/Living_Room/sensors"      # The reply topic is different
+  QueryTopic = "daikin2mqtt/Living_Room/get/sensors" # No payload is required for this query
+  ReplyTopic = "daikin2mqtt/Living_Room/sensors"     # But the reply topic is different
   Key        = "ext_temp"
   Is         = "<"
   Value      = 17.0
@@ -98,12 +117,34 @@ Then follows a `Payload` section containing the MQTT payload to be sent.
 
 The `Payload` can be either a simple value, or a JSON string.
 
-JSON payloads will need to be enclosed either in single-quotes, or be multi-line strings enclosed
+JSON payloads need to be enclosed either in single-quotes, or be multi-line strings enclosed
 in triple-quotes.
 
+## Examples
+### 1. A very simple automation
+```
+Name = "StairwayZapperOff"
+Description = "Turn zapper off at sunrise"
+Enabled = true
+EventTopic = "aghast/time/events/Sunrise"
 
-Then follow an `Execute` section with one or more lines containing Control instructions...
- * Execute [ ] - containing by one or more Control-Setting pairs enclosed in { }s
- * Key - a JSON key understood by the receiver
- * Value - a value to set the for the given Key
+[Action.1]
+  Topic = "zigbee2mqtt/Stairway_Socket/set"
+  Payload = '{ "state": "OFF" }'
+```
+### 2. Using a value from the triggering event in a condition
+```
+Name        = "ExtraOfficeLampOn"
+Description = "Turn on side lamp in office when left wall switch is on"
+Enabled     = true
+EventTopic  = "zigbee2mqtt/Office_Dual_Switch"
 
+[Condition]
+  Key       = "state_left"
+  Is        = "="
+  Value     = "ON"
+
+[Action.1]
+  Topic     = "zigbee2mqtt/Office_3_Way_Socket/set"
+  Payload   = '{"state_l3": "ON"}'
+```

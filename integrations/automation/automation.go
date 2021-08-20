@@ -113,11 +113,10 @@ func (a *Automation) LoadConfig(confDir string) error {
 		}
 		if conf.Get("Condition") != nil {
 			newAuto.hasCondition = true
-			if conf.Get("Condition.QueryTopic") == nil {
-				log.Printf("ERROR: No MQTT Topic found for Condition in %s\n", newAuto.Name)
-				continue
+			newAuto.condition.QueryTopic = ""
+			if conf.Get("Condition.QueryTopic") != nil {
+				newAuto.condition.QueryTopic = conf.Get("Condition.QueryTopic").(string)
 			}
-			newAuto.condition.QueryTopic = conf.Get("Condition.QueryTopic").(string)
 			newAuto.condition.ReplyTopic = ""
 			if conf.Get("Condition.ReplyTopic") != nil {
 				newAuto.condition.ReplyTopic = conf.Get("Condition.ReplyTopic").(string)
@@ -193,36 +192,39 @@ func (a *Automation) Stop() {
 	log.Println("DEBUG: All Automations should have stopped")
 }
 
-func (a *Automation) testCondition(cond conditionT) bool {
-	//tempMQTT := mqtt.TempConnection(a.mq)
-	var respChan chan mqtt.GeneralMsgT
-	if cond.ReplyTopic == "" {
-		respChan = a.mq.SubscribeToTopic(cond.QueryTopic)
-		defer a.mq.UnsubscribeFromTopic(cond.QueryTopic, respChan)
-	} else {
-		respChan = a.mq.SubscribeToTopic(cond.ReplyTopic)
-		defer a.mq.UnsubscribeFromTopic(cond.ReplyTopic, respChan)
-	}
-	a.mq.ThirdPartyChan <- mqtt.GeneralMsgT{
-		Topic:    cond.QueryTopic,
-		Qos:      0,
-		Retained: false,
-		Payload:  cond.Payload, // may be empty
-	}
-
+func (a *Automation) testCondition(cond conditionT, eventPayload interface{}) bool {
 	var (
+		respChan   chan mqtt.GeneralMsgT
 		resp       mqtt.GeneralMsgT
 		respAsBool bool
 		respAsF64  float64
 		respAsI64  int64
 		respAsStr  string
 	)
+	if cond.QueryTopic == "" {
+		// there's no new query for this condition, we use the payload from the originating event
+		resp.Payload = eventPayload
+	} else {
+		if cond.ReplyTopic == "" {
+			respChan = a.mq.SubscribeToTopic(cond.QueryTopic)
+			defer a.mq.UnsubscribeFromTopic(cond.QueryTopic, respChan)
+		} else {
+			respChan = a.mq.SubscribeToTopic(cond.ReplyTopic)
+			defer a.mq.UnsubscribeFromTopic(cond.ReplyTopic, respChan)
+		}
+		a.mq.ThirdPartyChan <- mqtt.GeneralMsgT{
+			Topic:    cond.QueryTopic,
+			Qos:      0,
+			Retained: false,
+			Payload:  cond.Payload, // may be empty
+		}
 
-	select {
-	case resp = <-respChan:
-	case <-time.After(conditionQueryTimeoutSecs * time.Second):
-		log.Printf("WARNING: Automation (Condition) - MQTT query timed out on topic %s\n", cond.QueryTopic)
-		return false
+		select {
+		case resp = <-respChan:
+		case <-time.After(conditionQueryTimeoutSecs * time.Second):
+			log.Printf("WARNING: Automation (Condition) - MQTT query timed out on topic %s\n", cond.QueryTopic)
+			return false
+		}
 	}
 
 	// we expect either a simple value, or a JSON response in which case a "Key" should have been specified
@@ -312,11 +314,11 @@ func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
 		case <-stopChan:
 			log.Printf("INFO: Automation %s stopping", auto.Name)
 			return
-		case <-mqChan:
+		case eventMsg := <-mqChan:
 			// log.Printf("DEBUG: Automation Manager received Event %s\n", auto.Event.Name)
 			doit := true
 			if auto.hasCondition {
-				doit = a.testCondition(auto.condition)
+				doit = a.testCondition(auto.condition, eventMsg.Payload)
 			}
 			if doit {
 				log.Printf("DEBUG: Automation Manager will forward to %d actions\n", len(auto.sortedActionKeys))
