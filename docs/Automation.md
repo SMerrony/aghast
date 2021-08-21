@@ -110,10 +110,9 @@ The label `[Action.<label>]` in the Action header is used to sort the actions al
 
 To be usable by Automations, an Integration must accept MQTT 'commands'.
 
-The first line of an Action specifies the MQTT device to be controlled...
+Actions contain two confiurations...
  * Topic - the MQTT address receiving the Control
-
-Then follows a `Payload` section containing the MQTT payload to be sent.
+ * Payload - the MQTT message to be sent
 
 The `Payload` can be either a simple value, or a JSON string.
 

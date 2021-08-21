@@ -1,6 +1,9 @@
 CHANGES file for AGHAST Server
 ==============================
 
+AGHAST v0.5.0 (released 2021-08-21) - Simpler Conditions
+- New Feature:   Conditions may now use a value from the triggering message
+
 AGHAST v0.4.0 (released 2021-08-18) - Simpler Event Configuration
 - WARNING:       There are breaking changes to the Automation configuration files in this release.
                  (Hopefully for the last time in a while.)
