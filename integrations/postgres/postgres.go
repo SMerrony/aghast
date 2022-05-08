@@ -1,4 +1,4 @@
-// Copyright ©2021 Steve Merrony
+// Copyright ©2021,2022 Steve Merrony
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,10 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"math"
 	"strconv"
 	"sync"
 
@@ -154,12 +156,12 @@ func (p *Postgres) logger(l loggerT) {
 				jsonMap := make(map[string]interface{})
 				err := json.Unmarshal([]byte(msg.Payload.([]uint8)), &jsonMap)
 				if err != nil {
-					log.Printf("ERROR: DataLogger - Could not understand JSON %s\n", msg.Payload.(string))
+					log.Printf("ERROR: Postgres Logger - Could not understand JSON %s\n", msg.Payload.(string))
 					return
 				}
 				v, found := jsonMap[l.Key]
 				if !found {
-					log.Printf("ERROR: DataLogger - Could find Key in JSON %s\n", msg.Payload.(string))
+					log.Printf("ERROR: Postgres Logger - Could find Key in JSON %s\n", msg.Payload.(string))
 					return
 				}
 				value = v
@@ -175,25 +177,30 @@ func (p *Postgres) logger(l loggerT) {
 				case string:
 					fl, err = strconv.ParseFloat(value.(string), 64)
 					if err != nil {
-						log.Printf("WARNING: Postgres logger could not parse float from %v\n", value.(string))
+						log.Printf("WARNING: Postgres logger could not parse float from %v\n", value)
 						continue
 					}
 				}
 				sql = fmt.Sprintf("INSERT INTO logged_floats(id, ts, float_val) VALUES( %s, NOW(), %f)", idString, fl)
 			case "integer":
 				var num int
-				switch value.(type) {
+				switch t := value.(type) {
 				case int:
 					num = value.(int)
 				case int32:
 					num = int(value.(int32))
 				case int64:
 					num = int(value.(int64))
+				case float64:
+					num = int(math.Round(value.(float64)))
 				case string:
 					num, err = strconv.Atoi(value.(string))
+				default:
+					log.Printf("WARNING: Postgres Logger expected integer type, got: %T\n", t)
+					err = errors.New("Type error")
 				}
 				if err != nil {
-					log.Printf("WARNING: Postgres logger could not parse integer from %v\n", value.(string))
+					log.Printf("WARNING: Postgres logger could not parse integer from %v\n", value)
 					continue
 				}
 				sql = fmt.Sprintf("INSERT INTO logged_integers(id, ts, int_val) VALUES( %s, NOW(), %d)", idString, num)
