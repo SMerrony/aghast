@@ -31,7 +31,7 @@ import (
 	"github.com/SMerrony/aghast/server"
 )
 
-const SemVer = "v0.5.1" // TODO Update SemVer on each release
+const SemVer = "v0.5.2" // TODO Update SemVer on each release
 
 var (
 	configFlag  = flag.String("configdir", "", "directory containing configuration files")

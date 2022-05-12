@@ -248,7 +248,7 @@ func (a *Automation) testCondition(cond conditionT, eventPayload interface{}) bo
 		}
 		v, found := jsonMap[cond.Key]
 		if !found {
-			log.Printf("ERROR: Automation (Condition) - Could find Key in JSON %s\n", resp.Payload.(string))
+			// not an event we are interested in
 			return false
 		}
 
@@ -332,8 +332,6 @@ func (a *Automation) waitForMqttEvent(stopChan chan bool, auto automationT) {
 					}
 					log.Printf("DEBUG: Automation Manager sent Event to %s with payload %s\n", ac.Topic, ac.Payload)
 				}
-			} else {
-				log.Println("DEBUG: ... condition not met")
 			}
 		}
 	}
